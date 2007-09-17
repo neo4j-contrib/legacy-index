@@ -26,6 +26,7 @@ public class TestSimpleIndex extends TestCase
 	private EmbeddedNeo neo;
 	Transaction tx;
 	
+	@Override
 	public void setUp()
 	{
 		neo = new EmbeddedNeo( null, "var/timeline", true );
@@ -34,6 +35,7 @@ public class TestSimpleIndex extends TestCase
 		index = new SimpleIndex( "test_simple", node, neo ); 
 	}
 	
+	@Override
 	public void tearDown()
 	{
 		index.drop();

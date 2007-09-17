@@ -27,6 +27,7 @@ public class TestTimeline extends TestCase
 	private EmbeddedNeo neo;
 	Transaction tx;
 	
+	@Override
 	public void setUp()
 	{
 		neo = new EmbeddedNeo( null, "var/timeline", true );
@@ -35,6 +36,7 @@ public class TestTimeline extends TestCase
 		timeline = new Timeline( "test_timeline", node, false, neo ); 
 	}
 	
+	@Override
 	public void tearDown()
 	{
 		timeline.delete();

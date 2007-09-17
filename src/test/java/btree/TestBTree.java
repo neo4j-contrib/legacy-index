@@ -30,6 +30,7 @@ public class TestBTree extends TestCase
 	private EmbeddedNeo neo;
 	Transaction tx;
 	
+	@Override
 	public void setUp()
 	{
 		neo = new EmbeddedNeo( RelTypes.class, "var/timeline", true );
@@ -40,6 +41,7 @@ public class TestBTree extends TestCase
 		bTree = new BTree( neo, bNode );
 	}
 	
+	@Override
 	public void tearDown()
 	{
  		bTree.delete();

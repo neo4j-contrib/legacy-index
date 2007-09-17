@@ -27,6 +27,7 @@ public class TestMultiIndex extends TestCase
 	private EmbeddedNeo neo;
 	Transaction tx;
 	
+	@Override
 	public void setUp()
 	{
 		neo = new EmbeddedNeo( null, "var/timeline", true );
@@ -35,6 +36,7 @@ public class TestMultiIndex extends TestCase
 		index = new MultiIndex( "test_simple", node, neo ); 
 	}
 	
+	@Override
 	public void tearDown()
 	{
 		index.drop();

@@ -102,6 +102,7 @@ public class KeyEntry
 		entryRelationship.setProperty( VALUE, value );
 	}
 	
+	@Override
 	public String toString()
 	{
 		return "Entry[" + getKey() + "," + getValue() + "]";
