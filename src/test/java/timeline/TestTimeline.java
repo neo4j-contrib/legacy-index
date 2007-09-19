@@ -292,4 +292,40 @@ public class TestTimeline extends TestCase
 		assert !tlNode.getRelationships( 
 			Timeline.RelTypes.TIMELINE_NEXT_ENTRY ).iterator().hasNext();
 	}
+	
+	public void testTimelineSameTimestamp()
+	{
+		Node tlNode = neo.createNode();
+		timeline = new Timeline( "test", tlNode, true, neo );
+		Node node0 = neo.createNode();
+		Node node1_1 = neo.createNode();
+		Node node1_2 = neo.createNode();
+		Node node2 = neo.createNode();
+		timeline.addNode( node1_1, 1 );
+		timeline.addNode( node1_2, 1 );
+		timeline.addNode( node0, 0 );
+		timeline.addNode( node2, 2 );
+		Iterator<Node> itr = timeline.getAllNodes().iterator();
+		assertEquals( node0, itr.next() );
+		Node node1 = itr.next();
+		if ( node1.equals( node1_1 ) )
+		{
+			assertEquals( node1_2, itr.next() );
+		}
+		else if ( node1.equals( node1_2 ) )
+		{
+			assertEquals( node1_1, itr.next() );
+		}
+		else
+		{
+			fail( "should return node1_1 or node1_2" );
+		}
+		assertEquals( node2, itr.next() );
+		assertTrue( !itr.hasNext() );
+		// rest will be deleted in tearDown with timeline.delete
+		node0.delete();
+		node1_1.delete();
+		node1_2.delete();
+		node2.delete();
+	}
 }

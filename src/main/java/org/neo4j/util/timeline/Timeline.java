@@ -281,8 +281,12 @@ public class Timeline
 						RelTypes.TIMELINE_NEXT_ENTRY, Direction.INCOMING );
 					assert rel != null;
 					Node previous = rel.getStartNode();
-					long previousTimestamp = (Long) 
-						previous.getProperty( TIMESTAMP );
+					long previousTimestamp = Long.MIN_VALUE;
+					if ( !previous.equals( underlyingNode ) )
+					{
+						previousTimestamp = (Long) previous.getProperty( 
+							TIMESTAMP );
+					}
 					if ( previousTimestamp == timestamp )
 					{
 						// just connect previous with node to add
@@ -301,7 +305,7 @@ public class Timeline
 					}
 					
 					assert previousTimestamp < timestamp;
-					assert previousTimestamp > timestamp;
+					assert nextTimestamp > timestamp;
 					
 					Node node = createNewTimeNode( timestamp, nodeToAdd );
 					rel.delete();
@@ -822,6 +826,7 @@ public class Timeline
 			}
 			else
 			{
+				rel.delete();
 				rel = null;
 			}
 		}
