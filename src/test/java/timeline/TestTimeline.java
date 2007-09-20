@@ -251,7 +251,7 @@ public class TestTimeline extends TestCase
 	public void testIndexedTimeline()
 	{
 		Node tlNode = neo.createNode();
-		timeline = new Timeline( "test", tlNode, true, neo ); 
+		Timeline timeline = new Timeline( "test", tlNode, true, neo ); 
 		LinkedList<Node> after = new LinkedList<Node>();
 		LinkedList<Node> before = new LinkedList<Node>();
 		for ( long i = 1; i < 128; i++ )
@@ -291,12 +291,13 @@ public class TestTimeline extends TestCase
 		}
 		assert !tlNode.getRelationships( 
 			Timeline.RelTypes.TIMELINE_NEXT_ENTRY ).iterator().hasNext();
+		timeline.delete();
 	}
 	
 	public void testTimelineSameTimestamp()
 	{
 		Node tlNode = neo.createNode();
-		timeline = new Timeline( "test", tlNode, true, neo );
+		Timeline timeline = new Timeline( "test", tlNode, true, neo );
 		Node node0 = neo.createNode();
 		Node node1_1 = neo.createNode();
 		Node node1_2 = neo.createNode();
@@ -322,10 +323,48 @@ public class TestTimeline extends TestCase
 		}
 		assertEquals( node2, itr.next() );
 		assertTrue( !itr.hasNext() );
-		// rest will be deleted in tearDown with timeline.delete
 		node0.delete();
 		node1_1.delete();
 		node1_2.delete();
 		node2.delete();
+		timeline.delete();
+	}
+	
+	public void testMultipleTimelines()
+	{
+		Node tlNode1 = neo.createNode();
+		Timeline timeline1 = new Timeline( "test1", tlNode1, true, neo );
+		Node tlNode2 = neo.createNode();
+		Timeline timeline2 = new Timeline( "test2", tlNode2, true, neo );
+		Node node1 = neo.createNode();
+		Node node2 = neo.createNode();
+		Node node3 = neo.createNode();
+		Node node4 = neo.createNode();
+		
+		timeline1.addNode( node1, 1 );
+		timeline1.addNode( node2, 2 );
+		timeline2.addNode( node3, 1 );
+		timeline2.addNode( node4, 2 );
+		
+		assertEquals( node2, timeline1.getLastNode() );
+		assertEquals( node4, timeline2.getLastNode() );
+		assertEquals( node1, timeline1.getFirstNode() );
+		assertEquals( node3, timeline2.getFirstNode() );
+		
+		timeline1.addNode( node3, 3 );
+		Iterator<Node> itr = timeline1.getAllNodes().iterator();
+		assertEquals( node1, itr.next() );
+		assertEquals( node2, itr.next() );
+		assertEquals( node3, itr.next() );
+		assertTrue( !itr.hasNext() );
+		
+		itr = timeline2.getAllNodes().iterator();
+		assertEquals( node3, itr.next() );
+		assertEquals( node4, itr.next() );
+		assertTrue( !itr.hasNext() );
+		
+		timeline1.delete();
+		timeline2.delete();
+		node1.delete(); node2.delete(); node3.delete(); node4.delete();
 	}
 }

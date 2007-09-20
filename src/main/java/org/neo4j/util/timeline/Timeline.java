@@ -190,7 +190,7 @@ public class Timeline
 		try
 		{
 			Relationship rel = underlyingNode.getSingleRelationship( 
-				RelTypes.TIMELINE_INSTANCE, Direction.OUTGOING );
+				RelTypes.TIMELINE_NEXT_ENTRY, Direction.OUTGOING );
 			if ( rel == null )
 			{
 				return null;
