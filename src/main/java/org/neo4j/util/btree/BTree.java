@@ -249,6 +249,20 @@ public class BTree
 	}
 	
 	/**
+	 * Adds the entry to this b-tree. If key already exist nothing is modified 
+	 * and <CODE>null</CODE> is returned. The <CODE>value</CODE> has to be a 
+	 * valid Neo property.
+	 * 
+	 * @param key the key of the entry
+	 * @param value value of the entry
+	 * @return the added entry or <CODE>null</CODE> if key already existed
+	 */
+	public KeyEntry addIfAbsent( long key, Object value )
+	{
+		return treeRoot.addEntry( key, value, true );
+	}
+	
+	/**
 	 * Returns the value of an entry or null if no such entry exist.
 	 * 
 	 * @param key for the entry

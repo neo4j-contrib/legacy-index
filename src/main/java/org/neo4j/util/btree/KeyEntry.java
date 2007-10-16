@@ -9,6 +9,7 @@ public class KeyEntry
 {
 	static final String KEY = "key";
 	static final String VALUE = "val";
+	static final String KEY_VALUE = "key_val";
 	
 	private Relationship entryRelationship;
 	private TreeNode treeNode;
@@ -102,6 +103,21 @@ public class KeyEntry
 		entryRelationship.setProperty( VALUE, value );
 	}
 	
+	public void setKeyValue( Object keyValue )
+	{
+		entryRelationship.setProperty( KEY_VALUE, keyValue );
+	}
+	
+	public Object getKeyValue()
+	{
+		return entryRelationship.getProperty( KEY_VALUE, null );
+	}
+	
+	public void remove()
+	{
+		treeNode.removeEntry( this.getKey() );
+	}
+	
 	@Override
 	public String toString()
 	{
@@ -139,10 +155,15 @@ public class KeyEntry
 		this.treeNode = node;
 		long key = getKey();
 		Object value = getValue();
+		Object keyValue = getKeyValue();
 		entryRelationship.delete();
 		entryRelationship = startNode.createRelationshipTo( endNode, 
 			RelTypes.KEY_ENTRY );
 		setKey( key );
 		setValue( value );
+		if ( keyValue != null )
+		{
+			setKeyValue( keyValue );
+		}
     }
 }

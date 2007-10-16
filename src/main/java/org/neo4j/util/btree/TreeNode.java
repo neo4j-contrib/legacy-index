@@ -184,6 +184,11 @@ class TreeNode
 	
 	KeyEntry addEntry( long key, Object value )
 	{
+		return addEntry( key, value, false );
+	}
+	
+	KeyEntry addEntry( long key, Object value, boolean ignoreIfExist )
+	{
 		int entryCount = 0;
 		KeyEntry keyEntry = getFirstEntry();
 		while ( keyEntry != null )
@@ -191,6 +196,10 @@ class TreeNode
 			long currentKey = keyEntry.getKey();
 			if ( currentKey == key )
 			{
+				if ( ignoreIfExist )
+				{
+					return null;
+				}
 				throw new RuntimeException( "Key already exist:" + key );
 			}
 			entryCount++;
@@ -213,7 +222,7 @@ class TreeNode
 				// create new blank node for key entry relationship
 				Node blankNode = bTree.getNeo().createNode();
 				KeyEntry createdEntry = createEntry( keyEntry.getStartNode(), 
-					blankNode, key, value );
+					blankNode, key, value, null );
 				// move previous keyEntry to start at blank node
 				keyEntry.move( this, blankNode, keyEntry.getEndNode() );
 				entryCount++;
@@ -221,6 +230,7 @@ class TreeNode
 				if ( bTree.getOrder() == entryCount )
 				{
 					moveMiddleUp();
+					return bTree.getAsKeyEntry( key );
 				}
 				return createdEntry;
 			}
@@ -236,12 +246,13 @@ class TreeNode
 				// ok just append the element
 				Node blankNode = bTree.getNeo().createNode();				
 				KeyEntry createdEntry = createEntry( keyEntry.getEndNode(), 
-					blankNode, key, value );
+					blankNode, key, value, null );
 				entryCount++;
 				assert entryCount <= bTree.getOrder();
 				if ( bTree.getOrder() == entryCount )
 				{
 					moveMiddleUp();
+					return bTree.getAsKeyEntry( key );
 				}
 				return createdEntry;
 			}
@@ -254,16 +265,20 @@ class TreeNode
 			RelTypes.SUB_TREE ).iterator().hasNext();
 		// ok add first entry in root
 		Node blankNode = bTree.getNeo().createNode();
-		return createEntry( treeNode, blankNode, key, value );
+		return createEntry( treeNode, blankNode, key, value, null );
 	}
 	
 	private KeyEntry createEntry( Node startNode, Node endNode, long key, 
-		Object value )
+		Object value, Object keyValue )
 	{
 		KeyEntry newEntry = new KeyEntry( this, startNode.createRelationshipTo( 
 			endNode, RelTypes.KEY_ENTRY ) );
 		newEntry.setKey( key );
 		newEntry.setValue( value );
+		if ( keyValue != null )
+		{
+			newEntry.setKeyValue( keyValue );
+		}
 		return newEntry;
 	}
 	
@@ -273,7 +288,7 @@ class TreeNode
 			Direction.INCOMING ) != null;
 	}
 	
-	private KeyEntry insertEntry( long key, Object value )
+	private KeyEntry insertEntry( long key, Object value, Object keyValue )
 	{
 		KeyEntry keyEntry = getFirstEntry();
 		while ( keyEntry != null )
@@ -285,7 +300,7 @@ class TreeNode
 				// create new blank node for key entry relationship
 				Node blankNode = bTree.getNeo().createNode();
 				KeyEntry newEntry = createEntry( keyEntry.getStartNode(), 
-					blankNode, key, value );
+					blankNode, key, value, keyValue );
 				assert keyEntry.getStartNode().getSingleRelationship( 
 					RelTypes.SUB_TREE, Direction.OUTGOING ) == null;
 				// move previous keyEntry to start at blank node
@@ -298,13 +313,13 @@ class TreeNode
 				// just append the element
 				Node blankNode = bTree.getNeo().createNode();
 				return createEntry( keyEntry.getEndNode(), blankNode, key, 
-					value );
+					value, null );
 			}
 			keyEntry = keyEntry.getNextKey();
 		}
 		// ok insert first entry (in new root)
 		Node blankNode = bTree.getNeo().createNode();
-		return createEntry( treeNode, blankNode, key, value );
+		return createEntry( treeNode, blankNode, key, value, null );
 	}
 	
 	private void moveMiddleUp()
@@ -332,7 +347,7 @@ class TreeNode
 			middleEntry.getEndNode() );
 		// copy middle entry values to parent then remove it from this tree
 		KeyEntry movedMiddleEntry = parent.insertEntry( middleEntry.getKey(), 
-			middleEntry.getValue() );
+			middleEntry.getValue(), middleEntry.getKeyValue() );
 		middleEntry.getUnderlyingRelationship().delete();
 		// connect left (this) and new right tree with new parent
 		movedMiddleEntry.getStartNode().createRelationshipTo( 

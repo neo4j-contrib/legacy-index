@@ -143,28 +143,30 @@ public class MultiIndex implements Index
 		try
 		{
 			int hashCode = indexKey.hashCode();
-			KeyEntry entry = bTree.getAsKeyEntry( hashCode );
-			if ( entry == null )
+			Node indexNode = neo.createNode();
+			indexNode.setProperty( INDEX_KEY, indexKey );
+			// KeyEntry entry = bTree.getAsKeyEntry( hashCode );
+			KeyEntry entry = bTree.addIfAbsent( hashCode, indexNode.getId() );
+			if ( entry != null )
 			{
-				Node indexNode = neo.createNode();
-				indexNode.setProperty( INDEX_KEY, indexKey );
-				bTree.addEntry( hashCode, indexNode.getId() );
 				indexNode.setProperty( INDEX_VALUES, nodeToIndex.getId() );
 				underlyingNode.createRelationshipTo( indexNode, 
 					RelTypes.INDEX_INSTANCE );
 			}
 			else
 			{
+				indexNode.delete();
+				entry = bTree.getAsKeyEntry( hashCode );
 				for ( long nodeId : getValues( entry ) )
 				{
-					Node indexNode = neo.getNodeById( nodeId );
+					indexNode = neo.getNodeById( nodeId );
 					if ( indexNode.getProperty( INDEX_KEY).equals( indexKey ) )
 					{
 						addOneMoreValue( indexNode, nodeToIndex.getId() );
 						return;
 					}
 				}
-				Node indexNode = neo.createNode();
+				indexNode = neo.createNode();
 				indexNode.setProperty( INDEX_KEY, indexKey );
 				addOneMoreValue( entry, indexNode.getId() );
 				indexNode.setProperty( INDEX_VALUES, nodeToIndex.getId() );
