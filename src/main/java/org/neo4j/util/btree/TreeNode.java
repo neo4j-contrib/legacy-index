@@ -313,13 +313,13 @@ class TreeNode
 				// just append the element
 				Node blankNode = bTree.getNeo().createNode();
 				return createEntry( keyEntry.getEndNode(), blankNode, key, 
-					value, null );
+					value, keyValue );
 			}
 			keyEntry = keyEntry.getNextKey();
 		}
 		// ok insert first entry (in new root)
 		Node blankNode = bTree.getNeo().createNode();
-		return createEntry( treeNode, blankNode, key, value, null );
+		return createEntry( treeNode, blankNode, key, value, keyValue );
 	}
 	
 	private void moveMiddleUp()
