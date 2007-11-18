@@ -29,7 +29,7 @@ public class TestSimpleIndex extends TestCase
 	@Override
 	public void setUp()
 	{
-		neo = new EmbeddedNeo( null, "var/timeline", true );
+		neo = new EmbeddedNeo( null, "var/timeline" );
 		tx = Transaction.begin();
 		Node node = neo.createNode();
 		index = new SimpleIndex( "test_simple", node, neo ); 

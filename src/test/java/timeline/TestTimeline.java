@@ -30,7 +30,7 @@ public class TestTimeline extends TestCase
 	@Override
 	public void setUp()
 	{
-		neo = new EmbeddedNeo( null, "var/timeline", true );
+		neo = new EmbeddedNeo( null, "var/timeline" );
 		tx = Transaction.begin();
 		Node node = neo.createNode();
 		timeline = new Timeline( "test_timeline", node, false, neo ); 
