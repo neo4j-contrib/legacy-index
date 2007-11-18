@@ -1,7 +1,7 @@
 package org.neo4j.util.map;
 
 import org.neo4j.api.core.Direction;
-import org.neo4j.api.core.EmbeddedNeo;
+import org.neo4j.api.core.NeoService;
 import org.neo4j.api.core.Node;
 import org.neo4j.api.core.Relationship;
 import org.neo4j.api.core.RelationshipType;
@@ -32,7 +32,7 @@ public class BTreeMap
 	private final Node underlyingNode;
 	private BTree bTree;
 	private String name;
-	private EmbeddedNeo neo;
+	private NeoService neo;
 	
 	
 	/**
@@ -47,7 +47,7 @@ public class BTreeMap
 	 * @throws IllegalArgumentException if the underlying node is a map with
 	 * a different name set.
 	 */
-	public BTreeMap( String name, Node underlyingNode, EmbeddedNeo neo )
+	public BTreeMap( String name, Node underlyingNode, NeoService neo )
 	{
 		if ( underlyingNode == null || neo == null )
 		{
@@ -57,9 +57,9 @@ public class BTreeMap
 		}
 		this.underlyingNode = underlyingNode;
 		this.neo = neo;
-		this.neo.registerEnumRelationshipTypes( RelTypes.class );
-		this.neo.registerEnumRelationshipTypes( 
-			org.neo4j.util.btree.BTree.RelTypes.class );
+		this.neo.registerRelationshipTypes( RelTypes.values() );
+		this.neo.registerRelationshipTypes( 
+			org.neo4j.util.btree.BTree.RelTypes.values() );
 		Transaction tx = Transaction.begin();
 		try
 		{

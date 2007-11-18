@@ -4,7 +4,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import org.neo4j.api.core.Direction;
-import org.neo4j.api.core.EmbeddedNeo;
+import org.neo4j.api.core.NeoService;
 import org.neo4j.api.core.Node;
 import org.neo4j.api.core.Relationship;
 import org.neo4j.api.core.RelationshipType;
@@ -35,7 +35,7 @@ public class MultiIndex implements Index
 	private final Node underlyingNode;
 	private BTree bTree;
 	private String name;
-	private EmbeddedNeo neo;
+	private NeoService neo;
 	
 	
 	/**
@@ -50,7 +50,7 @@ public class MultiIndex implements Index
 	 * @throws IllegalArgumentException if the underlying node is a index with
 	 * a different name set.
 	 */
-	public MultiIndex( String name, Node underlyingNode, EmbeddedNeo neo )
+	public MultiIndex( String name, Node underlyingNode, NeoService neo )
 	{
 		if ( underlyingNode == null || neo == null )
 		{
@@ -60,9 +60,9 @@ public class MultiIndex implements Index
 		}
 		this.underlyingNode = underlyingNode;
 		this.neo = neo;
-		this.neo.registerEnumRelationshipTypes( RelTypes.class );
-		this.neo.registerEnumRelationshipTypes( 
-			org.neo4j.util.btree.BTree.RelTypes.class );
+		this.neo.registerRelationshipTypes( RelTypes.values() );
+		this.neo.registerRelationshipTypes( 
+			org.neo4j.util.btree.BTree.RelTypes.values() );
 		Transaction tx = Transaction.begin();
 		try
 		{

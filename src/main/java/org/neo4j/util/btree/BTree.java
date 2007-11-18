@@ -2,7 +2,7 @@ package org.neo4j.util.btree;
 
 import java.util.Iterator;
 import org.neo4j.api.core.Direction;
-import org.neo4j.api.core.EmbeddedNeo;
+import org.neo4j.api.core.NeoService;
 import org.neo4j.api.core.Node;
 import org.neo4j.api.core.Relationship;
 import org.neo4j.api.core.RelationshipType;
@@ -30,7 +30,7 @@ public class BTree
 		KEY_ENTRY 
 	};
 	
-	private EmbeddedNeo neo;
+	private NeoService neo;
 	private TreeNode treeRoot;
 	
 	/**
@@ -42,10 +42,10 @@ public class BTree
 	 * @param rootNode root node with incoming <CODE>TREE_ROOT</CODE> 
 	 * relationship
 	 */
-	public BTree( EmbeddedNeo neo, Node rootNode )
+	public BTree( NeoService neo, Node rootNode )
 	{
 		this.neo = neo;
-		neo.registerEnumRelationshipTypes( RelTypes.class );
+		neo.registerRelationshipTypes( RelTypes.values() );
 		this.treeRoot = new TreeNode( this, rootNode );
 	}
 	
@@ -340,7 +340,7 @@ public class BTree
 		return 9;
 	}
 	
-	EmbeddedNeo getNeo()
+	NeoService getNeo()
 	{
 		return neo;
 	}
