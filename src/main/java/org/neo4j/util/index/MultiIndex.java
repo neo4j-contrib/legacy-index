@@ -408,7 +408,7 @@ public class MultiIndex implements Index
 			KeyEntry entry = bTree.getAsKeyEntry( hashCode );
 			if ( entry == null )
 			{
-				return Collections.EMPTY_LIST;
+				return Collections.emptyList();
 			}
 			for ( long nodeId : getValues( entry ) )
 			{
@@ -425,7 +425,7 @@ public class MultiIndex implements Index
 					return nodes;
 				}
 			}
-			return Collections.EMPTY_LIST;
+			return Collections.emptyList();
 		}
 		finally
 		{

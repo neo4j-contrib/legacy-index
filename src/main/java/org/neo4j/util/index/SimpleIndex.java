@@ -211,7 +211,7 @@ public class SimpleIndex implements Index
 			KeyEntry entry = bTree.getAsKeyEntry( hashCode );
 			if ( entry == null )
 			{
-				return Collections.EMPTY_LIST;
+				return Collections.emptyList();
 			}
 			List<Node> nodes = new LinkedList<Node>();
 			nodes.add( neo.getNodeById( (Long) entry.getValue() ) );
