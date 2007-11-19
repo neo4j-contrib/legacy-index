@@ -7,8 +7,8 @@ import junit.framework.TestSuite;
 import org.neo4j.api.core.EmbeddedNeo;
 import org.neo4j.api.core.Node;
 import org.neo4j.api.core.Transaction;
-import org.neo4j.util.index.MultiIndex;
-import org.neo4j.util.index.SimpleIndex;
+import org.neo4j.util.index.MultiValueIndex;
+import org.neo4j.util.index.SingleValueIndex;
 
 public class TestMultiIndex extends TestCase
 {
@@ -23,7 +23,7 @@ public class TestMultiIndex extends TestCase
 		return suite;
 	}
 	
-	private MultiIndex index;
+	private MultiValueIndex index;
 	private EmbeddedNeo neo;
 	Transaction tx;
 	
@@ -33,13 +33,13 @@ public class TestMultiIndex extends TestCase
 		neo = new EmbeddedNeo( null, "var/timeline" );
 		tx = Transaction.begin();
 		Node node = neo.createNode();
-		index = new MultiIndex( "test_simple", node, neo ); 
+		index = new MultiValueIndex( "test_simple", node, neo ); 
 	}
 	
 	@Override
 	public void tearDown()
 	{
-		index.drop();
+		// index.drop();
 		tx.success();
 		tx.finish();
 		neo.shutdown();
@@ -85,19 +85,27 @@ public class TestMultiIndex extends TestCase
 		Node node1 = neo.createNode();
 		try 
 		{ 
-			new SimpleIndex( "blabla", null, neo );
+			new MultiValueIndex( "blabla", null, neo );
 			fail( "Null parameter should throw exception" );
 		} 
 		catch ( IllegalArgumentException e ) { // good
 		}
 		try 
 		{ 
-			new SimpleIndex( "blabla", node1, null );
+			new MultiValueIndex( "blabla", node1, null );
 			fail( "Null parameter should throw exception" );
 		} 
 		catch ( IllegalArgumentException e ) { // good
 		}
-		node1.delete();
+		SingleValueIndex sIndex = new SingleValueIndex( "multi", node1, neo );
+		try 
+		{ 
+			new MultiValueIndex( "blabla", node1, neo );
+			fail( "Wrong index type should throw exception" );
+		} 
+		catch ( IllegalArgumentException e ) { // good
+		}
+		// mIndex.drop();
 		tx.success();
 	}	
 }

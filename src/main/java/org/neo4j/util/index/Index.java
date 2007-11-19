@@ -26,6 +26,17 @@ public interface Index
 	public Iterable<Node> getNodesFor( Object indexKey );
 	
 	/**
+	 * Returns a single node indexed with <CODE>indexKey</CODE>. If more 
+	 * then one node is indexed with that key a <CODE>RuntimeException</CODE>
+	 * is thrown. If no node is indexed with the key <CODE>null</CODE> is 
+	 * returned.
+	 * 
+	 * @param indexKey the index key
+	 * @return the single node mapped to <CODE>indexKey</CODE>
+	 */
+	public Node getSingleNodeFor( Object indexKey );
+	
+	/**
 	 * Removes a index mapping between a node and a key.
 	 * 
 	 * @param nodeToRemove node to remove
@@ -51,6 +62,8 @@ public interface Index
 	 * depending on implementation.
 	 * 
 	 * @return all nodes in this index
+	 * @throws UnsupportedOperationException if the <CODE>values()</CODE>
+	 * method isn't supported by this index.
 	 */
 	public Iterable<Node> values();
 }

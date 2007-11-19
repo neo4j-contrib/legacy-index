@@ -402,4 +402,85 @@ public class BTree
 			return this;
         }
 	}
+	
+	public Iterable<KeyEntry> entries()
+	{
+		EntryReturnableEvaluator entryEvaluator = 
+			new EntryReturnableEvaluator();
+		
+		Traverser trav = treeRoot.getUnderlyingNode().traverse( 
+			Order.DEPTH_FIRST, StopEvaluator.END_OF_NETWORK, 
+			entryEvaluator, RelTypes.KEY_ENTRY, Direction.OUTGOING, 
+			RelTypes.SUB_TREE, Direction.OUTGOING );
+		return new EntryTraverser( trav, this, entryEvaluator );
+	}
+	
+	private static class EntryTraverser implements Iterable<KeyEntry>, 
+		Iterator<KeyEntry>
+	{
+		private EntryReturnableEvaluator entryEvaluator;
+		private BTree bTree;
+		private Iterator<Node> itr;
+		
+		EntryTraverser( Traverser trav, BTree tree, 
+			EntryReturnableEvaluator entry )
+		{
+			this.itr = trav.iterator();
+			this.bTree = tree;
+			this.entryEvaluator = entry;
+		}
+	
+		public boolean hasNext()
+	    {
+			return itr.hasNext();
+	    }
+	
+		public KeyEntry next()
+	    {
+			Node node = itr.next();
+			TreeNode treeNode = new TreeNode( bTree, 
+				entryEvaluator.getCurrentTreeNode() );
+	        return new KeyEntry( treeNode, node.getSingleRelationship( 
+	        	RelTypes.KEY_ENTRY, Direction.INCOMING ) );
+	    }
+	
+		public void remove()
+	    {
+			throw new UnsupportedOperationException();
+	    }
+	
+		public Iterator<KeyEntry> iterator()
+	    {
+			return this;
+	    }
+	}
+	
+	private static class EntryReturnableEvaluator implements ReturnableEvaluator
+	{
+		private Node currentTreeNode = null;
+		
+		public Node getCurrentTreeNode()
+		{
+			return currentTreeNode;
+		}
+		
+		public boolean isReturnableNode( TraversalPosition pos )
+        {
+			if ( !pos.notStartNode() )
+			{
+				currentTreeNode = pos.currentNode();
+				return false;
+			}
+			Relationship last = pos.lastRelationshipTraversed();
+			if ( last.isType( RelTypes.KEY_ENTRY ) )
+			{
+				return true;
+			}
+			if ( last.isType( RelTypes.SUB_TREE ) )
+			{
+				currentTreeNode = pos.currentNode();
+			}
+			return false;
+        }
+	}
 }

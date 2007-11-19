@@ -7,22 +7,23 @@ import junit.framework.TestSuite;
 import org.neo4j.api.core.EmbeddedNeo;
 import org.neo4j.api.core.Node;
 import org.neo4j.api.core.Transaction;
-import org.neo4j.util.index.SimpleIndex;
+import org.neo4j.util.index.MultiValueIndex;
+import org.neo4j.util.index.SingleValueIndex;
 
-public class TestSimpleIndex extends TestCase
+public class TestSingleIndex extends TestCase
 {
-	public TestSimpleIndex(String testName)
+	public TestSingleIndex(String testName)
 	{
 		super( testName );
 	}
 	
 	public static Test suite()
 	{
-		TestSuite suite = new TestSuite( TestSimpleIndex.class );
+		TestSuite suite = new TestSuite( TestSingleIndex.class );
 		return suite;
 	}
 	
-	private SimpleIndex index;
+	private SingleValueIndex index;
 	private EmbeddedNeo neo;
 	Transaction tx;
 	
@@ -32,7 +33,7 @@ public class TestSimpleIndex extends TestCase
 		neo = new EmbeddedNeo( null, "var/timeline" );
 		tx = Transaction.begin();
 		Node node = neo.createNode();
-		index = new SimpleIndex( "test_simple", node, neo ); 
+		index = new SingleValueIndex( "test_simple", node, neo ); 
 	}
 	
 	@Override
@@ -85,50 +86,29 @@ public class TestSimpleIndex extends TestCase
 	public void testIllegalStuff()
 	{
 		Node node1 = neo.createNode();
-		Node node2 = neo.createNode();
-		Object key1 = 1;
-		Object key2 = 1;
 		try 
 		{ 
-			new SimpleIndex( "blabla", null, neo );
+			new SingleValueIndex( "blabla", null, neo );
 			fail( "Null parameter should throw exception" );
 		} 
 		catch ( IllegalArgumentException e ) { // good
 		}
 		try 
 		{ 
-			new SimpleIndex( "blabla", node1, null );
+			new SingleValueIndex( "blabla", node1, null );
 			fail( "Null parameter should throw exception" );
 		} 
 		catch ( IllegalArgumentException e ) { // good
 		}
-
-		index.index( node1, key1 );
+		MultiValueIndex mIndex = new MultiValueIndex( "multi", node1, neo );
 		try 
 		{ 
-			index.index( node1, key1 );
-			fail( "Re-adding same index throw exception" );
+			new SingleValueIndex( "blabla", node1, neo );
+			fail( "Wrong index type should throw exception" );
 		} 
-		catch ( RuntimeException e ) { // good
+		catch ( IllegalArgumentException e ) { // good
 		}
-		try 
-		{ 
-			index.index( node2, key2 );
-			fail( "Removing non existing index should throw exception" );
-		} 
-		catch ( RuntimeException e ) { // good
-		}
-		index.remove( node1, key1 );
-		try 
-		{ 
-			index.remove( node1, key1 );
-			fail( "Removing non existing index should throw exception" );
-		} 
-		catch ( RuntimeException e ) { // good
-		}
-		
-		node1.delete();
-		node2.delete();
+		// mIndex.drop();
 		tx.success();
 	}	
 }

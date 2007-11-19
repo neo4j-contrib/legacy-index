@@ -24,7 +24,7 @@ public class BTreeMap
 	
 	private static final Object GOTO_NODE = Long.MIN_VALUE;
 	
-	private static final String MAP_NAME = "index_name";
+	private static final String MAP_NAME = "map_name";
 	private static final String MAP_KEY = "map_key";
 	private static final String MAP_VALUE = "map_value";
 	// private static final String GOTO_NODE = "goto_node";
