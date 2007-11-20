@@ -8,6 +8,7 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.neo4j.api.core.EmbeddedNeo;
+import org.neo4j.api.core.NeoService;
 import org.neo4j.api.core.Node;
 import org.neo4j.api.core.Transaction;
 import org.neo4j.util.btree.BTree;
@@ -27,7 +28,7 @@ public class TestBTree extends TestCase
 	}
 	
 	private BTree bTree;
-	private EmbeddedNeo neo;
+	private NeoService neo;
 	Transaction tx;
 	
 	@Override

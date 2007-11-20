@@ -5,6 +5,7 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.neo4j.api.core.EmbeddedNeo;
+import org.neo4j.api.core.NeoService;
 import org.neo4j.api.core.Node;
 import org.neo4j.api.core.Transaction;
 import org.neo4j.util.index.MultiValueIndex;
@@ -24,7 +25,7 @@ public class TestMultiIndex extends TestCase
 	}
 	
 	private MultiValueIndex index;
-	private EmbeddedNeo neo;
+	private NeoService neo;
 	Transaction tx;
 	
 	@Override
