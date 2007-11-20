@@ -57,9 +57,6 @@ public class BTreeMap
 		}
 		this.underlyingNode = underlyingNode;
 		this.neo = neo;
-		this.neo.registerRelationshipTypes( RelTypes.values() );
-		this.neo.registerRelationshipTypes( 
-			org.neo4j.util.btree.BTree.RelTypes.values() );
 		Transaction tx = Transaction.begin();
 		try
 		{

@@ -1,7 +1,8 @@
 package org.neo4j.util.timeline;
 import java.util.Iterator;
+
 import org.neo4j.api.core.Direction;
-import org.neo4j.api.core.EmbeddedNeo;
+import org.neo4j.api.core.NeoService;
 import org.neo4j.api.core.Node;
 import org.neo4j.api.core.Relationship;
 import org.neo4j.api.core.RelationshipType;
@@ -38,7 +39,7 @@ public class Timeline
 	private final Node underlyingNode;
 	private boolean useIndexing = false;
 	private BTree bTree = null;
-	private final EmbeddedNeo neo;
+	private final NeoService neo;
 	
 	// lazy init cache holders for first and last
 	private Node firstNode;
@@ -58,7 +59,7 @@ public class Timeline
 	 * @param neo The embedded neo instance
 	 */
 	public Timeline( String name, Node underlyingNode, boolean indexed, 
-		EmbeddedNeo neo )
+		NeoService neo )
 	{
 		if ( underlyingNode == null || neo == null )
 		{
@@ -69,7 +70,6 @@ public class Timeline
 		useIndexing = false;
 		this.underlyingNode = underlyingNode;
 		this.neo = neo;
-		neo.registerEnumRelationshipTypes( RelTypes.class );
 		Transaction tx = Transaction.begin();
 		try
 		{
@@ -112,7 +112,6 @@ public class Timeline
 			}
 			if ( useIndexing )
 			{
-				neo.registerEnumRelationshipTypes( BTree.RelTypes.class );
 				Relationship bTreeRel = underlyingNode.getSingleRelationship( 
 					BTree.RelTypes.TREE_ROOT, Direction.OUTGOING );
 				if ( bTreeRel == null )

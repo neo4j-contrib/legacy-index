@@ -45,7 +45,6 @@ public class BTree
 	public BTree( NeoService neo, Node rootNode )
 	{
 		this.neo = neo;
-		neo.registerRelationshipTypes( RelTypes.values() );
 		this.treeRoot = new TreeNode( this, rootNode );
 	}
 	
