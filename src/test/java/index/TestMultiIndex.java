@@ -30,7 +30,7 @@ public class TestMultiIndex extends TestCase
 	@Override
 	public void setUp()
 	{
-		neo = new EmbeddedNeo( null, "var/timeline" );
+		neo = new EmbeddedNeo( "var/timeline" );
 		tx = Transaction.begin();
 		Node node = neo.createNode();
 		index = new MultiValueIndex( "test_simple", node, neo ); 
@@ -97,7 +97,7 @@ public class TestMultiIndex extends TestCase
 		} 
 		catch ( IllegalArgumentException e ) { // good
 		}
-		SingleValueIndex sIndex = new SingleValueIndex( "multi", node1, neo );
+		new SingleValueIndex( "multi", node1, neo );
 		try 
 		{ 
 			new MultiValueIndex( "blabla", node1, neo );
