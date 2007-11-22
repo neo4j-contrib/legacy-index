@@ -1,5 +1,8 @@
 package org.neo4j.util.map;
 
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
 import org.neo4j.api.core.Direction;
 import org.neo4j.api.core.NeoService;
 import org.neo4j.api.core.Node;
@@ -15,7 +18,7 @@ import org.neo4j.util.btree.KeyEntry;
  * Note: this implementation is not thread safe (yet).
  */
 // not thread safe yet
-public class BTreeMap
+public class BTreeMap<K,V> implements Map<K,V>
 {
 	public static enum RelTypes implements RelationshipType
 	{
@@ -122,7 +125,7 @@ public class BTreeMap
 	 * If key or value is <CODE>null</CODE> {@link IllegalArgumentException} is 
 	 * thrown. Key and value must be valid neo properties.
 	 */
-	public void put( Object key, Object value )
+	public V put( K key, V value )
 	{
 		if ( key == null || value == null )
 		{
@@ -148,9 +151,10 @@ public class BTreeMap
 					Object prevKey = entry.getKeyValue();
 					if ( prevKey.equals( key ) )
 					{
+						Object oldValue = entry.getValue();
 						entry.setValue( value );
 						tx.success();
-						return;
+						return (V) oldValue;
 					}
 					entry.setKeyValue( GOTO_NODE );
 					bucketNode = neo.createNode();
@@ -177,7 +181,7 @@ public class BTreeMap
 						{
 							entryNode.setProperty( MAP_VALUE, value );
 							tx.success();
-							return;
+							return null;
 						}
 					}
 					Node newEntry = neo.createNode();
@@ -188,6 +192,7 @@ public class BTreeMap
 				}
 			}
 			tx.success();
+			return null;
 		}
 		finally
 		{
@@ -195,7 +200,7 @@ public class BTreeMap
 		}
 	}
 	
-	public Object remove( Object key )
+	public V remove( Object key )
 	{
 		Transaction tx = Transaction.begin();
 		try
@@ -212,7 +217,7 @@ public class BTreeMap
 						Object value = entry.getValue();
 						entry.remove();
 						tx.success();
-						return value;
+						return (V) value;
 					}
 				}
 				else
@@ -229,7 +234,7 @@ public class BTreeMap
 							rel.delete();
 							entryNode.delete();
 							tx.success();
-							return value;
+							return (V) value;
 						}
 					}
 				}
@@ -252,7 +257,7 @@ public class BTreeMap
 		bTree.validateTree();
 	}
 	
-	public Object get( Object key )
+	public V get( Object key )
 	{
 		Transaction tx = Transaction.begin();
 		try
@@ -267,7 +272,7 @@ public class BTreeMap
 					if ( goOtherNode.equals( key ) )
 					{
 						tx.success();
-						return entry.getValue();
+						return (V) entry.getValue();
 					}
 				}
 				else
@@ -281,7 +286,7 @@ public class BTreeMap
 						if ( entryNode.getProperty( MAP_KEY ).equals( key ) )
 						{
 							tx.success();
-							return entryNode.getProperty( MAP_VALUE );
+							return (V) entryNode.getProperty( MAP_VALUE );
 						}
 					}
 				}
@@ -297,16 +302,114 @@ public class BTreeMap
 	
 	public void clear()
 	{
-	    throw new UnsupportedOperationException();
+		for ( KeyEntry entry : bTree.entries() )
+		{
+			Object goOtherNode = entry.getKeyValue();
+			if ( goOtherNode.equals( GOTO_NODE ) )
+			{
+				Node bucketNode = neo.getNodeById( 
+					(Long) entry.getValue() );
+				for ( Relationship rel : bucketNode.getRelationships( 
+					RelTypes.MAP_ENTRY, Direction.OUTGOING ) )
+				{
+					Node entryNode = rel.getEndNode();
+					rel.delete();
+					entryNode.delete();
+				}
+				bucketNode.delete();
+			}
+		}
+		bTree.delete();
+		Node bTreeNode = neo.createNode();
+		underlyingNode.createRelationshipTo( bTreeNode, 
+			org.neo4j.util.btree.BTree.RelTypes.TREE_ROOT );
+		bTree = new BTree( neo, bTreeNode );
+	}
+	
+	public void delete()
+	{
+		for ( KeyEntry entry : bTree.entries() )
+		{
+			Object goOtherNode = entry.getKeyValue();
+			if ( goOtherNode.equals( GOTO_NODE ) )
+			{
+				Node bucketNode = neo.getNodeById( 
+					(Long) entry.getValue() );
+				for ( Relationship rel : bucketNode.getRelationships( 
+					RelTypes.MAP_ENTRY, Direction.OUTGOING ) )
+				{
+					Node entryNode = rel.getEndNode();
+					rel.delete();
+					entryNode.delete();
+				}
+				bucketNode.delete();
+			}
+		}
+		bTree.delete();
+		underlyingNode.delete();
 	}
 
-	public Iterable<Object> values()
+	public void delete( int commitInterval )
+	{
+		for ( KeyEntry entry : bTree.entries() )
+		{
+			Object goOtherNode = entry.getKeyValue();
+			if ( goOtherNode.equals( GOTO_NODE ) )
+			{
+				Node bucketNode = neo.getNodeById( 
+					(Long) entry.getValue() );
+				for ( Relationship rel : bucketNode.getRelationships( 
+					RelTypes.MAP_ENTRY, Direction.OUTGOING ) )
+				{
+					Node entryNode = rel.getEndNode();
+					rel.delete();
+					entryNode.delete();
+				}
+				bucketNode.delete();
+			}
+		}
+		bTree.delete( commitInterval );
+		underlyingNode.delete();
+	}
+	
+	public Collection<V> values()
     {
 	    throw new UnsupportedOperationException();
     }
 
-	public Iterable<Object> keySet()
+	public Set<K> keySet()
     {
 	    throw new UnsupportedOperationException();
+    }
+
+	public boolean containsKey( Object key )
+    {
+		throw new UnsupportedOperationException();
+    }
+
+	public boolean containsValue( Object value )
+    {
+		throw new UnsupportedOperationException();
+    }
+
+	public Set<java.util.Map.Entry<K, V>> entrySet()
+    {
+		throw new UnsupportedOperationException();
+    }
+
+	public boolean isEmpty()
+    {
+	    // TODO Auto-generated method stub
+		throw new UnsupportedOperationException();
+    }
+
+	public void putAll( Map<? extends K, ? extends V> t )
+    {
+		throw new UnsupportedOperationException();
+    }
+
+	public int size()
+    {
+		throw new UnsupportedOperationException();
     }
 }

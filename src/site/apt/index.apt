@@ -1,0 +1,102 @@
+Neo indexing utilities
+
+	Neo indexing utilities is a set of components that can provide simple 
+	indexing and simular data strucutres (such as persistent maps). Note that 
+	this component is under development and can be considered being in 'alpha' 
+	state. 
+
+	A BTree implementation ontop of Neo can be found in 
+	<<org.neo4j.util.btree package>>. This BTree is used by 
+	<<org.neo4j.util.index>>, <<org.neo4j.util.map>> and 
+	<<org.neo4j.util.timeline packages>>. All the different utilities have 
+	an <underlying node> that represents a particular instance. For example 
+	creating a new index you first create a new node then pass that node
+	into the constructor for the index. When the index has been created you 
+	can create instances of the Index by passing in the same node to the 
+	correct index constructor.  
+
+Index package
+
+	In the <<org.neo4j.util.index>> package you will find an <<Index>> interface
+	and two different index implementations. The <<SingleValueIndex>> can only 
+	index one node per key while the <<MultiValueIndex>> handles many nodes per 
+	key. The keys used for indexing must be of primitive type or String type.
+	
+---
+    // create a new index
+    Node indexNode = neo.createNode();
+    Index myIndex = new SingleValueIndex( "my_index", indexNode, neo );
+    // we have now created an index called "my_index" connected to the 
+    // underlying node 'indexNode'
+    
+    // index a node 
+    myIndex.index( personNode, personNode.getProperty( "person_id" ) );
+    
+    // getting a node using the index
+    Node node = index.getSingleNodeFor( somePersonId );
+    
+    // re-create an already existing index
+    Node indexNode = //... get the underlying index node
+    // we can pass in null as name if the index already exist (name will then
+    // be loaded from the underlying node)
+    Index myIndex = new SingleValueIndex( null, indexNode, neo ); 
+---
+
+Map package
+
+	In the <<org.neo4j.util.map>> package you will find a <<BTreeMap>> that has 
+	the standard put/get/remove methods. The keys and values can be any of the 
+	primitivie types or String. The <<Map>> interace is implemented but the 
+	only valid methods at the moment are <put,get,remove and clear>. The 
+	<<size()>> method will hopefully be implemented soon (as for some of 
+	the other optional methods).
+	
+---
+   // create a new map
+   Node mapNode = neo.createNode();
+   Map<String,String> persistentMap = new BTreeMap<String,String>( "my_map", 
+       mapNode, neo ); 
+
+   // use the map
+   persistentMap.put( "key", "value" );
+   String value = persistentMap.get( "key" );
+   persistentMap.remove( "key" );
+   
+   // map can be cleared
+   persistentMap.clear();
+   // but delete has to be invoked to delete the underlying map node
+   ((BTreeMap) persistentMap).delete();
+   
+   // re-create an already existing map
+   Map<String,String> persistentMap = new BTreeMap<String,String( null,
+    myMapNode, neo );
+---
+
+Timeline package
+
+	Timeline is a utility that can be used to order nodes then perform searches 
+	on that order.
+
+---
+    // create a timeline, and make it indexed (for small timelines < 10k nodes
+    // index isn't needed)
+    Timeline timeline = new Timeline( "my_timeline", neo.createNode(), 
+        true, neo );
+    
+    // add some data
+    for ( long i = 0; i < 50000; i++ )
+    {
+        timeline.addNode( neo.createNode(), i );
+    }
+    
+    // perform some searches
+    Node firstNode = timeline.getFirstNode(); // first node in timeline
+    Node lastNode = timeline.getLastNode(); // last node
+    Iterable<Node> nodes = timeline.getAllNodes(); // all nodes
+    nodes = timeline.getAllNodesAfter( 25000 ); // all nodes after timestamp
+    nodes = timeline.getAllNodesBefore( 25001 ); // all nodes before timestamp
+    nodes = timeline.getAllNodesBetween( 15000, 35000 ); // ...
+    
+    // delete a timeline
+    timeline.delete();
+---

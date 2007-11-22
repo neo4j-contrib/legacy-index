@@ -6,6 +6,7 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.neo4j.api.core.EmbeddedNeo;
+import org.neo4j.api.core.NeoService;
 import org.neo4j.api.core.Node;
 import org.neo4j.api.core.Transaction;
 import org.neo4j.util.timeline.Timeline;
@@ -24,8 +25,8 @@ public class TestTimeline extends TestCase
 	}
 	
 	private Timeline timeline;
-	private EmbeddedNeo neo;
-	Transaction tx;
+	private NeoService neo;
+	private Transaction tx;
 	
 	@Override
 	public void setUp()
@@ -40,7 +41,6 @@ public class TestTimeline extends TestCase
 	public void tearDown()
 	{
 		timeline.delete();
-		// timeline.getUnderlyingNode().delete();
 		tx.success();
 		tx.finish();
 		neo.shutdown();

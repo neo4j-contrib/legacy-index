@@ -8,6 +8,7 @@ import org.neo4j.api.core.EmbeddedNeo;
 import org.neo4j.api.core.NeoService;
 import org.neo4j.api.core.Node;
 import org.neo4j.api.core.Transaction;
+import org.neo4j.util.index.Index;
 import org.neo4j.util.index.MultiValueIndex;
 import org.neo4j.util.index.SingleValueIndex;
 
@@ -26,12 +27,12 @@ public class TestSingleIndex extends TestCase
 	
 	private SingleValueIndex index;
 	private NeoService neo;
-	Transaction tx;
+	private Transaction tx;
 	
 	@Override
 	public void setUp()
 	{
-		neo = new EmbeddedNeo( "var/timeline" );
+		neo = new EmbeddedNeo( "var/index" );
 		tx = Transaction.begin();
 		Node node = neo.createNode();
 		index = new SingleValueIndex( "test_simple", node, neo ); 
@@ -101,7 +102,7 @@ public class TestSingleIndex extends TestCase
 		} 
 		catch ( IllegalArgumentException e ) { // good
 		}
-		new MultiValueIndex( "multi", node1, neo );
+		Index mIndex = new MultiValueIndex( "multi", node1, neo );
 		try 
 		{ 
 			new SingleValueIndex( "blabla", node1, neo );
@@ -109,7 +110,7 @@ public class TestSingleIndex extends TestCase
 		} 
 		catch ( IllegalArgumentException e ) { // good
 		}
-		// mIndex.drop();
+		mIndex.drop();
 		tx.success();
 	}	
 }
