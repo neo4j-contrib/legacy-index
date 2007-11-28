@@ -34,8 +34,8 @@ public class TestBTree extends TestCase
 	@Override
 	public void setUp()
 	{
-		neo = new EmbeddedNeo( "var/timeline" );
-		tx = Transaction.begin();
+		neo = new EmbeddedNeo( "var/btree" );
+		tx = neo.beginTx();
 		Node bNode = neo.createNode();
 		neo.getReferenceNode().createRelationshipTo( bNode, 
 			RelTypes.TREE_ROOT );
@@ -143,7 +143,7 @@ public class TestBTree extends TestCase
 		}
 		tx.success();
 		tx.finish();
-		tx = Transaction.begin();
+		tx = neo.beginTx();
 	}
 	
 	public void testGetValues()

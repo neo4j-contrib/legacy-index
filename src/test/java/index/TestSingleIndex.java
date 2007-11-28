@@ -1,6 +1,8 @@
 package index;
 
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -33,7 +35,7 @@ public class TestSingleIndex extends TestCase
 	public void setUp()
 	{
 		neo = new EmbeddedNeo( "var/index" );
-		tx = Transaction.begin();
+		tx = neo.beginTx();
 		Node node = neo.createNode();
 		index = new SingleValueIndex( "test_simple", node, neo ); 
 	}
@@ -112,5 +114,21 @@ public class TestSingleIndex extends TestCase
 		}
 		mIndex.drop();
 		tx.success();
-	}	
+	}
+    
+    public void testValues()
+    {
+        Set<Node> nodes = new HashSet<Node>();
+        for ( int i = 0; i < 100; i++ )
+        {
+            Node node = neo.createNode();
+            nodes.add( node );
+            index.index( node, i );
+        }
+        for ( Node node : index.values() )
+        {
+            assertTrue( nodes.remove( node ) );
+        }
+        assertTrue( nodes.isEmpty() );
+    }
 }

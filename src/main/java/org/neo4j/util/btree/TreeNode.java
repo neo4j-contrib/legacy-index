@@ -1,9 +1,10 @@
 package org.neo4j.util.btree;
 
+import javax.transaction.Transaction;
 import org.neo4j.api.core.Direction;
+import org.neo4j.api.core.EmbeddedNeo;
 import org.neo4j.api.core.Node;
 import org.neo4j.api.core.Relationship;
-import org.neo4j.impl.transaction.TransactionUtil;
 import org.neo4j.util.btree.BTree.RelTypes;
 
 class TreeNode
@@ -136,8 +137,21 @@ class TreeNode
 		}
 		if ( count >= commitInterval )
 		{
-			TransactionUtil.commitTx( true );
-			TransactionUtil.beginTx();
+            EmbeddedNeo neo = (EmbeddedNeo) bTree.getNeo();
+            try
+            {
+                Transaction tx = neo.getConfig().getTxModule().getTxManager().
+                    getTransaction();
+                if ( tx != null )
+                {
+                    tx.commit();
+                }
+            }
+            catch ( Exception e )
+            {
+                throw new RuntimeException( e );
+            }
+            neo.beginTx();
 			count = 0;
 		}
 		return count;
@@ -209,7 +223,7 @@ class TreeNode
 				TreeNode subTree = keyEntry.getBeforeSubTree();
 				if ( subTree != null )
 				{
-					return subTree.addEntry( key, value );
+					return subTree.addEntry( key, value, ignoreIfExist );
 				}
 				// no sub tree so we insert here
 				// get current amount of entries
@@ -241,7 +255,7 @@ class TreeNode
 				TreeNode subTree = keyEntry.getAfterSubTree();
 				if ( subTree != null )
 				{
-					return subTree.addEntry( key, value );
+					return subTree.addEntry( key, value, ignoreIfExist );
 				}
 				// ok just append the element
 				Node blankNode = bTree.getNeo().createNode();				

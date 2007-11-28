@@ -32,7 +32,7 @@ public class TestTimeline extends TestCase
 	public void setUp()
 	{
 		neo = new EmbeddedNeo( "var/timeline" );
-		tx = Transaction.begin();
+		tx = neo.beginTx();
 		Node node = neo.createNode();
 		timeline = new Timeline( "test_timeline", node, false, neo ); 
 	}

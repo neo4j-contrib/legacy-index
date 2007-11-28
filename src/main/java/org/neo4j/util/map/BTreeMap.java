@@ -60,7 +60,7 @@ public class BTreeMap<K,V> implements Map<K,V>
 		}
 		this.underlyingNode = underlyingNode;
 		this.neo = neo;
-		Transaction tx = Transaction.begin();
+		Transaction tx = neo.beginTx();
 		try
 		{
 			if ( underlyingNode.hasProperty( MAP_NAME ) )
@@ -131,7 +131,7 @@ public class BTreeMap<K,V> implements Map<K,V>
 		{
 			throw new IllegalArgumentException( "Null node" );
 		}
-		Transaction tx = Transaction.begin();
+		Transaction tx = neo.beginTx();
 		try
 		{
 			int hashCode = key.hashCode();
@@ -202,7 +202,7 @@ public class BTreeMap<K,V> implements Map<K,V>
 	
 	public V remove( Object key )
 	{
-		Transaction tx = Transaction.begin();
+		Transaction tx = neo.beginTx();
 		try
 		{
 			int hashCode = key.hashCode();
@@ -259,7 +259,7 @@ public class BTreeMap<K,V> implements Map<K,V>
 	
 	public V get( Object key )
 	{
-		Transaction tx = Transaction.begin();
+		Transaction tx = neo.beginTx();
 		try
 		{
 			int hashCode = key.hashCode();

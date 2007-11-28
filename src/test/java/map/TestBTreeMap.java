@@ -29,7 +29,7 @@ public class TestBTreeMap extends TestCase
 	public void setUp()
 	{
 		neo = new EmbeddedNeo( "var/map" );
-		tx = Transaction.begin();
+		tx = neo.beginTx();
 		Node bNode = neo.createNode();
 		bTreeMap = new BTreeMap<Character,Character>( "test_map", bNode, neo );
 	}

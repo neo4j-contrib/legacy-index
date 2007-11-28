@@ -1,6 +1,5 @@
 package org.neo4j.util.timeline;
 import java.util.Iterator;
-
 import org.neo4j.api.core.Direction;
 import org.neo4j.api.core.NeoService;
 import org.neo4j.api.core.Node;
@@ -11,7 +10,6 @@ import org.neo4j.api.core.StopEvaluator;
 import org.neo4j.api.core.Transaction;
 import org.neo4j.api.core.TraversalPosition;
 import org.neo4j.api.core.Traverser.Order;
-import org.neo4j.impl.core.NodeManager;
 import org.neo4j.util.btree.BTree;
 
 /**
@@ -70,7 +68,7 @@ public class Timeline
 		useIndexing = false;
 		this.underlyingNode = underlyingNode;
 		this.neo = neo;
-		Transaction tx = Transaction.begin();
+		Transaction tx = neo.beginTx();
 		try
 		{
 			if ( underlyingNode.hasProperty( TIMELINE_NAME ) )
@@ -152,7 +150,7 @@ public class Timeline
 		{
 			return lastNode;
 		}
-		Transaction tx = Transaction.begin();
+		Transaction tx = neo.beginTx();
 		try
 		{
 			Relationship rel = underlyingNode.getSingleRelationship( 
@@ -185,7 +183,7 @@ public class Timeline
 		{
 			return firstNode;
 		}
-		Transaction tx = Transaction.begin();
+		Transaction tx = neo.beginTx();
 		try
 		{
 			Relationship rel = underlyingNode.getSingleRelationship( 
@@ -220,7 +218,7 @@ public class Timeline
 		{
 			throw new IllegalArgumentException( "Null node" );
 		}
-		Transaction tx = Transaction.begin();
+		Transaction tx = neo.beginTx();
 		try
 		{
 			for ( Relationship rel : nodeToAdd.getRelationships( 
@@ -329,7 +327,7 @@ public class Timeline
 	
 	private Node createNewTimeNode( long timestamp, Node nodeToAdd )
 	{
-		Node node = NodeManager.getManager().createNode();
+		Node node = neo.createNode();
 		node.setProperty( TIMESTAMP, timestamp );
 		Relationship instanceRel = node.createRelationshipTo( nodeToAdd, 
 			RelTypes.TIMELINE_INSTANCE );
@@ -414,7 +412,7 @@ public class Timeline
 			throw new IllegalArgumentException( 
 				"Cannot remove underlying node" );
 		}
-		Transaction tx = Transaction.begin();
+		Transaction tx = neo.beginTx();
 		try
 		{
 			Relationship instanceRel = null;

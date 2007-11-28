@@ -1,6 +1,8 @@
 package index;
 
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -33,7 +35,7 @@ public class TestMultiIndex extends TestCase
 	public void setUp()
 	{
 		neo = new EmbeddedNeo( "var/index" );
-		tx = Transaction.begin();
+		tx = neo.beginTx();
 		Node node = neo.createNode();
 		index = new MultiValueIndex( "test_simple", node, neo ); 
 	}
@@ -110,4 +112,23 @@ public class TestMultiIndex extends TestCase
 		sIndex.drop();
 		tx.success();
 	}	
+
+    public void testValues()
+    {
+        Set<Node> nodes = new HashSet<Node>();
+        for ( int i = 0; i < 100; i++ )
+        {
+            Node node1 = neo.createNode();
+            Node node2 = neo.createNode();
+            nodes.add( node1 );
+            nodes.add( node2 );
+            index.index( node1, i );
+            index.index( node2, i );
+        }
+        for ( Node node : index.values() )
+        {
+            assertTrue( nodes.remove( node ) );
+        }
+        assertTrue( nodes.isEmpty() );
+    }
 }

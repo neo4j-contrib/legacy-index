@@ -1,8 +1,12 @@
 package org.neo4j.util.index;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 import org.neo4j.api.core.Direction;
+import org.neo4j.api.core.EmbeddedNeo;
 import org.neo4j.api.core.NeoService;
 import org.neo4j.api.core.Node;
 import org.neo4j.api.core.Relationship;
@@ -71,7 +75,7 @@ abstract class AbstractIndex implements Index
 		}
 		this.underlyingNode = underlyingNode;
 		this.neo = neo;
-		Transaction tx = Transaction.begin();
+		Transaction tx = neo.beginTx();
 		try
 		{
 			if ( underlyingNode.hasProperty( INDEX_NAME ) )
@@ -150,7 +154,7 @@ abstract class AbstractIndex implements Index
 		{
 			throw new IllegalArgumentException( "Null node" );
 		}
-		Transaction tx = Transaction.begin();
+		Transaction tx = neo.beginTx();
 		try
 		{
 			int hashCode = indexKey.hashCode();
@@ -235,7 +239,7 @@ abstract class AbstractIndex implements Index
 		{
 			throw new IllegalArgumentException( "Null node" );
 		}
-		Transaction tx = Transaction.begin();
+		Transaction tx = neo.beginTx();
 		try
 		{
 			int hashCode = indexKey.hashCode();
@@ -304,7 +308,7 @@ abstract class AbstractIndex implements Index
 		{
 			throw new IllegalArgumentException( "Null index key" );
 		}
-		Transaction tx = Transaction.begin();
+		Transaction tx = neo.beginTx();
 		try
 		{
 			int hashCode = indexKey.hashCode();
@@ -363,7 +367,7 @@ abstract class AbstractIndex implements Index
 		{
 			throw new IllegalArgumentException( "Null index key" );
 		}
-		Transaction tx = Transaction.begin();
+		Transaction tx = neo.beginTx();
 		try
 		{
 			int hashCode = indexKey.hashCode();
@@ -443,6 +447,7 @@ abstract class AbstractIndex implements Index
 	 */
 	public void drop( int commitInterval )
 	{
+        int count = 0;
 		for ( KeyEntry entry : bTree.entries() )
 		{
 			Object goOtherNode = entry.getKeyValue();
@@ -459,6 +464,21 @@ abstract class AbstractIndex implements Index
 				}
 				bucketNode.delete();
 			}
+            count++;
+            if ( count >= commitInterval )
+            {
+                try
+                {
+                    ((EmbeddedNeo) neo).getConfig().getTxModule().
+                        getTxManager().getTransaction().commit();
+                }
+                catch ( Exception e )
+                {
+                    throw new RuntimeException( e );
+                }
+                neo.beginTx();
+                count = 0;
+            }
 		}
 		bTree.delete( commitInterval );
 		underlyingNode.delete();
@@ -469,6 +489,99 @@ abstract class AbstractIndex implements Index
 	 */
 	public Iterable<Node> values()
     {
-	    throw new UnsupportedOperationException();
+        return new IndexIterator( this, bTree, neo );
+    }
+    
+    private static class IndexIterator implements Iterable<Node>,
+        Iterator<Node>
+    {
+        private Iterator<Node> currentNodes;
+        private final Iterator<KeyEntry> bTreeIterator;
+        private final NeoService neo;
+        private final AbstractIndex index;
+        
+        private IndexIterator( AbstractIndex index, BTree bTree, 
+            NeoService neo )
+        {
+            this.index = index;
+            this.bTreeIterator = bTree.entries().iterator();
+            this.neo = neo;
+        }
+        
+        public boolean hasNext()
+        {
+            if ( currentNodes != null && currentNodes.hasNext() )
+            {
+                return true;
+            }
+            Transaction tx = neo.beginTx();
+            try
+            {
+                if ( bTreeIterator.hasNext() )
+                {
+                    nextKeyEntry();
+                    return hasNext();
+                }
+            }
+            finally
+            {
+                tx.finish();
+            }
+            return false;
+        }
+        
+        private void nextKeyEntry()
+        {
+            KeyEntry entry = bTreeIterator.next();
+            Object goOtherNode = entry.getKeyValue();
+            if ( !goOtherNode.equals( GOTO_NODE ) )
+            {
+                long[] nodeIds = index.getValues( entry );
+                Node[] nodes = new Node[nodeIds.length];
+                for ( int i = 0; i < nodeIds.length; i++ )
+                {
+                    nodes[i] = neo.getNodeById( nodeIds[i] );
+                }
+                currentNodes = Arrays.asList( nodes ).iterator();
+            }
+            else
+            {
+                Node bucketNode = neo.getNodeById( 
+                    (Long) entry.getValue() );
+                List<Node> nodeList = new ArrayList<Node>();
+                for ( Relationship rel : bucketNode.getRelationships( 
+                    RelTypes.INDEX_ENTRY, Direction.OUTGOING ) )
+                {
+                    Node entryNode = rel.getEndNode();
+                    long[] nodeIds = index.getValues( entryNode );
+                    Node[] nodes = new Node[nodeIds.length];
+                    for ( int i = 0; i < nodeIds.length; i++ )
+                    {
+                        nodes[i] = neo.getNodeById( nodeIds[i] );
+                    }
+                    nodeList.addAll( Arrays.asList( nodes ) );
+                }
+                currentNodes = nodeList.iterator();
+            }
+        }
+
+        public Node next()
+        {
+            if ( currentNodes == null || !currentNodes.hasNext() )
+            {
+                nextKeyEntry();
+            }
+            return currentNodes.next();
+        }
+
+        public void remove()
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        public Iterator<Node> iterator()
+        {
+            return this;
+        }
     }
 }
