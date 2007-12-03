@@ -367,4 +367,33 @@ public class TestTimeline extends TestCase
 		timeline2.delete();
 		node1.delete(); node2.delete(); node3.delete(); node4.delete();
 	}
+
+    public void testTimelineRemoveNode()
+    {
+        Node tlNode = neo.createNode();
+        Timeline indexedTimeline = new Timeline( "test", tlNode, true, neo ); 
+        for ( long i = 1; i < 128; i++ )
+        {
+            Node node = neo.createNode();
+            indexedTimeline.addNode( node, i );
+        }
+        for ( Node node : indexedTimeline.getAllNodes() )
+        {
+            indexedTimeline.removeNode( node );
+            node.delete();
+        }
+        assertFalse( indexedTimeline.getAllNodes().iterator().hasNext() );
+        LinkedList<Node> nodes = new LinkedList<Node>();
+        for ( long i = 1; i < 128; i++ )
+        {
+            Node node = neo.createNode();
+            indexedTimeline.addNode( node, i );
+            nodes.add( node );
+        }
+        indexedTimeline.delete();
+        for ( Node node : nodes )
+        {
+            node.delete();
+        }
+    }
 }

@@ -531,7 +531,7 @@ public class Timeline
 	 */
 	public Iterable<Node> getAllNodes()
 	{
-		return underlyingNode.traverse( Order.DEPTH_FIRST, 
+		return underlyingNode.traverse( Order.BREADTH_FIRST, 
 			StopEvaluator.END_OF_NETWORK, 
 			new ReturnableEvaluator()
 			{
