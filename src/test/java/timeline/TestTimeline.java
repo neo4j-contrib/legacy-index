@@ -323,6 +323,20 @@ public class TestTimeline extends TestCase
 		}
 		assertEquals( node2, itr.next() );
 		assertTrue( !itr.hasNext() );
+        itr = timeline.getNodes( 1 ).iterator();
+        node1 = itr.next();
+        if ( node1.equals( node1_1 ) )
+        {
+            assertEquals( node1_2, itr.next() );
+        }
+        else if ( node1.equals( node1_2 ) )
+        {
+            assertEquals( node1_1, itr.next() );
+        }
+        else
+        {
+            fail( "should return node1_1 or node1_2" );
+        }
 		node0.delete();
 		node1_1.delete();
 		node1_2.delete();

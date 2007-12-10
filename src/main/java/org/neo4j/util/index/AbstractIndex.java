@@ -439,6 +439,36 @@ abstract class AbstractIndex implements Index
 		underlyingNode.delete();
 	}
 
+    /**
+     * Deletes this index in a single (or the current) transaction including 
+     * the underlying node.
+     */
+    public void clear()
+    {
+        for ( KeyEntry entry : bTree.entries() )
+        {
+            Object goOtherNode = entry.getKeyValue();
+            if ( goOtherNode.equals( GOTO_NODE ) )
+            {
+                Node bucketNode = neo.getNodeById( 
+                    (Long) entry.getValue() );
+                for ( Relationship rel : bucketNode.getRelationships( 
+                    RelTypes.INDEX_ENTRY, Direction.OUTGOING ) )
+                {
+                    Node entryNode = rel.getEndNode();
+                    rel.delete();
+                    entryNode.delete();
+                }
+                bucketNode.delete();
+            }
+        }
+        bTree.delete();
+        Node bTreeNode = neo.createNode();
+        underlyingNode.createRelationshipTo( bTreeNode, 
+            org.neo4j.util.btree.BTree.RelTypes.TREE_ROOT );
+        bTree = new BTree( neo, bTreeNode );
+    }
+    
 	/**
 	 * Deletes this index using a commit interval including the underlying node.
 	 * 

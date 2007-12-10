@@ -56,7 +56,9 @@ public interface Index
 	 * transaction is started
 	 */
 	public void drop( int commitInterval );
-	
+    
+    public void clear();
+    
 	/**
 	 * Returns all nodes in this index. Same node may be returned many times 
 	 * depending on implementation.

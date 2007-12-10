@@ -1,5 +1,7 @@
 package org.neo4j.util.timeline;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import org.neo4j.api.core.Direction;
 import org.neo4j.api.core.NeoService;
 import org.neo4j.api.core.Node;
@@ -20,7 +22,7 @@ import org.neo4j.util.btree.BTree;
  * Note: this implementation is not threadsafe (yet). 
  */
 // not thread safe yet
-public class Timeline
+public class Timeline implements TimelineIndex
 {
 	public static enum RelTypes implements RelationshipType
 	{
@@ -128,7 +130,22 @@ public class Timeline
 		}
 	}
 	
-	/**
+    /**
+     * Creates/loads a indexed timeline. The <CODE>underlyingNode</CODE> can 
+     * either be a new (just created) node or a node that already represents a 
+     * previously timeline.
+     *
+     * @param name The unique name of the timeline or <CODE>null</CODE> if 
+     * timeline already exist
+     * @param underlyingNode The underlying node representing the timeline
+     * @param neo The embedded neo instance
+     */
+    public Timeline( String name, Node underlyingNode, NeoService neo )
+    {
+        this( name, underlyingNode, true, neo );
+    }
+    
+    /**
 	 * Returns the underlying node representing this timeline.
 	 * 
 	 * @return The underlying node representing this timeline
@@ -580,6 +597,33 @@ public class Timeline
 		return underlyingNode;
 	}
 	
+    public Iterable<Node> getNodes( long timestamp )
+    {
+        Node currentNode = getIndexedStartNode( timestamp );
+        List<Node> nodeList = new ArrayList<Node>();
+        do
+        {
+            Relationship rel = currentNode.getSingleRelationship( 
+                RelTypes.TIMELINE_NEXT_ENTRY, Direction.OUTGOING );
+            currentNode = rel.getEndNode();
+            long currentTime = (Long) currentNode.getProperty( TIMESTAMP );
+            if ( currentTime == timestamp )
+            {
+                for ( Relationship instanceRel : currentNode.getRelationships( 
+                    RelTypes.TIMELINE_INSTANCE, Direction.OUTGOING ) )
+                {
+                    nodeList.add( instanceRel.getEndNode() );
+                }
+                break;
+            }
+            if ( currentTime > timestamp )
+            {
+                break;
+            }
+        } while ( !currentNode.equals( underlyingNode ) );
+        return nodeList;
+    }
+    
 	/**
 	 * Returns all nodes after (not including) the specified timestamp 
 	 * ordered by increasing timestamp.

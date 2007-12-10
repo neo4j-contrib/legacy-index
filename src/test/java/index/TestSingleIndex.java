@@ -2,6 +2,8 @@ package index;
 
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -128,7 +130,26 @@ public class TestSingleIndex extends TestCase
         for ( Node node : index.values() )
         {
             assertTrue( nodes.remove( node ) );
+            node.delete();
         }
         assertTrue( nodes.isEmpty() );
+    }
+    
+    public void testClear()
+    {
+        List<Node> nodes = new LinkedList<Node>();
+        for ( int i = 0; i < 100; i++ )
+        {
+            Node node = neo.createNode();
+            nodes.add( node );
+            index.index( node, i );
+        }
+        index.clear();
+        index.index( nodes.get( 0 ), 0 );
+        index.remove( nodes.get( 0 ), 0 );
+        for ( Node node : nodes )
+        {
+            node.delete();
+        }
     }
 }
