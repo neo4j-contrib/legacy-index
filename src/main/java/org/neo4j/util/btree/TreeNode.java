@@ -315,8 +315,6 @@ class TreeNode
 				Node blankNode = bTree.getNeo().createNode();
 				KeyEntry newEntry = createEntry( keyEntry.getStartNode(), 
 					blankNode, key, value, keyValue );
-				assert keyEntry.getStartNode().getSingleRelationship( 
-					RelTypes.SUB_TREE, Direction.OUTGOING ) == null;
 				// move previous keyEntry to start at blank node
 				keyEntry.move( this, blankNode, keyEntry.getEndNode() );
 				return newEntry;
