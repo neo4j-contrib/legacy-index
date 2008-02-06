@@ -367,11 +367,11 @@ class TreeNode
 		movedMiddleEntry.getEndNode().createRelationshipTo( 
 			newTreeToTheRight.getUnderlyingNode(), RelTypes.SUB_TREE );
 		int parentEntryCount = parent.getEntryCount();
-		assert parentEntryCount <= bTree.getOrder();
 		if ( parentEntryCount == bTree.getOrder() )
 		{
 			parent.moveMiddleUp();
 		}
+        assert parent.getEntryCount() <= bTree.getOrder();
 	}
 	
 	KeyEntry getEntry( long key )
