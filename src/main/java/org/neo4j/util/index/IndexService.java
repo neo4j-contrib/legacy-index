@@ -13,4 +13,6 @@ public interface IndexService
     void removeIndex( Node node, String key, Object value );
     
     void setIsolation( Isolation level );
+
+    void shutdown();
 }

@@ -42,7 +42,10 @@ class NeoIndexServiceQueue extends Thread
             QueueElement qe = new QueueElement( Operation.ADD, node, key, 
                 value );
             queue.add( qe );
-            this.notify();
+            synchronized ( this )
+            {
+                this.notify();
+            }
             if ( nonCommittedElements.size() >= MAX_PENDING_OPERATIONS )
             {
                 waitForQueueElementNotify( qe );
@@ -53,7 +56,10 @@ class NeoIndexServiceQueue extends Thread
             QueueElement qe = new QueueElement( Operation.ADD, node, key, 
                 value );
             queue.add( qe );
-            this.notify();
+            synchronized ( this )
+            {
+                this.notify();
+            }
             waitForQueueElementNotify( qe );
         }
         else
@@ -69,7 +75,10 @@ class NeoIndexServiceQueue extends Thread
             QueueElement qe = new QueueElement( Operation.REMOVE, node, key, 
                 value );
             queue.add( qe );
-            this.notify();
+            synchronized ( this )
+            {
+                this.notify();
+            }
             if ( nonCommittedElements.size() >= MAX_PENDING_OPERATIONS )
             {
                 waitForQueueElementNotify( qe );
@@ -80,7 +89,10 @@ class NeoIndexServiceQueue extends Thread
             QueueElement qe = new QueueElement( Operation.REMOVE, node, key, 
                 value );
             queue.add( qe );
-            this.notify();
+            synchronized ( this )
+            {
+                this.notify();
+            }
             waitForQueueElementNotify( qe );
         }
         else
@@ -95,7 +107,10 @@ class NeoIndexServiceQueue extends Thread
         {
             try
             {
-                qe.wait( 100 );
+                synchronized ( qe )
+                {
+                    qe.wait( 100 );
+                }
             }
             catch ( InterruptedException e )
             {
@@ -156,7 +171,7 @@ class NeoIndexServiceQueue extends Thread
         lastCommit = System.currentTimeMillis();
         try
         {
-            while ( run && !queue.isEmpty() )
+            while ( run || !queue.isEmpty() )
             {
                 QueueElement qe = queue.poll();
                 try
@@ -167,8 +182,17 @@ class NeoIndexServiceQueue extends Thread
                     }
                     else
                     {
-                        this.wait( 100 );
+                        synchronized ( this )
+                        {
+                            this.wait( 100 );
+                        }
                         currentTimestamp = System.currentTimeMillis();
+                        if ( currentTimestamp - lastCommit > MAX_WAIT_TIME )
+                        {
+                            tx.success();
+                            tx.finish();
+                            tx = indexService.beginTx();
+                        }
                     }
                 }
                 catch ( InterruptedException e )
@@ -212,7 +236,10 @@ class NeoIndexServiceQueue extends Thread
                 for ( QueueElement doneElement : nonCommittedElements )
                 {
                     doneElement.setIndexed();
-                    doneElement.notify();
+                    synchronized ( doneElement )
+                    {
+                        doneElement.notify();
+                    }
                 }
                 nonCommittedElements.clear();
             }

@@ -16,6 +16,8 @@ public class NeoIndexService implements IndexService
     private final Index keyToIndex;
     private final ArrayMap<String,Index> keyToIndexCache = 
         new ArrayMap<String,Index>( 6, true, true );
+    private final NeoIndexServiceQueue queue;
+    
     
     private ThreadLocal<Isolation> threadIsolation =
         new ThreadLocal<Isolation>()
@@ -76,6 +78,8 @@ public class NeoIndexService implements IndexService
         finally
         {
             tx.finish();
+            queue = new NeoIndexServiceQueue( this );
+            queue.start();
         }
     }
     
@@ -88,8 +92,12 @@ public class NeoIndexService implements IndexService
         }
         else
         {
-            throw new IllegalStateException( "Unkown isolation: " + level );
+            queue.queueIndex( level, node, key, value );
         }
+//        else
+//        {
+//            throw new IllegalStateException( "Unkown isolation: " + level );
+//        }
     }
     
     void indexThisTx( Node node, String key, Object value )
@@ -115,12 +123,12 @@ public class NeoIndexService implements IndexService
                     valueIndexNode, neo );
                 keyToIndexCache.put( key, valueIndex );
             }
-            else
-            {
-                valueIndex = new MultiValueIndex( "index_" + key, 
-                    valueIndexNode, neo );
-                keyToIndexCache.put( key, valueIndex );
-            }
+//            else if ( !create )
+//            {
+//                valueIndex = new MultiValueIndex( "index_" + key, 
+//                    valueIndexNode, neo );
+//                keyToIndexCache.put( key, valueIndex );
+//            }
         }
         return valueIndex;
     }
@@ -154,8 +162,12 @@ public class NeoIndexService implements IndexService
         }
         else
         {
-            throw new IllegalStateException( "Unkown isolation: " + level );
+            queue.queueRemove( level, node, key, value );
         }
+//        else
+//        {
+//            throw new IllegalStateException( "Unkown isolation: " + level );
+//        }
     }
     
     void removeIndexThisTx( Node node, String key, Object value )
@@ -175,5 +187,10 @@ public class NeoIndexService implements IndexService
     Transaction beginTx()
     {
         return neo.beginTx();
+    }
+    
+    public void shutdown()
+    {
+        queue.stopRunning();
     }
 }
