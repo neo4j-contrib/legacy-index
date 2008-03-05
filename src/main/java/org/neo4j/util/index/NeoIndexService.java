@@ -22,6 +22,7 @@ public class NeoIndexService implements IndexService
     private ThreadLocal<Isolation> threadIsolation =
         new ThreadLocal<Isolation>()
         {
+    		@Override
             protected Isolation initialValue()
             {
                 return Isolation.SAME_TX;
