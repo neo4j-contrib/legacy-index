@@ -28,6 +28,7 @@ class NeoIndexServiceQueue extends Thread
     private long lastCommit;
     private long currentTimestamp;
     private Transaction tx;
+    private boolean done = false;
     
     NeoIndexServiceQueue( NeoIndexService service )
     {
@@ -206,6 +207,11 @@ class NeoIndexServiceQueue extends Thread
         {
             tx.finish();
         }
+        synchronized ( indexService )
+        {
+            done = true;
+            indexService.notify();
+        }
     }
     
     private void performIndexOperation( QueueElement qe )
@@ -276,5 +282,19 @@ class NeoIndexServiceQueue extends Thread
     void stopRunning()
     {
         run = false;
+        synchronized ( indexService )
+        {
+            while ( !done )
+            {
+                try
+                {
+                    indexService.wait( 500 );
+                }
+                catch ( InterruptedException e )
+                {
+                    Thread.interrupted();
+                }
+            }
+        }
     }
 }

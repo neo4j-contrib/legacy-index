@@ -118,18 +118,19 @@ public class NeoIndexService implements IndexService
             {
                 // create new value index
                 valueIndexNode = neo.createNode();
+                keyToIndex.index( valueIndexNode, key );
                 rootIndexService.createRelationshipTo( valueIndexNode, 
                     RelTypes.VALUE_INDEX );
                 valueIndex = new MultiValueIndex( "index_" + key, 
                     valueIndexNode, neo );
                 keyToIndexCache.put( key, valueIndex );
             }
-//            else if ( !create )
-//            {
-//                valueIndex = new MultiValueIndex( "index_" + key, 
-//                    valueIndexNode, neo );
-//                keyToIndexCache.put( key, valueIndex );
-//            }
+            else if ( valueIndexNode != null )
+            {
+                valueIndex = new MultiValueIndex( "index_" + key, 
+                    valueIndexNode, neo );
+                keyToIndexCache.put( key, valueIndex );
+            }
         }
         return valueIndex;
     }
