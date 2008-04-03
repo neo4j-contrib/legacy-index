@@ -12,16 +12,16 @@ import org.neo4j.util.index.IndexService;
 import org.neo4j.util.index.Isolation;
 import org.neo4j.util.index.NeoIndexService;
 
-public class TestIndexingService extends TestCase
+public class TestNeoIndexingService extends TestCase
 {
-	public TestIndexingService(String testName)
+	public TestNeoIndexingService(String testName)
 	{
 		super( testName );
 	}
 	
 	public static Test suite()
 	{
-		TestSuite suite = new TestSuite( TestIndexingService.class );
+		TestSuite suite = new TestSuite( TestNeoIndexingService.class );
 		return suite;
 	}
 	

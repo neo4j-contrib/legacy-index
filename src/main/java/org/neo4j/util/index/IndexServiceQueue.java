@@ -5,9 +5,9 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import org.neo4j.api.core.Node;
 import org.neo4j.api.core.Transaction;
 
-class NeoIndexServiceQueue extends Thread
+class IndexServiceQueue extends Thread
 {
-    private final NeoIndexService indexService;
+    private final GenericIndexService indexService;
     
     private final ConcurrentLinkedQueue<QueueElement> queue =
         new ConcurrentLinkedQueue<QueueElement>();
@@ -30,9 +30,9 @@ class NeoIndexServiceQueue extends Thread
     private Transaction tx;
     private boolean done = false;
     
-    NeoIndexServiceQueue( NeoIndexService service )
+    IndexServiceQueue( GenericIndexService service )
     {
-        super( "NeoIndexServiceQueue" );
+        super( "IndexServiceQueue" );
         this.indexService = service;
     }
     

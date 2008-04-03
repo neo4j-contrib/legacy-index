@@ -9,25 +9,13 @@ import org.neo4j.api.core.RelationshipType;
 import org.neo4j.api.core.Transaction;
 import org.neo4j.impl.util.ArrayMap;
 
-public class NeoIndexService implements IndexService
+public class NeoIndexService extends GenericIndexService
 {
-    private final NeoService neo;
     private final Node rootIndexService;
     private final Index keyToIndex;
     private final ArrayMap<String,Index> keyToIndexCache = 
         new ArrayMap<String,Index>( 6, true, true );
-    private final NeoIndexServiceQueue queue;
     
-    
-    private ThreadLocal<Isolation> threadIsolation =
-        new ThreadLocal<Isolation>()
-        {
-    		@Override
-            protected Isolation initialValue()
-            {
-                return Isolation.SAME_TX;
-            }
-        };
     
     private enum RelTypes implements RelationshipType
     {
@@ -36,17 +24,13 @@ public class NeoIndexService implements IndexService
         VALUE_INDEX,
     }
 
-    public NeoIndexService( NeoService service )
+    public NeoIndexService( NeoService neo )
     {
-        if ( service == null )
-        {
-            throw new IllegalArgumentException( "Null neo service" );
-        }
-        this.neo = service;
-        Transaction tx = service.beginTx();
+        super( neo );
+        Transaction tx = neo.beginTx();
         try
         {
-            Node refNode = service.getReferenceNode();
+            Node refNode = neo.getReferenceNode();
             Relationship rel = refNode.getSingleRelationship( 
                 RelTypes.INDEX_SERVICE, Direction.OUTGOING );
             if ( rel == null )
@@ -79,29 +63,10 @@ public class NeoIndexService implements IndexService
         finally
         {
             tx.finish();
-            queue = new NeoIndexServiceQueue( this );
-            queue.start();
         }
     }
     
-    public void index( Node node, String key, Object value )
-    {
-        Isolation level = threadIsolation.get();
-        if ( level == Isolation.SAME_TX )
-        {
-            indexThisTx( node, key, value );
-        }
-        else
-        {
-            queue.queueIndex( level, node, key, value );
-        }
-//        else
-//        {
-//            throw new IllegalStateException( "Unkown isolation: " + level );
-//        }
-    }
-    
-    void indexThisTx( Node node, String key, Object value )
+    protected void indexThisTx( Node node, String key, Object value )
     {
         // get the value index
         Index valueIndex = getValueIndex( key, true );
@@ -117,18 +82,18 @@ public class NeoIndexService implements IndexService
             if ( valueIndexNode == null && create )
             {
                 // create new value index
-                valueIndexNode = neo.createNode();
+                valueIndexNode = getNeo().createNode();
                 keyToIndex.index( valueIndexNode, key );
                 rootIndexService.createRelationshipTo( valueIndexNode, 
                     RelTypes.VALUE_INDEX );
                 valueIndex = new MultiValueIndex( "index_" + key, 
-                    valueIndexNode, neo );
+                    valueIndexNode, getNeo() );
                 keyToIndexCache.put( key, valueIndex );
             }
             else if ( valueIndexNode != null )
             {
                 valueIndex = new MultiValueIndex( "index_" + key, 
-                    valueIndexNode, neo );
+                    valueIndexNode, getNeo() );
                 keyToIndexCache.put( key, valueIndex );
             }
         }
@@ -155,44 +120,12 @@ public class NeoIndexService implements IndexService
         return valueIndex.getSingleNodeFor( value );
     }
 
-    public void removeIndex( Node node, String key, Object value )
-    {
-        Isolation level = threadIsolation.get();
-        if ( level == Isolation.SAME_TX )
-        {
-            removeIndexThisTx( node, key, value );
-        }
-        else
-        {
-            queue.queueRemove( level, node, key, value );
-        }
-//        else
-//        {
-//            throw new IllegalStateException( "Unkown isolation: " + level );
-//        }
-    }
-    
-    void removeIndexThisTx( Node node, String key, Object value )
+    protected void removeIndexThisTx( Node node, String key, Object value )
     {
         Index valueIndex = getValueIndex( key, false );
         if ( valueIndex != null )
         {
             valueIndex.remove( node, value );
         }
-    }
-
-    public void setIsolation( Isolation level )
-    {
-        threadIsolation.set( level );
-    }
-    
-    Transaction beginTx()
-    {
-        return neo.beginTx();
-    }
-    
-    public void shutdown()
-    {
-        queue.stopRunning();
     }
 }
