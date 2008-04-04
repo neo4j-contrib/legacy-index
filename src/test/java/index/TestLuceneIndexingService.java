@@ -1,5 +1,6 @@
 package index;
 
+import java.util.Iterator;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -8,6 +9,7 @@ import org.neo4j.api.core.NeoService;
 import org.neo4j.api.core.Node;
 import org.neo4j.api.core.Transaction;
 import org.neo4j.util.index.IndexService;
+import org.neo4j.util.index.Isolation;
 import org.neo4j.util.index.LuceneIndexService;
 
 public class TestLuceneIndexingService extends TestCase
@@ -48,7 +50,7 @@ public class TestLuceneIndexingService extends TestCase
     
     public void testSimple()
     {
-/*        Node node1 = neo.createNode();
+        Node node1 = neo.createNode();
         
         assertTrue( !indexService.getNodes( "a_property", 
             1 ).iterator().hasNext() );
@@ -84,7 +86,7 @@ public class TestLuceneIndexingService extends TestCase
         tx.finish();
         tx = neo.beginTx();
         
-/*        indexService.setIsolation( Isolation.ASYNC_OTHER_TX );
+        indexService.setIsolation( Isolation.ASYNC_OTHER_TX );
         itr = indexService.getNodes( "a_property", 1 ).iterator();
         
         assertTrue( !itr.hasNext() );
@@ -107,6 +109,6 @@ public class TestLuceneIndexingService extends TestCase
         assertTrue( !itr.hasNext() );
         node1.delete();
         node2.delete();
-        tx.success();*/
+        tx.success();
     }
 }

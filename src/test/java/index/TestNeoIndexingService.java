@@ -63,7 +63,7 @@ public class TestNeoIndexingService extends TestCase
         assertTrue( !itr.hasNext() );
         
         indexService.removeIndex( node1, "a_property", 1 );
-        assertTrue( !indexService.getNodes( "a_roperty", 
+        assertTrue( !indexService.getNodes( "a_property", 
             1 ).iterator().hasNext() );
 
         indexService.index( node1, "a_property", 1 );
@@ -78,7 +78,7 @@ public class TestNeoIndexingService extends TestCase
         
         indexService.removeIndex( node1, "a_property", 1 );
         indexService.removeIndex( node2, "a_property", 1 );
-        assertTrue( !indexService.getNodes( "a_roperty", 
+        assertTrue( !indexService.getNodes( "a_property", 
             1 ).iterator().hasNext() );
         itr = indexService.getNodes( "a_property", 1 ).iterator();
         assertTrue( !itr.hasNext() );

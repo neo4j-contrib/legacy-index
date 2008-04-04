@@ -2,7 +2,6 @@ package org.neo4j.util.index;
 
 import java.io.IOException;
 import java.io.Reader;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -40,9 +39,9 @@ import org.neo4j.impl.transaction.LockManager;
 import org.neo4j.impl.util.ArrayMap;
 
 // TODO: 
-// o Move LuceneTransaction to its own file
-// o Fix remove index bug
+// o Move LuceneTransaction to its own file and do general code cleanup
 // o Run optimize when starting up
+// o Abort all writers (if any) on shutdown
 public class LuceneIndexService extends GenericIndexService
 {
     private final ArrayMap<String,IndexSearcher> indexSearchers = 
@@ -87,8 +86,8 @@ public class LuceneIndexService extends GenericIndexService
     
     private class LuceneTransaction implements Synchronization
     {
-        private final Map<WriterLock,IndexWriter> writers = 
-            new HashMap<WriterLock,IndexWriter>();
+        private final Set<WriterLock> writers = 
+            new HashSet<WriterLock>();
         
         private final Map<String,Map<Object,Long[]>> txIndexed = 
             new HashMap<String,Map<Object,Long[]>>();
@@ -96,19 +95,19 @@ public class LuceneIndexService extends GenericIndexService
         private final Map<String,Map<Object,Long[]>> txRemoved = 
             new HashMap<String,Map<Object,Long[]>>();
         
-        IndexWriter getWriterForLock( WriterLock lock )
+        boolean hasWriter( WriterLock lock )
         {
-            return writers.get( lock );
+            return writers.contains( lock );
         }
 
-        void addWriter( WriterLock lock, IndexWriter writer )
+        void addWriter( WriterLock lock )
         {
-            writers.put( lock, writer );
+            writers.add( lock );
         }
 
         void index( Node node, String key, Object value )
         {
-            delRemovedIndex( node, key, value );
+            delRemovedIndex( node, key, value ); 
             Map<Object,Long[]> keyIndex = txIndexed.get( key );
             if ( keyIndex == null )
             {
@@ -146,7 +145,10 @@ public class LuceneIndexService extends GenericIndexService
         
         void removeIndex( Node node, String key, Object value )
         {
-            delAddedIndex( node, key, value );
+            if ( delAddedIndex( node, key, value ) )
+            {
+                return;
+            }
             Map<Object,Long[]> keyIndex = txRemoved.get( key );
             if ( keyIndex == null )
             {
@@ -182,23 +184,28 @@ public class LuceneIndexService extends GenericIndexService
             keyIndex.put( value, nodeIds );
         }
         
-        void delRemovedIndex( Node node, String key, Object value )
+        boolean delRemovedIndex( Node node, String key, Object value )
         {
             Map<Object,Long[]> keyIndex = txRemoved.get( key );
             if ( keyIndex == null )
             {
-                return;
+                return false;
             }
             Long nodeIds[] = keyIndex.get( value );
             if ( nodeIds == null )
             {
-                return;
+                return false;
             }
             Long newIds[] = new Long[nodeIds.length - 1 ];
             long nodeId = node.getId();
             int index = 0;
             for ( int i = 0; i < nodeIds.length; i++ )
             {
+                if ( i != 0 && index == newIds.length )
+                {
+                    // no match found
+                    return false;
+                }
                 if ( nodeIds[i] != nodeId )
                 {
                     newIds[index++] = nodeIds[i];
@@ -212,25 +219,31 @@ public class LuceneIndexService extends GenericIndexService
             {
                 keyIndex.put( value, newIds );
             }
+            return true;
         }
         
-        void delAddedIndex( Node node, String key, Object value )
+        boolean delAddedIndex( Node node, String key, Object value )
         {
             Map<Object,Long[]> keyIndex = txIndexed.get( key );
             if ( keyIndex == null )
             {
-                return;
+                return false;
             }
             Long nodeIds[] = keyIndex.get( value );
             if ( nodeIds == null )
             {
-                return;
+                return false;
             }
             Long newIds[] = new Long[nodeIds.length - 1 ];
             long nodeId = node.getId();
             int index = 0;
             for ( int i = 0; i < nodeIds.length; i++ )
             {
+                if ( i != 0 && index == newIds.length )
+                {
+                    // no match found
+                    return false;
+                }
                 if ( nodeIds[i] != nodeId )
                 {
                     newIds[index++] = nodeIds[i];
@@ -244,6 +257,7 @@ public class LuceneIndexService extends GenericIndexService
             {
                 keyIndex.put( value, newIds );
             }
+            return true;
         }
         
         Set<Node> getDeletedNodesFor( String key, Object value )
@@ -299,22 +313,26 @@ public class LuceneIndexService extends GenericIndexService
         public void afterCompletion( int status )
         {
             luceneTransactions.set( null );
-            for ( Entry<WriterLock,IndexWriter> entry : writers.entrySet() )
+            for ( WriterLock lock : writers )
             {
-                IndexWriter writer = entry.getValue();
-                WriterLock lock = entry.getKey();
+                String key = lock.getKey();
                 if ( status == Status.STATUS_COMMITTED )
                 {
-                    try
+                    Map<Object,Long[]> deleteMap = txRemoved.get( key );
+                    if ( deleteMap != null )
                     {
-                        writer.close();
+                        for ( Entry<Object,Long[]> deleteEntry : 
+                            deleteMap.entrySet() )
+                        {
+                            Object value = deleteEntry.getKey();
+                            Long[] ids = deleteEntry.getValue();
+                            for ( Long id : ids )
+                            {
+                                deleteDocumentUsingReader( id, key, value );
+                            }
+                        }
                     }
-                    catch ( IOException e )
-                    {
-                        e.printStackTrace();
-                    }
-                    IndexSearcher searcher = indexSearchers.remove( 
-                        lock.getKey() );
+                    IndexSearcher searcher = indexSearchers.remove( key );
                     if ( searcher != null )
                     {
                         try
@@ -326,12 +344,24 @@ public class LuceneIndexService extends GenericIndexService
                             e.printStackTrace();
                         }
                     }
-                }
-                else
-                {
+                    IndexWriter writer = getIndexWriter( key );
+                    Map<Object,Long[]> indexMap = txIndexed.get( key );
                     try
                     {
-                        writer.abort();
+                        if ( indexMap != null )
+                        {
+                            for ( Entry<Object,Long[]> indexEntry : 
+                                indexMap.entrySet() )
+                            {
+                                Object value = indexEntry.getKey();
+                                Long[] ids = indexEntry.getValue();
+                                for ( Long id : ids )
+                                {
+                                    indexWriter( writer, id, key, value );
+                                }
+                            }
+                        }
+                        writer.close();
                     }
                     catch ( IOException e )
                     {
@@ -342,6 +372,25 @@ public class LuceneIndexService extends GenericIndexService
             }
         }
 
+        private void indexWriter( IndexWriter writer, long nodeId, String key, 
+            Object value )
+        {
+            Document document = new Document();
+            document.add( new Field( "id", 
+                String.valueOf( nodeId ),
+                Field.Store.YES, Field.Index.UN_TOKENIZED ) );
+            document.add( new Field( "index", value.toString(),
+                Field.Store.NO, Field.Index.UN_TOKENIZED ) );
+            try
+            {
+                writer.addDocument( document );
+            }
+            catch ( IOException e )
+            {
+                throw new RuntimeException( e );
+            }
+        }
+        
         public void beforeCompletion()
         {
         }
@@ -404,27 +453,28 @@ public class LuceneIndexService extends GenericIndexService
             }
         }
         WriterLock lock = new WriterLock( key );
-        IndexWriter writer = luceneTx.getWriterForLock( lock );
-        if ( writer == null )
+        // IndexWriter writer = luceneTx.getWriterForLock( lock );
+        if ( !luceneTx.hasWriter( lock ) )
         {
             lockManager.getWriteLock( lock );
-            writer = getIndexWriter( key );
-            luceneTx.addWriter( lock, writer );
+//            writer = getIndexWriter( key );
+//            luceneTx.addWriter( lock, writer );
+            luceneTx.addWriter( lock );
         }
-        Document document = new Document();
-        document.add( new Field( "id", 
-            String.valueOf( node.getId() ),
-            Field.Store.YES, Field.Index.UN_TOKENIZED ) );
-        document.add( new Field( "index", value.toString(),
-            Field.Store.NO, Field.Index.UN_TOKENIZED ) );
-        try
-        {
-            writer.addDocument( document );
-        }
-        catch ( IOException e )
-        {
-            throw new RuntimeException( e );
-        }
+//        Document document = new Document();
+//        document.add( new Field( "id", 
+//            String.valueOf( node.getId() ),
+//            Field.Store.YES, Field.Index.UN_TOKENIZED ) );
+//        document.add( new Field( "index", value.toString(),
+//            Field.Store.NO, Field.Index.UN_TOKENIZED ) );
+//        try
+//        {
+//            writer.addDocument( document );
+//        }
+//        catch ( IOException e )
+//        {
+//            throw new RuntimeException( e );
+//        }
         luceneTx.index( node, key, value );
     }
     
@@ -455,64 +505,62 @@ public class LuceneIndexService extends GenericIndexService
     public Iterable<Node> getNodes( String key, Object value )
     {
         IndexSearcher searcher = getIndexSearcher( key );
+        List<Node> nodes = new LinkedList<Node>();
+        LuceneTransaction luceneTx = luceneTransactions.get();
+        Set<Node> deletedNodes = Collections.EMPTY_SET;
+        if ( luceneTx != null )
+        {
+            // add nodes that has been indexed in this tx
+            List<Node> txNodes = luceneTx.getNodesFor( key, value );
+            nodes.addAll( txNodes );
+            deletedNodes = luceneTx.getDeletedNodesFor( key, value );
+        }
         if ( searcher == null )
         {
-            return Arrays.asList( new Node[0] );
-        }
-        Query query = new TermQuery( new Term( "index", value.toString() ) );
-        try
-        {
-            Hits hits = searcher.search( query );
-            List<Node> nodes = new LinkedList<Node>();
-            for ( int i = 0; i < hits.length(); i++ )
-            {
-                Document document = hits.doc( i );
-                try
-                {
-                    nodes.add( getNeo().getNodeById( Integer.parseInt(
-                    document.getField( "id" ).stringValue() ) ) );
-                }
-                catch ( NotFoundException e )
-                {
-                    // deleted in this tx
-                }
-            }
-            LuceneTransaction luceneTx = luceneTransactions.get();
-            Set<Node> deletedNodes = Collections.EMPTY_SET;
-            if ( luceneTx != null )
-            {
-                // add nodes that has been indexed in this tx
-                List<Node> txNodes = luceneTx.getNodesFor( key, value );
-                nodes.addAll( txNodes );
-                deletedNodes = luceneTx.getDeletedNodesFor( key, value );
-            }
-            // remove dupes and deleted in same tx
-            Set<Node> addedNodes = new HashSet<Node>();
-            Iterator<Node> nodeItr = nodes.iterator();
-            while ( nodeItr.hasNext() )
-            {
-                Node node = nodeItr.next();
-                if ( !addedNodes.add( node ) || deletedNodes.contains( node ) )
-                {
-                    nodeItr.remove();
-                }
-            }
             return nodes;
         }
-        catch ( IOException e )
+        else
         {
-            throw new RuntimeException( "Unable to search for " + key + "," + 
-                value, e );
+            Query query = new TermQuery( new Term( "index", value.toString() ) );
+            try
+            {
+                Hits hits = searcher.search( query );
+                for ( int i = 0; i < hits.length(); i++ )
+                {
+                    Document document = hits.doc( i );
+                    try
+                    {
+                        nodes.add( getNeo().getNodeById( Integer.parseInt(
+                        document.getField( "id" ).stringValue() ) ) );
+                    }
+                    catch ( NotFoundException e )
+                    {
+                        // deleted in this tx
+                    }
+                }
+            }
+            catch ( IOException e )
+            {
+                throw new RuntimeException( "Unable to search for " + key + "," + 
+                    value, e );
+            }
         }
+        // remove dupes and deleted in same tx
+        Set<Node> addedNodes = new HashSet<Node>();
+        Iterator<Node> nodeItr = nodes.iterator();
+        while ( nodeItr.hasNext() )
+        {
+            Node node = nodeItr.next();
+            if ( !addedNodes.add( node ) || deletedNodes.contains( node ) )
+            {
+                nodeItr.remove();
+            }
+        }
+        return nodes;
     }
     
     public Node getSingleNode( String key, Object value )
     {
-        IndexSearcher searcher = getIndexSearcher( key );
-        if ( searcher == null )
-        {
-            return null;
-        }
         LuceneTransaction luceneTx = luceneTransactions.get();
         Set<Node> deletedNodes = Collections.EMPTY_SET;
         List<Node> addedNodes = Collections.EMPTY_LIST;
@@ -530,56 +578,101 @@ public class LuceneIndexService extends GenericIndexService
                 }
             }
         }
+        IndexSearcher searcher = getIndexSearcher( key );
+        if ( searcher == null )
+        {
+            if ( addedNodes.isEmpty() )
+            {
+                return null;
+            }
+            if ( addedNodes.size() == 1 )
+            {
+                return addedNodes.get( 0 );
+            }
+        }
+        else
+        {
+            Query query = new TermQuery( new Term( "index", value.toString() ) );
+            try
+            {
+                Hits hits = searcher.search( query );
+                if ( hits.length() == 1 )
+                {
+                    Document document = hits.doc( 0 );
+                    Node node = getNeo().getNodeById( Integer.parseInt(
+                        document.getField( "id" ).stringValue() ) );
+                    if ( deletedNodes.contains( node ) )
+                    {
+                        node = null;
+                    }
+                    if ( addedNodes.size() == 0 )
+                    {
+                        return node;
+                    }
+                    if ( addedNodes.size() == 1 )
+                    {
+                        if ( node == null )
+                        {
+                            return addedNodes.get( 0 );
+                        }
+                        if ( node.equals( addedNodes.get( 0 ) ) )
+                        {
+                            return node;
+                        }
+                    }
+                }
+                else if ( hits.length() == 0 )
+                {
+                    if ( addedNodes.size() == 0 )
+                    {
+                        return null;
+                    }
+                    if ( addedNodes.size() == 1 )
+                    {
+                        return addedNodes.get( 0 );
+                    }
+                }
+            }
+            catch ( IOException e )
+            {
+                throw new RuntimeException( "Unable to search for " + key + "," + 
+                    value, e );
+            }
+        }
+        throw new RuntimeException( "More then one node found for: " +
+            key + "," + value );
+    }
+
+    void deleteDocumentUsingReader( long nodeId, String key, Object value )
+    {
+        IndexSearcher searcher = getIndexSearcher( key );
+        if ( searcher == null )
+        {
+            return;
+        }
         Query query = new TermQuery( new Term( "index", value.toString() ) );
         try
         {
             Hits hits = searcher.search( query );
-            if ( hits.length() == 1 )
+            for ( int i = 0; i < hits.length(); i++ )
             {
                 Document document = hits.doc( 0 );
-                Node node = getNeo().getNodeById( Integer.parseInt(
-                    document.getField( "id" ).stringValue() ) );
-                if ( deletedNodes.contains( node ) )
+                int foundId = Integer.parseInt(
+                    document.getField( "id" ).stringValue() );
+                if ( nodeId == foundId )
                 {
-                    node = null;
-                }
-                if ( addedNodes.size() == 0 )
-                {
-                    return node;
-                }
-                if ( addedNodes.size() == 1 )
-                {
-                    if ( node == null )
-                    {
-                        return addedNodes.get( 0 );
-                    }
-                    if ( node.equals( addedNodes.get( 0 ) ) )
-                    {
-                        return node;
-                    }
+                    int docNum = hits.id( i );
+                    searcher.getIndexReader().deleteDocument( docNum );
                 }
             }
-            else if ( hits.length() == 0 )
-            {
-                if ( addedNodes.size() == 0 )
-                {
-                    return null;
-                }
-                if ( addedNodes.size() == 1 )
-                {
-                    return addedNodes.get( 0 );
-                }
-            }
-            throw new RuntimeException( "More then one node found for: " +
-                key + "," + value );
         }
         catch ( IOException e )
         {
-            throw new RuntimeException( "Unable to search for " + key + "," + 
-                value, e );
+            throw new RuntimeException( "Unable to delete for " + nodeId +"," + 
+                key + "," + value, e );
         }
     }
-
+    
     protected void removeIndexThisTx( Node node, String key, Object value )
     {
         LuceneTransaction luceneTx = luceneTransactions.get();
@@ -603,23 +696,24 @@ public class LuceneIndexService extends GenericIndexService
             }
         }
         WriterLock lock = new WriterLock( key );
-        IndexWriter writer = luceneTx.getWriterForLock( lock );
-        if ( writer == null )
+        // IndexWriter writer = luceneTx.getWriterForLock( lock );
+        if ( !luceneTx.hasWriter( lock ) )
         {
             lockManager.getWriteLock( lock );
-            writer = getIndexWriter( key );
-            luceneTx.addWriter( lock, writer );
+            // writer = getIndexWriter( key );
+            // luceneTx.addWriter( lock, writer );
+            luceneTx.addWriter( lock );
         }
-        Term term = new Term( new Long( node.getId() ).toString(), 
-            value.toString().toLowerCase() );
-        try
-        {
-            writer.deleteDocuments( term );
-        }
-        catch ( IOException e )
-        {
-            throw new RuntimeException( e );
-        }
+//        Term term = new Term( new Long( node.getId() ).toString(), 
+//            value.toString().toLowerCase() );
+//        try
+//        {
+//            writer.deleteDocuments( term );
+//        }
+//        catch ( IOException e )
+//        {
+//            throw new RuntimeException( e );
+//        }
         luceneTx.removeIndex( node, key, value );
     }
     
