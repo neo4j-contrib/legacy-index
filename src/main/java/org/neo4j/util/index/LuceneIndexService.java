@@ -332,18 +332,6 @@ public class LuceneIndexService extends GenericIndexService
                             }
                         }
                     }
-                    IndexSearcher searcher = indexSearchers.remove( key );
-                    if ( searcher != null )
-                    {
-                        try
-                        {
-                            searcher.close();
-                        }
-                        catch ( IOException e )
-                        {
-                            e.printStackTrace();
-                        }
-                    }
                     IndexWriter writer = getIndexWriter( key );
                     Map<Object,Long[]> indexMap = txIndexed.get( key );
                     try
@@ -362,10 +350,23 @@ public class LuceneIndexService extends GenericIndexService
                             }
                         }
                         writer.close();
+                        
                     }
                     catch ( IOException e )
                     {
                         e.printStackTrace();
+                    }
+                    IndexSearcher searcher = indexSearchers.remove( key );
+                    if ( searcher != null )
+                    {
+                        try
+                        {
+                            searcher.close();
+                        }
+                        catch ( IOException e )
+                        {
+                            e.printStackTrace();
+                        }
                     }
                 }
                 lockManager.releaseWriteLock( lock );
