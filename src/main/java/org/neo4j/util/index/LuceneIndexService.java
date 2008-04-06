@@ -282,7 +282,7 @@ public class LuceneIndexService extends GenericIndexService
                     return nodes;
                 }
             }
-            return Collections.EMPTY_SET;
+            return Collections.emptySet();
         }
         
         List<Node> getNodesFor( String key, Object value )
@@ -307,7 +307,7 @@ public class LuceneIndexService extends GenericIndexService
                     return nodes;
                 }
             }
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
         
         public void afterCompletion( int status )
@@ -445,12 +445,12 @@ public class LuceneIndexService extends GenericIndexService
             }
             catch ( SystemException e )
             {
-                throw new IllegalStateException( "No transaciton running?", e );
+                throw new IllegalStateException( "No transaction running?", e );
             }
             catch ( RollbackException e )
             {
                 throw new IllegalStateException( 
-                    "Unable to register syncrhonization hook", e );
+                    "Unable to register synchronization hook", e );
             }
         }
         WriterLock lock = new WriterLock( key );
@@ -508,7 +508,7 @@ public class LuceneIndexService extends GenericIndexService
         IndexSearcher searcher = getIndexSearcher( key );
         List<Node> nodes = new LinkedList<Node>();
         LuceneTransaction luceneTx = luceneTransactions.get();
-        Set<Node> deletedNodes = Collections.EMPTY_SET;
+        Set<Node> deletedNodes = Collections.emptySet();
         if ( luceneTx != null )
         {
             // add nodes that has been indexed in this tx
@@ -563,8 +563,8 @@ public class LuceneIndexService extends GenericIndexService
     public Node getSingleNode( String key, Object value )
     {
         LuceneTransaction luceneTx = luceneTransactions.get();
-        Set<Node> deletedNodes = Collections.EMPTY_SET;
-        List<Node> addedNodes = Collections.EMPTY_LIST;
+        Set<Node> deletedNodes = Collections.emptySet();
+        List<Node> addedNodes = Collections.emptyList();
         if ( luceneTx != null )
         {
             addedNodes = luceneTx.getNodesFor( key, value );
@@ -640,7 +640,7 @@ public class LuceneIndexService extends GenericIndexService
                     value, e );
             }
         }
-        throw new RuntimeException( "More then one node found for: " +
+        throw new RuntimeException( "More than one node found for: " +
             key + "," + value );
     }
 
@@ -688,12 +688,12 @@ public class LuceneIndexService extends GenericIndexService
             }
             catch ( SystemException e )
             {
-                throw new IllegalStateException( "No transaciton running?", e );
+                throw new IllegalStateException( "No transaction running?", e );
             }
             catch ( RollbackException e )
             {
                 throw new IllegalStateException( 
-                    "Unable to register syncrhonization hook", e );
+                    "Unable to register synchronization hook", e );
             }
         }
         WriterLock lock = new WriterLock( key );
