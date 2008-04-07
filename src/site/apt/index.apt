@@ -18,7 +18,7 @@ Neo indexing utilities
 IndexService
 
 	In the <<org.neo4j.util.index>> package you will find an <<IndexService>> 
-	interface and one implementation using Lucene with a reference 
+	interface with one implementation using Lucene and another reference 
 	implementation ontop of Neo.
 
 ---
