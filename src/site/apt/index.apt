@@ -15,7 +15,24 @@ Neo indexing utilities
 	can create instances of the Index by passing in the same node to the 
 	correct index constructor.  
 
-Index package
+IndexService
+
+	In the <<org.neo4j.util.index>> package you will find an <<IndexService>> 
+	interface and one implementation using Lucene with a reference 
+	implementation ontop of Neo.
+
+---
+    IndexService indexService = new LuceneIndexService( neo );
+    
+    // index a node 
+    indexService.index( personNode, "name", 
+    	personNode.getProperty( "name" ) );
+    
+    // getting a node using the index
+    Node node = index.getSingleNodeFor( "name", someName );
+---
+
+Index interface
 
 	In the <<org.neo4j.util.index>> package you will find an <<Index>> interface
 	and two different index implementations. The <<SingleValueIndex>> can only 
