@@ -66,6 +66,7 @@ public class NeoIndexService extends GenericIndexService
         }
     }
     
+    @Override
     protected void indexThisTx( Node node, String key, Object value )
     {
         // get the value index
@@ -120,6 +121,7 @@ public class NeoIndexService extends GenericIndexService
         return valueIndex.getSingleNodeFor( value );
     }
 
+    @Override
     protected void removeIndexThisTx( Node node, String key, Object value )
     {
         Index valueIndex = getValueIndex( key, false );

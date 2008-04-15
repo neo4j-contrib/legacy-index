@@ -430,6 +430,7 @@ public class LuceneIndexService extends GenericIndexService
         }
     }
     
+    @Override
     protected void indexThisTx( Node node, String key, 
         Object value )
     {
@@ -674,6 +675,7 @@ public class LuceneIndexService extends GenericIndexService
         }
     }
     
+    @Override
     protected void removeIndexThisTx( Node node, String key, Object value )
     {
         LuceneTransaction luceneTx = luceneTransactions.get();
