@@ -205,11 +205,11 @@ class IndexServiceQueue extends Thread
         }
         finally
         {
+            done = true;
             tx.finish();
         }
         synchronized ( indexService )
         {
-            done = true;
             indexService.notify();
         }
     }
