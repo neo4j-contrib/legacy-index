@@ -51,7 +51,7 @@ public class LuceneIndexService extends GenericIndexService
         = new ThreadLocal<LuceneTransaction>();
     private final LockManager lockManager;
     private final TransactionManager txManager;
-
+    private final String luceneDirectory;
     
     private static class WriterLock
     {
@@ -412,6 +412,8 @@ public class LuceneIndexService extends GenericIndexService
     {
         super ( neo );
         EmbeddedNeo embeddedNeo = ((EmbeddedNeo) neo);
+        luceneDirectory = 
+            embeddedNeo.getConfig().getTxModule().getTxLogDirectory();
         lockManager = embeddedNeo.getConfig().getLockManager();
         txManager = embeddedNeo.getConfig().getTxModule().getTxManager();
     }
@@ -421,7 +423,7 @@ public class LuceneIndexService extends GenericIndexService
         try
         {
             Directory dir = FSDirectory.getDirectory( 
-                "var/search/" + key );
+                luceneDirectory + "/lucene/" + key );
             return new IndexWriter( dir, false, DEFAULT_ANALYZER );
         }
         catch ( IOException e )
@@ -488,7 +490,7 @@ public class LuceneIndexService extends GenericIndexService
             try
             {
                 Directory dir = FSDirectory.getDirectory( 
-                    "var/search/" + key );
+                    luceneDirectory + "/lucene/" + key );
                 if ( dir.list().length == 0 )
                 {
                     return null;
