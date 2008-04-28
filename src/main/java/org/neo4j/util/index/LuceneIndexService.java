@@ -2,6 +2,7 @@ package org.neo4j.util.index;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -89,11 +90,11 @@ public class LuceneIndexService extends GenericIndexService
         private final Set<WriterLock> writers = 
             new HashSet<WriterLock>();
         
-        private final Map<String,Map<Object,Long[]>> txIndexed = 
-            new HashMap<String,Map<Object,Long[]>>();
+        private final Map<String,Map<Object,Collection<Long>>> txIndexed = 
+            new HashMap<String,Map<Object,Collection<Long>>>();
 
-        private final Map<String,Map<Object,Long[]>> txRemoved = 
-            new HashMap<String,Map<Object,Long[]>>();
+        private final Map<String,Map<Object,Collection<Long>>> txRemoved = 
+            new HashMap<String,Map<Object,Collection<Long>>>();
         
         boolean hasWriter( WriterLock lock )
         {
@@ -107,39 +108,19 @@ public class LuceneIndexService extends GenericIndexService
 
         void index( Node node, String key, Object value )
         {
-            delRemovedIndex( node, key, value ); 
-            Map<Object,Long[]> keyIndex = txIndexed.get( key );
+            delRemovedIndex( node, key, value );
+            Map<Object,Collection<Long>> keyIndex = txIndexed.get( key );
             if ( keyIndex == null )
             {
-                keyIndex = new HashMap<Object,Long[]>();
+                keyIndex = new HashMap<Object,Collection<Long>>();
                 txIndexed.put( key, keyIndex );
             }
-            Long nodeIds[] = keyIndex.get( value );
+            Collection<Long> nodeIds = keyIndex.get( value );
             if ( nodeIds == null )
             {
-                nodeIds = new Long[1];
-                nodeIds[0] = node.getId();
+                nodeIds = new HashSet<Long>();
             }
-            else
-            {
-                Long newIds[] = new Long[nodeIds.length + 1 ];
-                boolean dupe = false;
-                long nodeId = node.getId();
-                for ( int i = 0; i < nodeIds.length; i++ )
-                {
-                    if ( nodeIds[i] == nodeId )
-                    {
-                        dupe = true;
-                        break;
-                    }
-                    newIds[i] = nodeIds[i];
-                }
-                if ( !dupe )
-                {
-                    newIds[nodeIds.length] = node.getId();
-                    nodeIds = newIds;
-                }
-            }
+            nodeIds.add( node.getId() );
             keyIndex.put( value, nodeIds );
         }
         
@@ -149,123 +130,57 @@ public class LuceneIndexService extends GenericIndexService
             {
                 return;
             }
-            Map<Object,Long[]> keyIndex = txRemoved.get( key );
+            Map<Object,Collection<Long>> keyIndex = txRemoved.get( key );
             if ( keyIndex == null )
             {
-                keyIndex = new HashMap<Object,Long[]>();
+                keyIndex = new HashMap<Object,Collection<Long>>();
                 txRemoved.put( key, keyIndex );
             }
-            Long nodeIds[] = keyIndex.get( value );
+            Collection<Long> nodeIds = keyIndex.get( value );
             if ( nodeIds == null )
             {
-                nodeIds = new Long[1];
-                nodeIds[0] = node.getId();
+                nodeIds = new HashSet<Long>();
             }
-            else
-            {
-                Long newIds[] = new Long[nodeIds.length + 1 ];
-                boolean dupe = false;
-                long nodeId = node.getId();
-                for ( int i = 0; i < nodeIds.length; i++ )
-                {
-                    if ( nodeIds[i] == nodeId )
-                    {
-                        dupe = true;
-                        break;
-                    }
-                    newIds[i] = nodeIds[i];
-                }
-                if ( !dupe )
-                {
-                    newIds[nodeIds.length] = node.getId();
-                    nodeIds = newIds;
-                }
-            }
+            nodeIds.add( node.getId() );
             keyIndex.put( value, nodeIds );
         }
         
         boolean delRemovedIndex( Node node, String key, Object value )
         {
-            Map<Object,Long[]> keyIndex = txRemoved.get( key );
+            Map<Object,Collection<Long>> keyIndex = txRemoved.get( key );
             if ( keyIndex == null )
             {
                 return false;
             }
-            Long nodeIds[] = keyIndex.get( value );
-            if ( nodeIds == null )
+            Collection<Long> nodeIds = keyIndex.get( value );
+            if ( nodeIds != null )
             {
-                return false;
+                return nodeIds.remove( node.getId() );
             }
-            Long newIds[] = new Long[nodeIds.length - 1 ];
-            long nodeId = node.getId();
-            int index = 0;
-            for ( int i = 0; i < nodeIds.length; i++ )
-            {
-                if ( i != 0 && index == newIds.length )
-                {
-                    // no match found
-                    return false;
-                }
-                if ( nodeIds[i] != nodeId )
-                {
-                    newIds[index++] = nodeIds[i];
-                }
-            }
-            if ( newIds.length == 0 )
-            {
-                keyIndex.remove( value );
-            }
-            else
-            {
-                keyIndex.put( value, newIds );
-            }
-            return true;
+            return false;
         }
         
         boolean delAddedIndex( Node node, String key, Object value )
         {
-            Map<Object,Long[]> keyIndex = txIndexed.get( key );
+            Map<Object,Collection<Long>> keyIndex = txIndexed.get( key );
             if ( keyIndex == null )
             {
                 return false;
             }
-            Long nodeIds[] = keyIndex.get( value );
-            if ( nodeIds == null )
+            Collection<Long> nodeIds = keyIndex.get( value );
+            if ( nodeIds != null )
             {
-                return false;
+                return nodeIds.remove( node.getId() );
             }
-            Long newIds[] = new Long[nodeIds.length - 1 ];
-            long nodeId = node.getId();
-            int index = 0;
-            for ( int i = 0; i < nodeIds.length; i++ )
-            {
-                if ( i != 0 && index == newIds.length )
-                {
-                    // no match found
-                    return false;
-                }
-                if ( nodeIds[i] != nodeId )
-                {
-                    newIds[index++] = nodeIds[i];
-                }
-            }
-            if ( newIds.length == 0 )
-            {
-                keyIndex.remove( value );
-            }
-            else
-            {
-                keyIndex.put( value, newIds );
-            }
-            return true;
+            return false;
         }
         
         Set<Node> getDeletedNodesFor( String key, Object value )
         {
-            Map<Object,Long[]> keyIndex = txRemoved.get( key );
+            Map<Object,Collection<Long>> keyIndex = txRemoved.get( key );
             if ( keyIndex != null )
             {
-                Long[] nodeIds = keyIndex.get( value );
+                Collection<Long> nodeIds = keyIndex.get( value );
                 if ( nodeIds != null )
                 {
                     Set<Node> nodes = new HashSet<Node>();
@@ -287,10 +202,10 @@ public class LuceneIndexService extends GenericIndexService
         
         List<Node> getNodesFor( String key, Object value )
         {
-            Map<Object,Long[]> keyIndex = txIndexed.get( key );
+            Map<Object,Collection<Long>> keyIndex = txIndexed.get( key );
             if ( keyIndex != null )
             {
-                Long[] nodeIds = keyIndex.get( value );
+                Collection<Long> nodeIds = keyIndex.get( value );
                 if ( nodeIds != null )
                 {
                     List<Node> nodes = new LinkedList<Node>();
@@ -318,14 +233,32 @@ public class LuceneIndexService extends GenericIndexService
                 String key = lock.getKey();
                 if ( status == Status.STATUS_COMMITTED )
                 {
-                    Map<Object,Long[]> deleteMap = txRemoved.get( key );
+                    Map<Object,Collection<Long>> addMap = txIndexed.get( key );
+                    if ( addMap != null )
+                    {
+                        for ( Entry<Object,Collection<Long>> addEntry : 
+                            addMap.entrySet() )
+                        {
+                            Object value = addEntry.getKey();
+                            Collection<Long> ids = addEntry.getValue();
+                            for ( Long id : ids )
+                            {
+                                if ( documentExist( id, key, value ) )
+                                {
+                                    ids.remove( id );
+                                }
+                            }
+                        }
+                    }
+                    Map<Object,Collection<Long>> deleteMap = 
+                        txRemoved.get( key );
                     if ( deleteMap != null )
                     {
-                        for ( Entry<Object,Long[]> deleteEntry : 
+                        for ( Entry<Object,Collection<Long>> deleteEntry : 
                             deleteMap.entrySet() )
                         {
                             Object value = deleteEntry.getKey();
-                            Long[] ids = deleteEntry.getValue();
+                            Collection<Long> ids = deleteEntry.getValue();
                             for ( Long id : ids )
                             {
                                 deleteDocumentUsingReader( id, key, value );
@@ -333,16 +266,17 @@ public class LuceneIndexService extends GenericIndexService
                         }
                     }
                     IndexWriter writer = getIndexWriter( key );
-                    Map<Object,Long[]> indexMap = txIndexed.get( key );
+                    Map<Object,Collection<Long>> indexMap = 
+                        txIndexed.get( key );
                     try
                     {
                         if ( indexMap != null )
                         {
-                            for ( Entry<Object,Long[]> indexEntry : 
+                            for ( Entry<Object,Collection<Long>> indexEntry : 
                                 indexMap.entrySet() )
                             {
                                 Object value = indexEntry.getKey();
-                                Long[] ids = indexEntry.getValue();
+                                Collection<Long> ids = indexEntry.getValue();
                                 for ( Long id : ids )
                                 {
                                     indexWriter( writer, id, key, value );
@@ -372,6 +306,7 @@ public class LuceneIndexService extends GenericIndexService
                 lockManager.releaseWriteLock( lock );
             }
         }
+
 
         private void indexWriter( IndexWriter writer, long nodeId, String key, 
             Object value )
@@ -636,6 +571,22 @@ public class LuceneIndexService extends GenericIndexService
                         return addedNodes.get( 0 );
                     }
                 }
+                else
+                {
+                    long idHit[] = new long[hits.length()];
+                    int index = 0;
+                    for ( int i = 0; i < hits.length(); i++ )
+                    {
+                        if ( !deletedNodes.contains( i ) )
+                        {
+                            idHit[index++] = i;
+                        }
+                    }
+                    if ( index == 1 )
+                    {
+                        return getNeo().getNodeById( idHit[0] );
+                    }
+                }
             }
             catch ( IOException e )
             {
@@ -647,6 +598,36 @@ public class LuceneIndexService extends GenericIndexService
             key + "," + value );
     }
 
+    boolean documentExist( Long id, String key, Object value )
+    {
+        IndexSearcher searcher = getIndexSearcher( key );
+        if ( searcher == null )
+        {
+            return false;
+        }
+        Query query = new TermQuery( new Term( "index", value.toString() ) );
+        try
+        {
+            Hits hits = searcher.search( query );
+            for ( int i = 0; i < hits.length(); i++ )
+            {
+                Document document = hits.doc( 0 );
+                int foundId = Integer.parseInt(
+                    document.getField( "id" ).stringValue() );
+                if ( id == foundId )
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+        catch ( IOException e )
+        {
+            throw new RuntimeException( "Propblem checking for " + id +"," + 
+                key + "," + value, e );
+        }
+    }
+    
     void deleteDocumentUsingReader( long nodeId, String key, Object value )
     {
         IndexSearcher searcher = getIndexSearcher( key );
