@@ -111,4 +111,19 @@ public class TestLuceneIndexingService extends TestCase
         node2.delete();
         tx.success();
     }
+    
+    public void testMultipleAdd()
+    {
+        Node node = neo.createNode();
+        indexService.index( node, "a_property", 3 );
+        tx.success(); tx.finish();
+        tx = neo.beginTx();
+        indexService.index( node, "a_property", 3 );
+        tx.success(); tx.finish();
+        tx = neo.beginTx();
+        indexService.removeIndex( node, "a_property", 3 );
+        tx.success(); tx.finish();
+        tx = neo.beginTx();
+        assertTrue( indexService.getSingleNode( "a_property", 3 ) == null );
+    }
 }
