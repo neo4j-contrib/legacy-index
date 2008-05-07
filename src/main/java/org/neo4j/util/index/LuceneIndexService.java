@@ -492,10 +492,16 @@ public class LuceneIndexService extends GenericIndexService
                     }
                     if ( node != null )
                     {
-                        throw new RuntimeException( "More than one node " + 
-                            "found for: " + key + "," + value );
+                    	if ( node.getId() != id )
+                    	{
+	                        throw new RuntimeException( "More than one " + 
+	                        	"node found for: " + key + "," + value );
+                    	}
                     }
-                    node = getNeo().getNodeById( id );
+                    else
+                    {
+                    	node = getNeo().getNodeById( id );
+                    }
                 }
             }
             catch ( IOException e )
