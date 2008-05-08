@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -107,30 +108,24 @@ public class LuceneIndexService extends GenericIndexService
 
         void index( Node node, String key, Object value )
         {
-            delRemovedIndex( node, key, value );
-            Map<Object,Set<Long>> keyIndex = txIndexed.get( key );
-            if ( keyIndex == null )
-            {
-                keyIndex = new HashMap<Object,Set<Long>>();
-                txIndexed.put( key, keyIndex );
-            }
-            Set<Long> nodeIds = keyIndex.get( value );
-            if ( nodeIds == null )
-            {
-                nodeIds = new HashSet<Long>();
-            }
-            nodeIds.add( node.getId() );
-            keyIndex.put( value, nodeIds );
+        	insert( node, key, value, txRemoved, txIndexed );
         }
         
         void removeIndex( Node node, String key, Object value )
         {
-            delAddedIndex( node, key, value );
-            Map<Object,Set<Long>> keyIndex = txRemoved.get( key );
+        	insert( node, key, value, txIndexed, txRemoved );
+        }
+        
+        void insert( Node node, String key, Object value,
+        	Map<String, Map<Object, Set<Long>>> toRemoveFrom,
+        	Map<String, Map<Object, Set<Long>>> toInsertInto )
+        {
+            delFromIndex( node, key, value, toRemoveFrom );
+            Map<Object,Set<Long>> keyIndex = toInsertInto.get( key );
             if ( keyIndex == null )
             {
                 keyIndex = new HashMap<Object,Set<Long>>();
-                txRemoved.put( key, keyIndex );
+                toInsertInto.put( key, keyIndex );
             }
             Set<Long> nodeIds = keyIndex.get( value );
             if ( nodeIds == null )
@@ -141,24 +136,10 @@ public class LuceneIndexService extends GenericIndexService
             keyIndex.put( value, nodeIds );
         }
         
-        boolean delRemovedIndex( Node node, String key, Object value )
+        boolean delFromIndex( Node node, String key, Object value,
+        	Map<String, Map<Object, Set<Long>>> map )
         {
-            Map<Object,Set<Long>> keyIndex = txRemoved.get( key );
-            if ( keyIndex == null )
-            {
-                return false;
-            }
-            Set<Long> nodeIds = keyIndex.get( value );
-            if ( nodeIds != null )
-            {
-                return nodeIds.remove( node.getId() );
-            }
-            return false;
-        }
-        
-        boolean delAddedIndex( Node node, String key, Object value )
-        {
-            Map<Object,Set<Long>> keyIndex = txIndexed.get( key );
+            Map<Object,Set<Long>> keyIndex = map.get( key );
             if ( keyIndex == null )
             {
                 return false;
@@ -451,11 +432,11 @@ public class LuceneIndexService extends GenericIndexService
     
     public Node getSingleNode( String key, Object value )
     {
-        LuceneTransaction luceneTx = luceneTransactions.get();
+/*        LuceneTransaction luceneTx = luceneTransactions.get();
         Set<Long> deletedNodes = luceneTx != null ? 
             luceneTx.getDeletedNodesFor( key, value ) : null;
         Set<Long> addedNodes = luceneTx != null ? 
-            luceneTx.getDeletedNodesFor( key, value ) : null;
+            luceneTx.getNodesFor( key, value ) : null;
         Node node = null;
         IndexSearcher searcher = getIndexSearcher( key );
         if ( searcher == null )
@@ -510,7 +491,17 @@ public class LuceneIndexService extends GenericIndexService
                     "," + value, e );
             }
         }
-        return node;
+        return node;*/
+    	
+    	// TODO Temporary code since the commented code (above) doesn't work.
+    	Iterator<Node> nodes = getNodes( key, value ).iterator();
+    	Node node = nodes.hasNext() ? nodes.next() : null;
+    	if ( nodes.hasNext() )
+    	{
+    		throw new RuntimeException( "More than one node for " + key + "=" +
+    			value );
+    	}
+    	return node;
     }
 
     boolean documentExist( Long id, String key, Object value )
