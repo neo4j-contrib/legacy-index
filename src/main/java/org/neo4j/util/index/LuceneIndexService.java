@@ -35,6 +35,8 @@ import org.apache.lucene.store.FSDirectory;
 import org.neo4j.api.core.EmbeddedNeo;
 import org.neo4j.api.core.NeoService;
 import org.neo4j.api.core.Node;
+import org.neo4j.impl.cache.AdaptiveCacheManager;
+import org.neo4j.impl.cache.LruCache;
 import org.neo4j.impl.core.NotFoundException;
 import org.neo4j.impl.transaction.LockManager;
 import org.neo4j.impl.util.ArrayMap;
@@ -53,6 +55,10 @@ public class LuceneIndexService extends GenericIndexService
     final LockManager lockManager;
     private final TransactionManager txManager;
     private final String luceneDirectory;
+    
+    private Map<String, LruCache<Object, Iterable<Long>>> caching =
+    	Collections.synchronizedMap(
+    		new HashMap<String, LruCache<Object, Iterable<Long>>>() );
     
     private static class WriterLock
     {
@@ -203,6 +209,7 @@ public class LuceneIndexService extends GenericIndexService
                                 closeAndRemove = true;
                                 deleteDocumentUsingReader( searcher, id, 
                                     value );
+                                invalidateCache( key, value );
                             }
                         }
                         try
@@ -233,6 +240,7 @@ public class LuceneIndexService extends GenericIndexService
                                 {
                                     indexWriter( writer, id, value );
                                 }
+                                invalidateCache( key, value );
                             }
                         }
                         writer.close();
@@ -319,6 +327,12 @@ public class LuceneIndexService extends GenericIndexService
         }
     }
     
+    protected void enableCache( String key, int maxNumberOfCachedEntries )
+    {
+    	this.caching.put( key, new LruCache<Object, Iterable<Long>>(
+    		key, maxNumberOfCachedEntries, new AdaptiveCacheManager() ) );
+    }
+    
     @Override
     protected void indexThisTx( Node node, String key, 
         Object value )
@@ -392,42 +406,77 @@ public class LuceneIndexService extends GenericIndexService
             }
             deletedNodes = luceneTx.getDeletedNodesFor( key, value );
         }
-        if ( searcher == null )
+        if ( searcher != null )
         {
-            return nodes;
-        }
-        else
-        {
-            Query query = new TermQuery( 
-                new Term( "index", value.toString() ) );
-            try
-            {
-                Hits hits = searcher.search( query );
-                for ( int i = 0; i < hits.length(); i++ )
-                {
-                    Document document = hits.doc( i );
-                    try
-                    {
-                        long id = Integer.parseInt(
-                            document.getField( "id" ).stringValue() );
-                        if ( !deletedNodes.contains( id ) )
-                        {
-                            nodes.add( getNeo().getNodeById( id ) );
-                        }
-                    }
-                    catch ( NotFoundException e )
-                    {
-                        // deleted in this tx
-                    }
-                }
-            }
-            catch ( IOException e )
-            {
-                throw new RuntimeException( "Unable to search for " + key +
-                    "," + value, e );
-            }
+        	LruCache<Object, Iterable<Long>> cachedNodesMap =
+        		caching.get( key );
+        	boolean foundInCache = false;
+        	if ( cachedNodesMap != null )
+        	{
+        		Iterable<Long> cachedNodes = cachedNodesMap.get( value );
+        		if ( cachedNodes != null )
+        		{
+        			foundInCache = true;
+        			for ( Long cachedNodeId : cachedNodes )
+        			{
+        				nodes.add( getNeo().getNodeById( cachedNodeId ) );
+        			}
+        		}
+        	}
+        	
+        	if ( !foundInCache )
+        	{
+        		Iterable<Node> readNodes =
+        			searchForNodes( key, value, deletedNodes );
+        		ArrayList<Long> readNodeIds = new ArrayList<Long>();
+        		for ( Node readNode : readNodes )
+        		{
+        			nodes.add( readNode );
+        			readNodeIds.add( readNode.getId() );
+        		}
+        		if ( cachedNodesMap != null )
+        		{
+        			cachedNodesMap.add( value, readNodeIds );
+        		}
+        	}
         }
         return nodes;
+    }
+    
+    private Iterable<Node> searchForNodes( String key, Object value,
+    	Set<Long> deletedNodes )
+    {
+    	IndexSearcher searcher = getIndexSearcher( key );
+        Query query = new TermQuery( 
+            new Term( "index", value.toString() ) );
+        try
+        {
+        	ArrayList<Node> nodes = new ArrayList<Node>();
+            Hits hits = searcher.search( query );
+            for ( int i = 0; i < hits.length(); i++ )
+            {
+                Document document = hits.doc( i );
+                try
+                {
+                    long id = Integer.parseInt(
+                        document.getField( "id" ).stringValue() );
+                    if ( !deletedNodes.contains( id ) )
+                    {
+                        nodes.add( getNeo().getNodeById( id ) );
+                    }
+                }
+                catch ( NotFoundException e )
+                {
+                    // deleted in this tx
+                }
+            }
+            return nodes;
+        }
+        catch ( IOException e )
+        {
+            throw new RuntimeException( "Unable to search for " + key +
+                "," + value, e );
+        }
     }
     
     public Node getSingleNode( String key, Object value )
@@ -529,9 +578,18 @@ public class LuceneIndexService extends GenericIndexService
         }
         catch ( IOException e )
         {
-            throw new RuntimeException( "Propblem checking for " + id +"," + 
+            throw new RuntimeException( "Problem checking for " + id +"," + 
                 key + "," + value, e );
         }
+    }
+    
+    private void invalidateCache( String key, Object value )
+    {
+    	LruCache<Object, Iterable<Long>> cache = caching.get( key );
+    	if ( cache != null )
+    	{
+    		cache.remove( value );
+    	}
     }
     
     void deleteDocumentUsingReader( IndexSearcher searcher, long nodeId, 
