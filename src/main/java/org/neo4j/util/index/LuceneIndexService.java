@@ -209,8 +209,8 @@ public class LuceneIndexService extends GenericIndexService
                                 closeAndRemove = true;
                                 deleteDocumentUsingReader( searcher, id, 
                                     value );
-                                invalidateCache( key, value );
                             }
+                            invalidateCache( key, value );
                         }
                         try
                         {
