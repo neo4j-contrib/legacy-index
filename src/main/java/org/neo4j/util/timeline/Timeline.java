@@ -2,6 +2,7 @@ package org.neo4j.util.timeline;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+
 import org.neo4j.api.core.Direction;
 import org.neo4j.api.core.NeoService;
 import org.neo4j.api.core.Node;
@@ -11,6 +12,7 @@ import org.neo4j.api.core.ReturnableEvaluator;
 import org.neo4j.api.core.StopEvaluator;
 import org.neo4j.api.core.Transaction;
 import org.neo4j.api.core.TraversalPosition;
+import org.neo4j.api.core.Traverser;
 import org.neo4j.api.core.Traverser.Order;
 import org.neo4j.util.btree.BTree;
 
@@ -350,6 +352,43 @@ public class Timeline implements TimelineIndex
 			RelTypes.TIMELINE_INSTANCE );
 		instanceRel.setProperty( TIMELINE_NAME, name );
 		return node;
+	}
+	
+	public long getTimestampForNode( Node node )
+	{
+		Transaction tx = neo.beginTx();
+		try
+		{
+			Traverser traverser = node.traverse( Traverser.Order.DEPTH_FIRST,
+				StopEvaluator.END_OF_NETWORK, new ReturnableEvaluator()
+			{
+				public boolean isReturnableNode( TraversalPosition position )
+				{
+					Node currentNode = position.currentNode();
+					return currentNode != null && !currentNode.hasRelationship(
+						RelTypes.TIMELINE_INSTANCE, Direction.INCOMING );
+				}
+			}, RelTypes.TIMELINE_INSTANCE, Direction.INCOMING );
+			
+			Iterator<Node> hits = traverser.iterator();
+			Long result = null;
+			if ( hits.hasNext() )
+			{
+				Node hit = hits.next();
+				result = ( Long ) hit.getProperty( TIMESTAMP );
+			}
+			else
+			{
+				throw new RuntimeException( "No timpestamp found for '" + node + 
+					"' maybe it's not in the timeline?" );
+			}
+			tx.success();
+			return result;
+		}
+		finally
+		{
+			tx.finish();
+		}
 	}
 	
 	private synchronized void updateNodeAdded( final long timestamp )

@@ -46,10 +46,24 @@ public class TestTimeline extends TestCase
 		neo.shutdown();
 	}
 	
+	private long getStamp()
+	{
+		long stamp = System.currentTimeMillis();
+		try
+		{
+			Thread.sleep( 20 );
+		}
+		catch ( InterruptedException e )
+		{
+			Thread.interrupted();
+		}
+		return stamp;
+	}
+	
 	public void testTimelineBasic()
 	{
 		Node node1 = neo.createNode();
-		long stamp1 = System.currentTimeMillis();
+		long stamp1 = getStamp();
 		node1.setProperty( "timestamp", stamp1 );
 		
 		assertTrue( !timeline.getAllNodes().iterator().hasNext() );
@@ -61,6 +75,7 @@ public class TestTimeline extends TestCase
 		assertTrue( timeline.getLastNode() == null );
 
 		timeline.addNode( node1, stamp1 );
+		assertEquals( stamp1, timeline.getTimestampForNode( node1 ) );
 		
 		Iterator<Node> itr = timeline.getAllNodes().iterator();
 		assertEquals( node1, itr.next() );
@@ -87,10 +102,12 @@ public class TestTimeline extends TestCase
 		assertTrue( timeline.getLastNode() == null );
 
 		timeline.addNode( node1, stamp1 );
+		assertEquals( stamp1, timeline.getTimestampForNode( node1 ) );
 		Node node2 = neo.createNode();
-		long stamp2 = System.currentTimeMillis();
+		long stamp2 = getStamp();
 		node2.setProperty( "timestamp", stamp2 );
 		timeline.addNode( node2, stamp2 );
+		assertEquals( stamp2, timeline.getTimestampForNode( node2 ) );
 		
 		itr = timeline.getAllNodes().iterator();
 		assertEquals( node1, itr.next() );
@@ -125,7 +142,7 @@ public class TestTimeline extends TestCase
 		timeline.addNode( node1, stamp1 );
 		timeline.addNode( node2, stamp2 );
 		Node node3 = neo.createNode();
-		long stamp3 = System.currentTimeMillis();
+		long stamp3 = getStamp();
 		node3.setProperty( "timestamp", stamp3 );
 		timeline.addNode( node3, stamp3 );
 		
@@ -134,7 +151,7 @@ public class TestTimeline extends TestCase
 		assertEquals( node2, itr.next() );
 		assertEquals( node3, itr.next() );
 		assertTrue( !itr.hasNext() );
-		itr = timeline.getAllNodesAfter( 0 ).iterator(); 
+		itr = timeline.getAllNodesAfter( 0 ).iterator();
 		assertEquals( node1, itr.next() );
 		assertEquals( node2, itr.next() );
 		assertEquals( node3, itr.next() );
