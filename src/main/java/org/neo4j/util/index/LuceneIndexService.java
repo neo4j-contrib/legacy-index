@@ -1,400 +1,90 @@
 package org.neo4j.util.index;
 
 import java.io.IOException;
-import java.io.Reader;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Map.Entry;
-import javax.transaction.RollbackException;
-import javax.transaction.Status;
 import javax.transaction.Synchronization;
 import javax.transaction.SystemException;
 import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
-import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.LowerCaseFilter;
-import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.WhitespaceTokenizer;
+import javax.transaction.xa.XAResource;
 import org.apache.lucene.document.Document;
-import org.apache.lucene.document.Field;
-import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.Hits;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
-import org.apache.lucene.store.Directory;
-import org.apache.lucene.store.FSDirectory;
 import org.neo4j.api.core.EmbeddedNeo;
 import org.neo4j.api.core.NeoService;
 import org.neo4j.api.core.Node;
-import org.neo4j.impl.cache.AdaptiveCacheManager;
 import org.neo4j.impl.cache.LruCache;
 import org.neo4j.impl.core.NotFoundException;
 import org.neo4j.impl.transaction.LockManager;
+import org.neo4j.impl.transaction.NotInTransactionException;
+import org.neo4j.impl.transaction.TxModule;
 import org.neo4j.impl.util.ArrayMap;
 
 // TODO: 
-// o Move LuceneTransaction to its own file and do general code cleanup
 // o Run optimize when starting up
-// o Abort all writers (if any) on shutdown
 public class LuceneIndexService extends GenericIndexService
 {
-    final ArrayMap<String,IndexSearcher> indexSearchers = 
-        new ArrayMap<String,IndexSearcher>( 6, true, true );
     
-    final ThreadLocal<LuceneTransaction> luceneTransactions
-        = new ThreadLocal<LuceneTransaction>();
-    final LockManager lockManager;
     private final TransactionManager txManager;
     private final String luceneDirectory;
+    private final ConnectionBroker broker;
     
-    private Map<String, LruCache<Object, Iterable<Long>>> caching =
-    	Collections.synchronizedMap(
-    		new HashMap<String, LruCache<Object, Iterable<Long>>>() );
-    
-    private static class WriterLock
-    {
-        private final String key;
-        
-        WriterLock( String key )
-        {
-            this.key = key;
-        }
-        
-        String getKey()
-        {
-            return key;
-        }
-        
-        @Override
-        public int hashCode()
-        {
-            return key.hashCode();
-        }
-        
-        @Override
-        public boolean equals( Object o )
-        {
-            if ( !(o instanceof WriterLock) )
-            {
-                return false;
-            }
-            return this.key.equals( ((WriterLock) o).getKey() );
-        }
-    }
-    
-    class LuceneTransaction implements Synchronization
-    {
-        private final Set<WriterLock> writers = 
-            new HashSet<WriterLock>();
-        
-        private final Map<String,Map<Object,Set<Long>>> txIndexed = 
-            new HashMap<String,Map<Object,Set<Long>>>();
-
-        private final Map<String,Map<Object,Set<Long>>> txRemoved = 
-            new HashMap<String,Map<Object,Set<Long>>>();
-        
-        boolean hasWriter( WriterLock lock )
-        {
-            return writers.contains( lock );
-        }
-
-        void addWriter( WriterLock lock )
-        {
-            writers.add( lock );
-        }
-
-        void index( Node node, String key, Object value )
-        {
-        	insert( node, key, value, txRemoved, txIndexed );
-        }
-        
-        void removeIndex( Node node, String key, Object value )
-        {
-        	insert( node, key, value, txIndexed, txRemoved );
-        }
-        
-        void insert( Node node, String key, Object value,
-        	Map<String, Map<Object, Set<Long>>> toRemoveFrom,
-        	Map<String, Map<Object, Set<Long>>> toInsertInto )
-        {
-            delFromIndex( node, key, value, toRemoveFrom );
-            Map<Object,Set<Long>> keyIndex = toInsertInto.get( key );
-            if ( keyIndex == null )
-            {
-                keyIndex = new HashMap<Object,Set<Long>>();
-                toInsertInto.put( key, keyIndex );
-            }
-            Set<Long> nodeIds = keyIndex.get( value );
-            if ( nodeIds == null )
-            {
-                nodeIds = new HashSet<Long>();
-            }
-            nodeIds.add( node.getId() );
-            keyIndex.put( value, nodeIds );
-        }
-        
-        boolean delFromIndex( Node node, String key, Object value,
-        	Map<String, Map<Object, Set<Long>>> map )
-        {
-            Map<Object,Set<Long>> keyIndex = map.get( key );
-            if ( keyIndex == null )
-            {
-                return false;
-            }
-            Set<Long> nodeIds = keyIndex.get( value );
-            if ( nodeIds != null )
-            {
-                return nodeIds.remove( node.getId() );
-            }
-            return false;
-        }
-        
-        Set<Long> getDeletedNodesFor( String key, Object value )
-        {
-            Map<Object,Set<Long>> keyIndex = txRemoved.get( key );
-            if ( keyIndex != null )
-            {
-                Set<Long> nodeIds = keyIndex.get( value );
-                if ( nodeIds != null )
-                {
-                    return nodeIds;
-                }
-            }
-            return Collections.emptySet();
-        }
-        
-        Set<Long> getNodesFor( String key, Object value )
-        {
-            Map<Object,Set<Long>> keyIndex = txIndexed.get( key );
-            if ( keyIndex != null )
-            {
-                Set<Long> nodeIds = keyIndex.get( value );
-                if ( nodeIds != null )
-                {
-                    return nodeIds;
-                }
-            }
-            return Collections.emptySet();
-        }
-        
-        public void afterCompletion( int status )
-        {
-            luceneTransactions.set( null );
-            for ( WriterLock lock : writers )
-            {
-                String key = lock.getKey();
-                if ( status == Status.STATUS_COMMITTED )
-                {
-                    Map<Object,Set<Long>> deleteMap = txRemoved.get( key );
-                    if ( deleteMap != null )
-                    {
-                        IndexSearcher searcher = getIndexSearcher( key );
-                        boolean closeAndRemove = false;
-                        for ( Entry<Object,Set<Long>> deleteEntry : 
-                            deleteMap.entrySet() )
-                        {
-                            Object value = deleteEntry.getKey();
-                            Collection<Long> ids = deleteEntry.getValue();
-                            for ( Long id : ids )
-                            {
-                                closeAndRemove = true;
-                                deleteDocumentUsingReader( searcher, id, 
-                                    value );
-                            }
-                            invalidateCache( key, value );
-                        }
-                        try
-                        {
-                            if ( closeAndRemove && searcher != null )
-                            {
-                                indexSearchers.remove( key );
-                                searcher.close();
-                            }
-                        }
-                        catch ( IOException e )
-                        {
-                            e.printStackTrace();
-                        }
-                    }
-                    IndexWriter writer = getIndexWriter( key );
-                    Map<Object,Set<Long>> indexMap = txIndexed.get( key );
-                    try
-                    {
-                        if ( indexMap != null )
-                        {
-                            for ( Entry<Object,Set<Long>> indexEntry : 
-                                indexMap.entrySet() )
-                            {
-                                Object value = indexEntry.getKey();
-                                Collection<Long> ids = indexEntry.getValue();
-                                for ( Long id : ids )
-                                {
-                                    indexWriter( writer, id, value );
-                                }
-                                invalidateCache( key, value );
-                            }
-                        }
-                        writer.close();
-                        
-                    }
-                    catch ( IOException e )
-                    {
-                        e.printStackTrace();
-                    }
-                    IndexSearcher searcher = indexSearchers.remove( key );
-                    if ( searcher != null )
-                    {
-                        try
-                        {
-                            searcher.close();
-                        }
-                        catch ( IOException e )
-                        {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-                lockManager.releaseWriteLock( lock );
-            }
-        }
-
-
-        private void indexWriter( IndexWriter writer, long nodeId, 
-            Object value )
-        {
-            Document document = new Document();
-            document.add( new Field( "id", 
-                String.valueOf( nodeId ),
-                Field.Store.YES, Field.Index.UN_TOKENIZED ) );
-            document.add( new Field( "index", value.toString(),
-                Field.Store.NO, Field.Index.UN_TOKENIZED ) );
-            try
-            {
-                writer.addDocument( document );
-            }
-            catch ( IOException e )
-            {
-                throw new RuntimeException( e );
-            }
-        }
-        
-        public void beforeCompletion()
-        {
-        }
-    }
-    
-    private static class DefaultAnalyzer extends Analyzer
-    {
-        @Override
-        public TokenStream tokenStream( String fieldName, Reader reader )
-        {
-            return new LowerCaseFilter( new WhitespaceTokenizer( reader ) );
-        }
-    }
-    
-    private static final Analyzer DEFAULT_ANALYZER = new DefaultAnalyzer();
+    private final LuceneDataSource xaDs; 
     
     public LuceneIndexService( NeoService neo )
     {
         super ( neo );
         EmbeddedNeo embeddedNeo = ((EmbeddedNeo) neo);
         luceneDirectory = 
-            embeddedNeo.getConfig().getTxModule().getTxLogDirectory();
-        lockManager = embeddedNeo.getConfig().getLockManager();
-        txManager = embeddedNeo.getConfig().getTxModule().getTxManager();
+            embeddedNeo.getConfig().getTxModule().getTxLogDirectory() + 
+            "/lucene";
+        TxModule txModule = embeddedNeo.getConfig().getTxModule();
+        txManager = txModule.getTxManager();
+        byte resourceId[] = "162373".getBytes();
+        Map<Object,Object> params = getDefaultParams();
+        params.put( "dir", luceneDirectory );
+        params.put( LockManager.class, 
+            embeddedNeo.getConfig().getLockManager() ); 
+        xaDs = (LuceneDataSource) txModule.registerDataSource( "lucene", 
+            LuceneDataSource.class.getName(), resourceId, params, true );
+        broker = new ConnectionBroker( txManager, xaDs );
     }
     
-    synchronized IndexWriter getIndexWriter( String key )
+    private Map<Object,Object> getDefaultParams()
     {
-        try
-        {
-            Directory dir = FSDirectory.getDirectory( 
-                luceneDirectory + "/lucene/" + key );
-            return new IndexWriter( dir, false, DEFAULT_ANALYZER );
-        }
-        catch ( IOException e )
-        {
-            throw new RuntimeException( e );
-        }
+        Map<Object,Object> params = new HashMap<Object,Object>();
+        params.put( LuceneIndexService.class, this );
+        return params;
     }
+    
     
     protected void enableCache( String key, int maxNumberOfCachedEntries )
     {
-    	this.caching.put( key, new LruCache<Object, Iterable<Long>>(
-    		key, maxNumberOfCachedEntries, new AdaptiveCacheManager() ) );
+        xaDs.enableCache( key, maxNumberOfCachedEntries );
     }
     
     @Override
     protected void indexThisTx( Node node, String key, 
         Object value )
     {
-        LuceneTransaction luceneTx = luceneTransactions.get();
-        if ( luceneTx == null )
-        {
-            luceneTx = new LuceneTransaction();
-            luceneTransactions.set( luceneTx );
-            try
-            {
-                Transaction tx = txManager.getTransaction();
-                tx.registerSynchronization( luceneTx );
-            }
-            catch ( SystemException e )
-            {
-                throw new IllegalStateException( "No transaction running?", e );
-            }
-            catch ( RollbackException e )
-            {
-                throw new IllegalStateException( 
-                    "Unable to register synchronization hook", e );
-            }
-        }
-        WriterLock lock = new WriterLock( key );
-        if ( !luceneTx.hasWriter( lock ) )
-        {
-            lockManager.getWriteLock( lock );
-            luceneTx.addWriter( lock );
-        }
-        luceneTx.index( node, key, value );
+        getConnection().index( node, key, value );
     }
     
-    IndexSearcher getIndexSearcher( String key )
-    {
-        IndexSearcher searcher = indexSearchers.get( key );
-        if ( searcher == null )
-        {
-            try
-            {
-                Directory dir = FSDirectory.getDirectory( 
-                    luceneDirectory + "/lucene/" + key );
-                if ( dir.list().length == 0 )
-                {
-                    return null;
-                }
-                searcher = new IndexSearcher( dir );
-            }
-            catch ( IOException e )
-            {
-                throw new RuntimeException( e );
-            }
-            indexSearchers.put( key, searcher );
-        }
-        return searcher;
-    }
     
     public Iterable<Node> getNodes( String key, Object value )
     {
-        IndexSearcher searcher = getIndexSearcher( key );
+        IndexSearcher searcher = xaDs.getIndexSearcher( key );
         List<Node> nodes = new ArrayList<Node>();
-        LuceneTransaction luceneTx = luceneTransactions.get();
+        LuceneTransaction luceneTx = getConnection().getLuceneTx();
         Set<Long> addedNodes = Collections.emptySet();
         Set<Long> deletedNodes = Collections.emptySet();
         if ( luceneTx != null )
@@ -409,7 +99,7 @@ public class LuceneIndexService extends GenericIndexService
         if ( searcher != null )
         {
         	LruCache<Object, Iterable<Long>> cachedNodesMap =
-        		caching.get( key );
+        		xaDs.getFromCache( key );
         	boolean foundInCache = false;
         	if ( cachedNodesMap != null )
         	{
@@ -446,7 +136,7 @@ public class LuceneIndexService extends GenericIndexService
     private Iterable<Node> searchForNodes( String key, Object value,
     	Set<Long> deletedNodes )
     {
-    	IndexSearcher searcher = getIndexSearcher( key );
+    	IndexSearcher searcher = xaDs.getIndexSearcher( key );
         Query query = new TermQuery( 
             new Term( "index", value.toString() ) );
         try
@@ -553,120 +243,143 @@ public class LuceneIndexService extends GenericIndexService
     	return node;
     }
 
-    boolean documentExist( Long id, String key, Object value )
-    {
-        IndexSearcher searcher = getIndexSearcher( key );
-        if ( searcher == null )
-        {
-            return false;
-        }
-        Query query = new TermQuery( new Term( "index", value.toString() ) );
-        try
-        {
-            Hits hits = searcher.search( query );
-            for ( int i = 0; i < hits.length(); i++ )
-            {
-                Document document = hits.doc( 0 );
-                int foundId = Integer.parseInt(
-                    document.getField( "id" ).stringValue() );
-                if ( id == foundId )
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-        catch ( IOException e )
-        {
-            throw new RuntimeException( "Problem checking for " + id +"," + 
-                key + "," + value, e );
-        }
-    }
-    
-    private void invalidateCache( String key, Object value )
-    {
-    	LruCache<Object, Iterable<Long>> cache = caching.get( key );
-    	if ( cache != null )
-    	{
-    		cache.remove( value );
-    	}
-    }
-    
-    void deleteDocumentUsingReader( IndexSearcher searcher, long nodeId, 
-        Object value )
-    {
-        if ( searcher == null )
-        {
-            return;
-        }
-        Query query = new TermQuery( new Term( "index", value.toString() ) );
-        try
-        {
-            Hits hits = searcher.search( query );
-            for ( int i = 0; i < hits.length(); i++ )
-            {
-                Document document = hits.doc( 0 );
-                int foundId = Integer.parseInt(
-                    document.getField( "id" ).stringValue() );
-                if ( nodeId == foundId )
-                {
-                    int docNum = hits.id( i );
-                    searcher.getIndexReader().deleteDocument( docNum );
-                }
-            }
-        }
-        catch ( IOException e )
-        {
-            throw new RuntimeException( "Unable to delete for " + nodeId +"," + 
-                "," + value + " using" + searcher, e );
-        }
-    }
-    
     @Override
     protected void removeIndexThisTx( Node node, String key, Object value )
     {
-        LuceneTransaction luceneTx = luceneTransactions.get();
-        if ( luceneTx == null )
-        {
-            luceneTx = new LuceneTransaction();
-            luceneTransactions.set( luceneTx );
-            try
-            {
-                Transaction tx = txManager.getTransaction();
-                tx.registerSynchronization( luceneTx );
-            }
-            catch ( SystemException e )
-            {
-                throw new IllegalStateException( "No transaction running?", e );
-            }
-            catch ( RollbackException e )
-            {
-                throw new IllegalStateException( 
-                    "Unable to register synchronization hook", e );
-            }
-        }
-        WriterLock lock = new WriterLock( key );
-        if ( !luceneTx.hasWriter( lock ) )
-        {
-            lockManager.getWriteLock( lock );
-            luceneTx.addWriter( lock );
-        }
-        luceneTx.removeIndex( node, key, value );
+        getConnection().removeIndex( node, key, value );
     }
     
     @Override
     public synchronized void shutdown()
     {
         super.shutdown();
-        for ( IndexSearcher searcher : indexSearchers.values() )
+        xaDs.close();
+    }
+
+    LuceneXaConnection getConnection()
+    {
+        return broker.acquireResourceConnection();
+    }
+    
+    private static class ConnectionBroker
+    {
+        private final ArrayMap<Transaction,LuceneXaConnection> txConnectionMap =
+            new ArrayMap<Transaction,LuceneXaConnection>( 5, true, true );
+
+        private final TransactionManager transactionManager;
+        private final LuceneDataSource xaDs;
+        
+        ConnectionBroker( TransactionManager transactionManager, 
+            LuceneDataSource xaDs ) 
+        {
+            this.transactionManager = transactionManager;
+            this.xaDs = xaDs;
+        }
+
+        LuceneXaConnection acquireResourceConnection()
+        {
+            LuceneXaConnection con      = null;
+            Transaction tx = this.getCurrentTransaction();        
+            con = txConnectionMap.get( tx );
+            if ( con == null )
+            {
+                try
+                {
+                    con = (LuceneXaConnection) xaDs.getXaConnection();
+                    if ( !tx.enlistResource( con.getXaResource() ) )
+                    {
+                        throw new RuntimeException( "Unable to enlist '" + 
+                            con.getXaResource() + "' in " + tx );
+                    }
+                    tx.registerSynchronization( new TxCommitHook( tx ) );
+                    txConnectionMap.put( tx, con );
+                }
+                catch ( javax.transaction.RollbackException re )
+                {
+                    String msg = "The transaction is marked for rollback only.";
+                    throw new RuntimeException( msg, re );
+                }
+                catch ( javax.transaction.SystemException se )
+                {
+                    String msg = 
+                        "TM encountered an unexpected error condition.";
+                    throw new RuntimeException( msg, se );
+                }
+            }
+            return con;
+        }
+        
+        void releaseResourceConnectionsForTransaction( Transaction tx ) 
+            throws NotInTransactionException
+        {
+            LuceneXaConnection con = txConnectionMap.remove( tx );
+            if ( con != null )
+            {
+                con.destroy();
+            }
+        }
+        
+        void delistResourcesForTransaction() throws NotInTransactionException
+        {
+            Transaction tx = this.getCurrentTransaction();
+            LuceneXaConnection con = txConnectionMap.get( tx ); 
+            if ( con != null )
+            {
+                try
+                {
+                    tx.delistResource( con.getXaResource(), 
+                        XAResource.TMSUCCESS );
+                }
+                catch ( IllegalStateException e )
+                {
+                    throw new RuntimeException( 
+                        "Unable to delist lucene resource from tx", e );
+                }
+                catch ( SystemException e )
+                {
+                    throw new RuntimeException( 
+                        "Unable to delist lucene resource from tx", e );
+                }
+            }
+        }
+        
+        private Transaction getCurrentTransaction()
+            throws NotInTransactionException
         {
             try
             {
-                searcher.close();
+                Transaction tx = transactionManager.getTransaction();
+                if ( tx == null )
+                {
+                    throw new NotInTransactionException( 
+                        "No transaction found for current thread" );
+                }
+                return tx;
             }
-            catch ( IOException e )
+            catch ( SystemException se )
             {
-                e.printStackTrace();
+                throw new NotInTransactionException( 
+                    "Error fetching transaction for current thread", se );
+            }
+        }
+        
+        private class TxCommitHook implements Synchronization
+        {
+            private final Transaction tx;
+            
+            TxCommitHook( Transaction tx )
+            {
+                this.tx = tx;
+            }
+            
+            public void afterCompletion( int param )
+            {
+                releaseResourceConnectionsForTransaction( tx );
+            }
+
+            public void beforeCompletion()
+            {
+                delistResourcesForTransaction();
             }
         }
     }
