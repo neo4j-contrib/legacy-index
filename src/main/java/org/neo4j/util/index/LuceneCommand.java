@@ -136,28 +136,53 @@ abstract class LuceneCommand extends XaCommand
         int valueCharLength = buffer.getInt();
 
         char[] keyChars = new char[keyCharLength];
-        buffer.clear(); 
-        buffer.limit( keyCharLength * 2 );
-        if ( fileChannel.read( buffer ) != buffer.limit() )
+        keyChars = readCharArray( fileChannel, buffer, keyChars );
+        if ( keyChars == null )
         {
             return null;
         }
-        buffer.flip();
-        buffer.asCharBuffer().get( keyChars );
         String key = new String( keyChars );
 
         char[] valueChars = new char[valueCharLength];
-        buffer.clear(); 
-        buffer.limit( valueCharLength * 2 );
-        if ( fileChannel.read( buffer ) != buffer.limit() )
+        valueChars = readCharArray( fileChannel, buffer, valueChars );
+        if ( valueChars == null )
         {
             return null;
         }
-        buffer.flip();
-        buffer.asCharBuffer().get( valueChars );
         String value = new String( valueChars );
-        
         return new CommandData( nodeId, key, value );
+    }
+    
+    private static char[] readCharArray( FileChannel fileChannel, 
+        ByteBuffer buffer, char[] charArray ) throws IOException
+    {
+        buffer.clear();
+        int bytesLeft = charArray.length * 2;
+        int maxSize = buffer.capacity() / 2 * 2;
+        int offset = 0; // offset in chars
+        while ( bytesLeft > 0 )
+        {
+            if ( bytesLeft > maxSize )
+            {
+                buffer.limit( maxSize );
+                bytesLeft -= maxSize;
+            }
+            else
+            {
+                buffer.limit( bytesLeft );
+                bytesLeft = 0;
+            }
+            if ( fileChannel.read( buffer ) != buffer.limit() )
+            {
+                return null;
+            }
+            buffer.flip();
+            assert buffer.limit() % 2 == 0;
+            int length = buffer.limit() / 2;
+            buffer.asCharBuffer().get( charArray, offset, length ); 
+            offset += length;
+        }
+        return charArray;
     }
     
     static XaCommand readCommand( FileChannel fileChannel, ByteBuffer buffer )
