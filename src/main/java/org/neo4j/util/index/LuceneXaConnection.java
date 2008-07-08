@@ -11,11 +11,12 @@ import org.neo4j.impl.transaction.xaframework.XaResourceManager;
 class LuceneXaConnection extends XaConnectionHelpImpl
 {
     private final LuceneXaResource xaResource;
-    
-    LuceneXaConnection( Object identifier, XaResourceManager xaRm )
+
+    LuceneXaConnection( Object identifier, XaResourceManager xaRm, 
+        byte[] branchId )
     {
         super( xaRm );
-        xaResource = new LuceneXaResource( identifier, xaRm );
+        xaResource = new LuceneXaResource( identifier, xaRm, branchId );
     }
     
     @Override
@@ -28,9 +29,10 @@ class LuceneXaConnection extends XaConnectionHelpImpl
     {
         private final Object identifier;
         
-        LuceneXaResource( Object identifier, XaResourceManager xaRm )
+        LuceneXaResource( Object identifier, XaResourceManager xaRm, 
+            byte[] branchId )
         {
-            super( xaRm );
+            super( xaRm, branchId );
             this.identifier = identifier;
         }
         

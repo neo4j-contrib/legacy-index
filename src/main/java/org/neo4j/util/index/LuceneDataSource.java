@@ -48,6 +48,8 @@ public class LuceneDataSource extends XaDataSource
         Collections.synchronizedMap(
             new HashMap<String, LruCache<Object, Iterable<Long>>>() );
     
+    private byte[] branchId = null;
+    
     public LuceneDataSource( Map<?,?> params ) 
         throws InstantiationException
     {
@@ -118,7 +120,7 @@ public class LuceneDataSource extends XaDataSource
     public XaConnection getXaConnection()
     {
         return new LuceneXaConnection( storeDir, 
-            xaContainer.getResourceManager() );
+            xaContainer.getResourceManager(), branchId );
     }
     
     private static class LuceneCommandFactory extends XaCommandFactory
@@ -284,5 +286,17 @@ public class LuceneDataSource extends XaDataSource
         {
             cache.remove( value );
         }
+    }
+
+    @Override
+    public byte[] getBranchId()
+    {
+        return branchId;
+    }
+
+    @Override
+    public void setBranchId( byte[] branchId )
+    {
+        this.branchId = branchId;
     }
 }
