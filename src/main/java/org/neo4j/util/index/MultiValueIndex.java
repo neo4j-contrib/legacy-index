@@ -92,14 +92,17 @@ public class MultiValueIndex extends AbstractIndex
 				node.setProperty( INDEX_VALUES, newValues );
 			}
 		}
-		long currentId = (Long) value;
-		if ( currentId != nodeId )
-		{
-			long[] newValues = new long[2];
-			newValues[0] = currentId;
-			newValues[1] = nodeId;
-			node.setProperty( INDEX_VALUES, newValues );
-		}
+        else
+        {
+    		long currentId = (Long) value;
+    		if ( currentId != nodeId )
+    		{
+    			long[] newValues = new long[2];
+    			newValues[0] = currentId;
+    			newValues[1] = nodeId;
+    			node.setProperty( INDEX_VALUES, newValues );
+    		}
+        }
 	}
 	
 	@Override
