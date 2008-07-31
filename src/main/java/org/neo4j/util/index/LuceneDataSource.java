@@ -36,22 +36,20 @@ import org.neo4j.impl.util.ArrayMap;
 
 public class LuceneDataSource extends XaDataSource
 {
-    final ArrayMap<String,IndexSearcher> indexSearchers = 
+    private final ArrayMap<String,IndexSearcher> indexSearchers = 
         new ArrayMap<String,IndexSearcher>( 6, true, true );
-    
+
     private final XaContainer xaContainer;
     private final String storeDir;
-
     private final LockManager lockManager;
-    
-    private Map<String, LruCache<Object, Iterable<Long>>> caching =
-        Collections.synchronizedMap(
-            new HashMap<String, LruCache<Object, Iterable<Long>>>() );
-    
+
+    private Map<String,LruCache<Object,Iterable<Long>>> caching = 
+        Collections.synchronizedMap( 
+            new HashMap<String,LruCache<Object,Iterable<Long>>>() );
+
     private byte[] branchId = null;
-    
-    public LuceneDataSource( Map<?,?> params ) 
-        throws InstantiationException
+
+    public LuceneDataSource( Map<?,?> params ) throws InstantiationException
     {
         super( params );
         this.lockManager = (LockManager) params.get( LockManager.class );
@@ -66,14 +64,12 @@ public class LuceneDataSource extends XaDataSource
             }
             catch ( IOException e )
             {
-                throw new RuntimeException( "Unable to create directory " + 
-                    dir, e );
+                throw new RuntimeException(
+                    "Unable to create directory " + dir, e );
             }
         }
-        
         XaCommandFactory cf = new LuceneCommandFactory();
         XaTransactionFactory tf = new LuceneTransactionFactory( this );
-        
         xaContainer = XaContainer.create( dir + "/lucene.log", cf, tf );
         try
         {
@@ -81,11 +77,11 @@ public class LuceneDataSource extends XaDataSource
         }
         catch ( IOException e )
         {
-            throw new RuntimeException( "Unable to open lucene log in " + dir, 
+            throw new RuntimeException( "Unable to open lucene log in " + dir,
                 e );
         }
     }
-    
+
     private void autoCreatePath( String dirs ) throws IOException
     {
         File directories = new File( dirs );
@@ -93,12 +89,12 @@ public class LuceneDataSource extends XaDataSource
         {
             if ( !directories.mkdirs() )
             {
-                throw new IOException( "Unable to create directory path[" + 
-                    dirs + "] for Neo store." );
+                throw new IOException( "Unable to create directory path["
+                    + dirs + "] for Neo store." );
             }
         }
     }
-    
+
     @Override
     public void close()
     {
@@ -119,17 +115,17 @@ public class LuceneDataSource extends XaDataSource
     @Override
     public XaConnection getXaConnection()
     {
-        return new LuceneXaConnection( storeDir, 
-            xaContainer.getResourceManager(), branchId );
+        return new LuceneXaConnection( storeDir, xaContainer
+            .getResourceManager(), branchId );
     }
-    
+
     private static class LuceneCommandFactory extends XaCommandFactory
     {
         LuceneCommandFactory()
         {
             super();
         }
-        
+
         @Override
         public XaCommand readCommand( FileChannel fileChannel, 
             ByteBuffer buffer ) throws IOException
@@ -137,16 +133,15 @@ public class LuceneDataSource extends XaDataSource
             return LuceneCommand.readCommand( fileChannel, buffer );
         }
     }
-    
     private static class LuceneTransactionFactory extends XaTransactionFactory
     {
         private final LuceneDataSource luceneDs;
-        
+
         LuceneTransactionFactory( LuceneDataSource luceneDs )
         {
             this.luceneDs = luceneDs;
         }
-        
+
         @Override
         public XaTransaction create( int identifier )
         {
@@ -162,7 +157,7 @@ public class LuceneDataSource extends XaDataSource
     }
 
     private static final Analyzer DEFAULT_ANALYZER = new DefaultAnalyzer();
-    
+
     private static class DefaultAnalyzer extends Analyzer
     {
         @Override
@@ -171,9 +166,10 @@ public class LuceneDataSource extends XaDataSource
             return new LowerCaseFilter( new WhitespaceTokenizer( reader ) );
         }
     }
-    
-    IndexSearcher getIndexSearcher( String key )
+
+    IndexSearcher acquireIndexSearcher( String key )
     {
+        lockManager.getReadLock( key );
         IndexSearcher searcher = indexSearchers.get( key );
         if ( searcher == null )
         {
@@ -195,19 +191,31 @@ public class LuceneDataSource extends XaDataSource
         }
         return searcher;
     }
-    
+
+    void releaseIndexSearcher( String key, IndexSearcher searcher )
+    {
+        lockManager.releaseReadLock( key );
+    }
+
     IndexSearcher removeIndexSearcher( String key )
     {
-        return indexSearchers.remove( key );
+        lockManager.getWriteLock( key );
+        try
+        {
+            return indexSearchers.remove( key );
+        }
+        finally
+        {
+            lockManager.releaseWriteLock( key );
+        }
     }
-    
+
     synchronized IndexWriter getIndexWriter( String key )
     {
         try
         {
             lockManager.getWriteLock( key );
-            Directory dir = FSDirectory.getDirectory( 
-                storeDir + "/" + key );
+            Directory dir = FSDirectory.getDirectory( storeDir + "/" + key );
             return new IndexWriter( dir, false, DEFAULT_ANALYZER );
         }
         catch ( IOException e )
@@ -216,7 +224,7 @@ public class LuceneDataSource extends XaDataSource
         }
     }
 
-    void deleteDocumentUsingReader( IndexSearcher searcher, long nodeId, 
+    void deleteDocumentUsingReader( IndexSearcher searcher, long nodeId,
         Object value )
     {
         if ( searcher == null )
@@ -230,8 +238,8 @@ public class LuceneDataSource extends XaDataSource
             for ( int i = 0; i < hits.length(); i++ )
             {
                 Document document = hits.doc( 0 );
-                int foundId = Integer.parseInt(
-                    document.getField( "id" ).stringValue() );
+                int foundId = Integer.parseInt( document.getField( "id" )
+                    .stringValue() );
                 if ( nodeId == foundId )
                 {
                     int docNum = hits.id( i );
@@ -241,8 +249,8 @@ public class LuceneDataSource extends XaDataSource
         }
         catch ( IOException e )
         {
-            throw new RuntimeException( "Unable to delete for " + nodeId +"," + 
-                "," + value + " using" + searcher, e );
+            throw new RuntimeException( "Unable to delete for " + nodeId + ","
+                + "," + value + " using" + searcher, e );
         }
     }
 
@@ -254,13 +262,13 @@ public class LuceneDataSource extends XaDataSource
         }
         catch ( CorruptIndexException e )
         {
-            throw new RuntimeException( "Unable to close lucene writer " + 
-                writer, e );
+            throw new RuntimeException( "Unable to close lucene writer "
+                + writer, e );
         }
         catch ( IOException e )
         {
-            throw new RuntimeException( "Unable to close lucene writer " + 
-                writer, e );
+            throw new RuntimeException( "Unable to close lucene writer "
+                + writer, e );
         }
         finally
         {
@@ -275,13 +283,13 @@ public class LuceneDataSource extends XaDataSource
 
     public void enableCache( String key, int maxNumberOfCachedEntries )
     {
-        this.caching.put( key, new LruCache<Object, Iterable<Long>>(
-            key, maxNumberOfCachedEntries, null ) );
+        this.caching.put( key, new LruCache<Object,Iterable<Long>>( key,
+            maxNumberOfCachedEntries, null ) );
     }
 
     void invalidateCache( String key, Object value )
     {
-        LruCache<Object, Iterable<Long>> cache = caching.get( key );
+        LruCache<Object,Iterable<Long>> cache = caching.get( key );
         if ( cache != null )
         {
             cache.remove( value );

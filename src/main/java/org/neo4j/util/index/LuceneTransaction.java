@@ -23,37 +23,36 @@ class LuceneTransaction extends XaTransaction
 {
     private final Map<String,Map<Object,Set<Long>>> txIndexed = 
         new HashMap<String,Map<Object,Set<Long>>>();
-
     private final Map<String,Map<Object,Set<Long>>> txRemoved = 
         new HashMap<String,Map<Object,Set<Long>>>();
-    
+
     private final LuceneDataSource luceneDs;
-    
+
     private final Map<String,List<AddCommand>> addCommandMap = 
         new HashMap<String,List<AddCommand>>();
     private final Map<String,List<RemoveCommand>> removeCommandMap = 
         new HashMap<String,List<RemoveCommand>>();
-    
-    LuceneTransaction( int identifier, XaLogicalLog xaLog, 
+
+    LuceneTransaction( int identifier, XaLogicalLog xaLog,
         LuceneDataSource luceneDs )
-    {   
+    {
         super( identifier, xaLog );
         this.luceneDs = luceneDs;
     }
-    
+
     void index( Node node, String key, Object value )
     {
         insert( node, key, value, txRemoved, txIndexed );
     }
-    
+
     void removeIndex( Node node, String key, Object value )
     {
         insert( node, key, value, txIndexed, txRemoved );
     }
-    
+
     void insert( Node node, String key, Object value,
-        Map<String, Map<Object, Set<Long>>> toRemoveFrom,
-        Map<String, Map<Object, Set<Long>>> toInsertInto )
+        Map<String,Map<Object,Set<Long>>> toRemoveFrom,
+        Map<String,Map<Object,Set<Long>>> toInsertInto )
     {
         delFromIndex( node, key, value, toRemoveFrom );
         Map<Object,Set<Long>> keyIndex = toInsertInto.get( key );
@@ -70,9 +69,9 @@ class LuceneTransaction extends XaTransaction
         nodeIds.add( node.getId() );
         keyIndex.put( value, nodeIds );
     }
-    
+
     boolean delFromIndex( Node node, String key, Object value,
-        Map<String, Map<Object, Set<Long>>> map )
+        Map<String,Map<Object,Set<Long>>> map )
     {
         Map<Object,Set<Long>> keyIndex = map.get( key );
         if ( keyIndex == null )
@@ -86,7 +85,7 @@ class LuceneTransaction extends XaTransaction
         }
         return false;
     }
-    
+
     Set<Long> getDeletedNodesFor( String key, Object value )
     {
         Map<Object,Set<Long>> keyIndex = txRemoved.get( key );
@@ -100,7 +99,7 @@ class LuceneTransaction extends XaTransaction
         }
         return Collections.emptySet();
     }
-    
+
     Set<Long> getNodesFor( String key, Object value )
     {
         Map<Object,Set<Long>> keyIndex = txIndexed.get( key );
@@ -114,16 +113,14 @@ class LuceneTransaction extends XaTransaction
         }
         return Collections.emptySet();
     }
-    
-    private void indexWriter( IndexWriter writer, long nodeId, 
-        Object value )
+
+    private void indexWriter( IndexWriter writer, long nodeId, Object value )
     {
         Document document = new Document();
-        document.add( new Field( "id", 
-            String.valueOf( nodeId ),
+        document.add( new Field( "id", String.valueOf( nodeId ),
             Field.Store.YES, Field.Index.UN_TOKENIZED ) );
-        document.add( new Field( "index", value.toString(),
-            Field.Store.NO, Field.Index.UN_TOKENIZED ) );
+        document.add( new Field( "index", value.toString(), Field.Store.NO,
+            Field.Index.UN_TOKENIZED ) );
         try
         {
             writer.addDocument( document );
@@ -133,7 +130,7 @@ class LuceneTransaction extends XaTransaction
             throw new RuntimeException( e );
         }
     }
-    
+
     @Override
     protected void doAddCommand( XaCommand command )
     {
@@ -152,8 +149,8 @@ class LuceneTransaction extends XaTransaction
         else if ( command instanceof RemoveCommand )
         {
             RemoveCommand removeCommand = (RemoveCommand) command;
-            List<RemoveCommand> list = removeCommandMap.get( 
-                removeCommand.getKey() );
+            List<RemoveCommand> list = removeCommandMap.get( removeCommand
+                .getKey() );
             if ( list == null )
             {
                 list = new ArrayList<RemoveCommand>();
@@ -172,45 +169,49 @@ class LuceneTransaction extends XaTransaction
     {
         for ( String key : removeCommandMap.keySet() )
         {
-            IndexSearcher searcher = 
-                luceneDs.getIndexSearcher( key );
-            if ( searcher != null )
+            IndexSearcher searcher = luceneDs.acquireIndexSearcher( key );
+            try
             {
-                List<RemoveCommand> commands = removeCommandMap.get( key );
-                for ( RemoveCommand cmd : commands )
+                if ( searcher != null )
                 {
-                    String value = cmd.getValue();
-                    long id = cmd.getNodeId();
-                    luceneDs.deleteDocumentUsingReader( searcher, 
-                        id, value );
-                    luceneDs.invalidateCache( key, value );
+                    List<RemoveCommand> commands = removeCommandMap.get( key );
+                    for ( RemoveCommand cmd : commands )
+                    {
+                        String value = cmd.getValue();
+                        long id = cmd.getNodeId();
+                        luceneDs.deleteDocumentUsingReader( searcher, id, 
+                            value );
+                        luceneDs.invalidateCache( key, value );
+                    }
+                    luceneDs.removeIndexSearcher( key );
+                    try
+                    {
+                        searcher.close();
+                    }
+                    catch ( Exception e )
+                    {
+                        throw new RuntimeException(
+                            "Unable to update lucene index", e );
+                    }
                 }
-                luceneDs.removeIndexSearcher( key );
-                try
-                {
-                    searcher.close();
-                }
-                catch ( Exception e )
-                {
-                    throw new RuntimeException( "Unable to update lucene index", 
-                        e );
-                }
+            }
+            finally
+            {
+                luceneDs.releaseIndexSearcher( key, searcher );
             }
         }
         for ( String key : addCommandMap.keySet() )
         {
             IndexWriter writer = luceneDs.getIndexWriter( key );
-            List<AddCommand> commands = addCommandMap.get( key );
-            for ( AddCommand cmd : commands )
-            {
-                indexWriter( writer, cmd.getNodeId(), cmd.getValue() );
-                luceneDs.invalidateCache( key, cmd.getValue() );
-            }
             try
             {
-                luceneDs.releaseAndRemoveWriter( key, writer );
-                IndexSearcher searcher = 
-                    luceneDs.removeIndexSearcher( key );
+                List<AddCommand> commands = addCommandMap.get( key );
+                for ( AddCommand cmd : commands )
+                {
+                    indexWriter( writer, cmd.getNodeId(), cmd.getValue() );
+                    luceneDs.invalidateCache( key, cmd.getValue() );
+                }
+                IndexSearcher searcher = luceneDs.removeIndexSearcher( key );
                 if ( searcher != null )
                 {
                     searcher.close();
@@ -220,7 +221,11 @@ class LuceneTransaction extends XaTransaction
             {
                 throw new RuntimeException( "Unable to update lucene index", 
                     e );
-           }
+            }
+            finally
+            {
+                luceneDs.releaseAndRemoveWriter( key, writer );
+            }
         }
     }
 
@@ -266,5 +271,5 @@ class LuceneTransaction extends XaTransaction
     public boolean isReadOnly()
     {
         return false;
-    }    
+    }
 }
