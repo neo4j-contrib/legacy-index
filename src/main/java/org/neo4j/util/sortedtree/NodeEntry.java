@@ -81,36 +81,6 @@ public class NodeEntry
 		return null;
 	}
 	
-/*	public long getKey()
-	{
-		return (Long) entryRelationship.getProperty( KEY );
-	}
-	
-	void setKey( long key )
-	{
-		entryRelationship.setProperty( KEY, key );
-	}
-	
-	public Object getValue()
-	{
-		return entryRelationship.getProperty( VALUE );
-	}
-	
-	public void setValue( Object value )
-	{
-		entryRelationship.setProperty( VALUE, value );
-	}
-	
-	public void setKeyValue( Object keyValue )
-	{
-		entryRelationship.setProperty( KEY_VALUE, keyValue );
-	}
-	
-	public Object getKeyValue()
-	{
-		return entryRelationship.getProperty( KEY_VALUE, null );
-	}*/
-	
 	public void remove()
 	{
         treeNode.removeEntry( this.getTheNode() );

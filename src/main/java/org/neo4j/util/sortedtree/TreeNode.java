@@ -196,7 +196,7 @@ class TreeNode
 		return entryCount;
 	}
 	
-	void addEntry( Node theNode, boolean ignoreIfExist )
+	boolean addEntry( Node theNode, boolean ignoreIfExist )
 	{
 		int entryCount = 0;
 		NodeEntry keyEntry = getFirstEntry();
@@ -207,7 +207,7 @@ class TreeNode
 			{
 				if ( ignoreIfExist )
 				{
-					return;
+					return false;
 				}
 				throw new RuntimeException( "Node already exist:" + theNode );
 			}
@@ -218,8 +218,7 @@ class TreeNode
 				TreeNode subTree = keyEntry.getBeforeSubTree();
 				if ( subTree != null )
 				{
-					subTree.addEntry( theNode, ignoreIfExist );
-                    return;
+					return subTree.addEntry( theNode, ignoreIfExist );
 				}
 				// no sub tree so we insert here
 				// get current amount of entries
@@ -231,8 +230,7 @@ class TreeNode
 				}
 				// create new blank node for key entry relationship
 				Node blankNode = bTree.getNeo().createNode();
-				NodeEntry createdEntry = createEntry( keyEntry.getStartNode(), 
-					blankNode, theNode );
+				createEntry( keyEntry.getStartNode(), blankNode, theNode );
 				// move previous keyEntry to start at blank node
 				keyEntry.move( this, blankNode, keyEntry.getEndNode() );
 				entryCount++;
@@ -241,7 +239,7 @@ class TreeNode
 				{
 					moveMiddleUp();
 				}
-				return;
+				return true;
 			}
 			// else if last entry, check for sub tree or add last
 			if ( keyEntry.getNextKey() == null )
@@ -250,20 +248,18 @@ class TreeNode
 				TreeNode subTree = keyEntry.getAfterSubTree();
 				if ( subTree != null )
 				{
-					subTree.addEntry( theNode, ignoreIfExist );
-                    return;
+					return subTree.addEntry( theNode, ignoreIfExist );
 				}
 				// ok just append the element
 				Node blankNode = bTree.getNeo().createNode();				
-				NodeEntry createdEntry = createEntry( keyEntry.getEndNode(), 
-					blankNode, theNode );
+				createEntry( keyEntry.getEndNode(), blankNode, theNode );
 				entryCount++;
 				assert entryCount <= bTree.getOrder();
 				if ( bTree.getOrder() == entryCount )
 				{
 					moveMiddleUp();
 				}
-				return;
+				return true;
 			}
 			keyEntry = keyEntry.getNextKey();
 		}
@@ -275,8 +271,48 @@ class TreeNode
 		// ok add first entry in root
 		Node blankNode = bTree.getNeo().createNode();
 		createEntry( treeNode, blankNode, theNode );
+        return true;
 	}
 	
+    boolean containsEntry( Node theNode )
+    {
+        int entryCount = 0;
+        NodeEntry keyEntry = getFirstEntry();
+        while ( keyEntry != null )
+        {
+            Node currentNode = keyEntry.getTheNode();
+            if ( currentNode.equals( theNode ) )
+            {
+                return true;
+            }
+            entryCount++;
+            if ( bTree.getComparator().compare( theNode, currentNode ) < 0 )
+            {
+                // check if we have subtree
+                TreeNode subTree = keyEntry.getBeforeSubTree();
+                if ( subTree != null )
+                {
+                    return subTree.containsEntry( theNode );
+                }
+                return false;
+            }
+            // else if last entry, check for sub tree or add last
+            if ( keyEntry.getNextKey() == null )
+            {
+                // check if we have subtree
+                TreeNode subTree = keyEntry.getAfterSubTree();
+                if ( subTree != null )
+                {
+                    return subTree.containsEntry( theNode );
+                }
+                // ok just append the element
+                return false;
+            }
+            keyEntry = keyEntry.getNextKey();
+        }
+        return false;
+    }
+    
 	private NodeEntry createEntry( Node startNode, Node endNode, Node theNode )
 	{
 		NodeEntry newEntry = new NodeEntry( this, startNode.createRelationshipTo( 
@@ -362,128 +398,13 @@ class TreeNode
         assert parent.getEntryCount() <= bTree.getOrder();
 	}
 	
-/*	NodeEntry getEntry( long key )
-	{
-		NodeEntry keyEntry = getFirstEntry();
-		while ( keyEntry != null )
-		{
-			long currentKey = keyEntry.getKey();
-			if ( currentKey == key )
-			{
-				return keyEntry;
-			}
-			if ( key < currentKey )
-			{
-				// check if we have subtree
-				TreeNode subTree = keyEntry.getBeforeSubTree();
-				if ( subTree != null )
-				{
-					// go down in tree
-					return subTree.getEntry( key );
-				}
-				return null;
-			}
-			// else if last entry, check for sub tree or add last
-			if ( keyEntry.getNextKey() == null )
-			{
-				// check if we have subtree
-				TreeNode subTree = keyEntry.getAfterSubTree();
-				if ( subTree != null )
-				{
-					// go down in tree
-					return subTree.getEntry( key );
-				}
-				return null;
-			}
-			keyEntry = keyEntry.getNextKey();
-		}
-		return null;
-	}
-	
-	NodeEntry getClosestLowerEntry( NodeEntry prevEntry, long key )
-	{
-		NodeEntry keyEntry = getFirstEntry();
-		while ( keyEntry != null )
-		{
-			long currentKey = keyEntry.getKey();
-			if ( currentKey == key )
-			{
-				return keyEntry;
-			}
-			if ( key < currentKey )
-			{
-				// check if we have subtree
-				TreeNode subTree = keyEntry.getBeforeSubTree();
-				if ( subTree != null )
-				{
-					// go down in tree
-					return subTree.getClosestLowerEntry( prevEntry, key );
-				}
-				return prevEntry;
-			}
-			// else if last entry, check for sub tree or add last
-			if ( keyEntry.getNextKey() == null )
-			{
-				// check if we have subtree
-				TreeNode subTree = keyEntry.getAfterSubTree();
-				if ( subTree != null )
-				{
-					// go down in tree
-					return subTree.getClosestLowerEntry( keyEntry, key );
-				}
-				return keyEntry;
-			}
-			prevEntry = keyEntry;
-			keyEntry = keyEntry.getNextKey();
-		}
-		return prevEntry;
-	}
-	
-	NodeEntry getClosestHigherEntry( NodeEntry nextEntry, long key )
-	{
-		NodeEntry keyEntry = getFirstEntry();
-		while ( keyEntry != null )
-		{
-			long currentKey = keyEntry.getKey();
-			if ( currentKey == key )
-			{
-				return keyEntry;
-			}
-			if ( key < currentKey )
-			{
-				// check if we have subtree
-				TreeNode subTree = keyEntry.getBeforeSubTree();
-				if ( subTree != null )
-				{
-					// go down in tree
-					return subTree.getClosestHigherEntry( keyEntry, key );
-				}
-				return keyEntry;
-			}
-			// else if last entry, check for sub tree or add last
-			if ( keyEntry.getNextKey() == null )
-			{
-				// check if we have subtree
-				TreeNode subTree = keyEntry.getAfterSubTree();
-				if ( subTree != null )
-				{
-					// go down in tree
-					return subTree.getClosestHigherEntry( nextEntry, key );
-				}
-				return nextEntry;
-			}
-			keyEntry = keyEntry.getNextKey();
-		}
-		return nextEntry;
-	}*/
-	
-	public Object removeEntry( Node theNode )
+	public boolean removeEntry( Node theNode )
 	{
 		NodeEntry entry = null;
 		NodeEntry keyEntry = getFirstEntry();
 		if ( keyEntry == null )
 		{
-			return null;
+			return false;
 		}
 		int entryCount = 0;
 		// see if key is in this node else go down in tree
@@ -512,7 +433,7 @@ class TreeNode
 					// go down in tree
 					return subTree.removeEntry( theNode );
 				}
-				return null;
+				return false;
 			}
 			// else if last entry, check for sub tree or add last
 			if ( keyEntry.getNextKey() == null )
@@ -524,7 +445,7 @@ class TreeNode
 					// go down in tree
 					return subTree.removeEntry( theNode );
 				}
-				return null;
+				return false;
 			}
 			keyEntry = keyEntry.getNextKey();
 		}
@@ -547,7 +468,6 @@ class TreeNode
 			{
 				tryBorrowFromSibling();
 			}
-			return value;
 		}
 		else
 		{
@@ -570,8 +490,8 @@ class TreeNode
 			{
 				leafTree.tryBorrowFromSibling();
 			}
-			return value;
 		}
+        return true;
 	}
 	
 	private void tryBorrowFromSibling()
@@ -807,52 +727,4 @@ class TreeNode
 	{
 		return bTree;
 	}
-	
-//	void validateTreeNode()
-//	{
-//		if ( isRoot() )
-//		{
-//			return;
-//		}
-//		assert treeNode.getSingleRelationship( RelTypes.KEY_ENTRY, 
-//			Direction.INCOMING ) == null;
-//		TreeNode parent = getParent();
-//		KeyEntry firstEntry = getFirstEntry();
-//		KeyEntry lastEntry = getLastEntry();
-//		Relationship toParent = treeNode.getSingleRelationship( 
-//			RelTypes.SUB_TREE, Direction.INCOMING );
-//		if ( toParent != null )
-//		{
-//			Relationship entryRel = 
-//				toParent.getStartNode().getSingleRelationship( 
-//					RelTypes.KEY_ENTRY, Direction.OUTGOING );
-//			if ( entryRel != null ) // we have next
-//			{
-//				assert lastEntry.getKey() < new KeyEntry( parent, 
-//					entryRel ).getKey();
-//			}
-//			entryRel = toParent.getStartNode().getSingleRelationship( 
-//				RelTypes.KEY_ENTRY, Direction.INCOMING );
-//			if ( entryRel != null ) // we have previous
-//			{
-//				assert firstEntry.getKey() > new KeyEntry( parent, 
-//					entryRel ).getKey();
-//			}
-//		}
-//		KeyEntry entry = firstEntry;
-//		long previousKey = Long.MIN_VALUE;
-//		while ( entry != null )
-//		{
-//			TreeNode subTree = entry.getBeforeSubTree();
-//			if ( subTree != null )
-//			{
-//				assert subTree.getLastEntry().getKey() < entry.getKey();
-//				subTree = entry.getAfterSubTree();
-//				assert subTree.getFirstEntry().getKey() > entry.getKey();
-//			}
-//			assert entry.getKey() > previousKey;
-//			previousKey = entry.getKey();
-//			entry = entry.getNextKey();
-//		}
-//	}	
 }

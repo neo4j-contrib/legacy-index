@@ -10,12 +10,6 @@ import org.neo4j.api.core.Node;
 import org.neo4j.api.core.Relationship;
 import org.neo4j.api.core.RelationshipType;
 
-/**
- * A b-tree implementation ontop of neo (using nodes/relationships 
- * and properties).
- * <p>
- * This implementation is not thread safe (yet).
- */
 //not thread safe yet
 public class SortedTree
 {
@@ -23,7 +17,6 @@ public class SortedTree
 	{
 		TREE_ROOT,
 		SUB_TREE,
-		
 		// a relationship type where relationship actually is the *key entry*
 		KEY_ENTRY 
 	};
@@ -32,15 +25,6 @@ public class SortedTree
     private final Comparator<Node> nodeComparator;
 	private TreeNode treeRoot;
 	
-	/**
-	 * Creates a <CODE>BTree</CODE> using <CODE>rootNode</CODE> as root. The 
-	 * root node must have a incoming relationship of {@link RelTypes TREE_ROOT}
-	 * or a runtime exception will be thrown.
-	 * 
-	 * @param neo the embedded neo instance
-	 * @param rootNode root node with incoming <CODE>TREE_ROOT</CODE> 
-	 * relationship
-	 */
 	public SortedTree( NeoService neo, Node rootNode, 
         Comparator<Node> nodeComparator )
 	{
@@ -85,203 +69,17 @@ public class SortedTree
 		rel.delete();
 	}
 	
-/*	public void validateTree()
+	public boolean addNode( Node node )
 	{
-		long currentValue = Long.MIN_VALUE;
-		KeyEntry entry = null;
-		KeyEntry keyEntry = treeRoot.getFirstEntry();
-		boolean hasSubTree = false;
-		int entryCount = 0;
-		while ( keyEntry != null )
-		{
-			entry = keyEntry;
-			entryCount++;
-			if ( entry.getKey() <= currentValue )
-			{
-				throw new RuntimeException( "Key entry ordering inconsistency");
-			}
-			currentValue = entry.getKey();
-			TreeNode subTree = entry.getBeforeSubTree();
-			if ( subTree != null )
-			{
-				hasSubTree = true;
-				validateAllLessThan( subTree, currentValue );
-			}
-			else if ( hasSubTree )
-			{
-				throw new RuntimeException( "Leaf/no leaf inconsistency");
-			}
-			keyEntry = keyEntry.getNextKey();
-		}
-		// root so we don't validate to few entries
-		if ( entryCount >= getOrder() )
-		{
-			throw new RuntimeException( "To many entries" );
-		}
-		if ( hasSubTree )
-		{
-			TreeNode subTree = entry.getAfterSubTree();
-			if ( subTree == null )
-			{
-				throw new RuntimeException( "Leaf/no leaf inconsistency" );
-			}
-			validateAllGreaterThan( subTree, currentValue );
-		}
+		return treeRoot.addEntry( node, true );
 	}
-	
-	private void validateAllLessThan( TreeNode treeNode, long value )
-	{
-		long currentValue = Long.MIN_VALUE;
-		KeyEntry entry = null;
-		KeyEntry keyEntry = treeNode.getFirstEntry();
-		boolean hasSubTree = false;
-		int entryCount = 0;
-		while ( keyEntry != null )
-		{
-			entryCount++;
-			entry = keyEntry;
-			if ( entry.getKey() >= value )
-			{
-				throw new RuntimeException( "Depth key inconsistency" );
-			}
-			if ( entry.getKey() <= currentValue )
-			{
-				throw new RuntimeException( "Key entry ordering inconsistency");
-			}
-			currentValue = entry.getKey();
-			TreeNode subTree = entry.getBeforeSubTree();
-			if ( subTree != null )
-			{
-				hasSubTree = true;
-				validateAllLessThan( subTree, currentValue );
-			}
-			else if ( hasSubTree )
-			{
-				throw new RuntimeException( "Leaf/no leaf inconsistency");
-			}
-			keyEntry = keyEntry.getNextKey();
-		}
-		if ( entryCount < getOrder() / 2 - 1 )
-		{
-			throw new RuntimeException( "To few entries" );
-		}
-		if ( entryCount >= getOrder() )
-		{
-			throw new RuntimeException( "To many entries" );
-		}
-		if ( hasSubTree )
-		{
-			TreeNode subTree = entry.getAfterSubTree();
-			if ( subTree == null )
-			{
-				throw new RuntimeException( "Leaf/no leaf inconsistency" );
-			}
-			validateAllGreaterThan( subTree, currentValue );
-		}
-	}
-
-	private void validateAllGreaterThan( TreeNode treeNode, long value )
-	{
-		long currentValue = Long.MIN_VALUE;
-		KeyEntry entry = null;
-		KeyEntry keyEntry = treeNode.getFirstEntry();
-		boolean hasSubTree = false;
-		int entryCount = 0;
-		while ( keyEntry != null )
-		{
-			entryCount++;
-			entry = keyEntry;
-			if ( entry.getKey() <= value )
-			{
-				throw new RuntimeException( "Depth key inconsistency" );
-			}
-			if ( entry.getKey() <= currentValue )
-			{
-				throw new RuntimeException( "Key entry ordering inconsistency");
-			}
-			currentValue = entry.getKey();
-			TreeNode subTree = entry.getBeforeSubTree();
-			if ( subTree != null )
-			{
-				hasSubTree = true;
-				validateAllLessThan( subTree, currentValue );
-			}
-			else if ( hasSubTree )
-			{
-				throw new RuntimeException( "Leaf/no leaf inconsistency");
-			}
-			keyEntry = keyEntry.getNextKey();
-		}
-		if ( entryCount < getOrder() / 2 - 1 )
-		{
-			throw new RuntimeException( "To few entries" );
-		}
-		if ( entryCount >= getOrder() )
-		{
-			throw new RuntimeException( "To many entries" );
-		}
-		if ( hasSubTree )
-		{
-			TreeNode subTree = entry.getAfterSubTree();
-			if ( subTree == null )
-			{
-				throw new RuntimeException( "Leaf/no leaf inconsistency" );
-			}
-			validateAllGreaterThan( subTree, currentValue );
-		}
-	} */
-	
-	/**
-	 * Adds a entry to this b-tree. If key already exist a runtime exception
-	 * is thrown. The <CODE>value</CODE> has to be a valid Neo property.
-	 * 
-	 * @param key the key of the entry
-	 * @param value value of the entry
-	 * @return the added entry
-	 */
-	public void addNode( Node value )
-	{
-		treeRoot.addEntry( value, true );
-	}
-	
-/*	public Object getEntry( long key )
-	{
-		KeyEntry entry = treeRoot.getEntry( key );
-		if ( entry != null )
-		{
-			return entry.getValue();
-		}
-		return null;
-	}*/
     
-    
+    public boolean containsNode( Node node )
+    {
+        return treeRoot.containsEntry( node );
+    }
 	
-/*	public Object getClosestLowerEntry( long key )
-	{
-		KeyEntry entry = treeRoot.getClosestLowerEntry( null, key );
-		if ( entry != null )
-		{
-			return entry.getValue();
-		}
-		return null;
-	}*/
-	
-/*	public Object getClosestHigherEntry( long key )
-	{
-		KeyEntry entry = treeRoot.getClosestHigherEntry( null, key );
-		if ( entry != null )
-		{
-			return entry.getValue();
-		}
-		return null;
-	}*/
-	
-/*	public KeyEntry getAsKeyEntry( long key )
-	{
-		return treeRoot.getEntry( key );
-	}*/
-	
-	public Object removeEntry( Node node )
+	public boolean removeNode( Node node )
 	{
 		return treeRoot.removeEntry( node );
 	}
@@ -296,146 +94,11 @@ public class SortedTree
 		return neo;
 	}
     
-    Comparator<Node> getComparator()
+    public Comparator<Node> getComparator()
     {
         return nodeComparator;
     }
 	
-/*	public Iterable<Object> values()
-	{
-		Traverser trav = treeRoot.getUnderlyingNode().traverse( 
-			Order.DEPTH_FIRST, StopEvaluator.END_OF_NETWORK, 
-			new ReturnableEvaluator()
-			{
-				public boolean isReturnableNode( TraversalPosition pos )
-				{
-					Relationship last = pos.lastRelationshipTraversed();
-					if ( last != null && last.getType().equals( 
-						RelTypes.KEY_ENTRY ) )
-					{
-						return true;
-					}
-					return false;
-				}
-			}, RelTypes.KEY_ENTRY, Direction.OUTGOING, 
-			RelTypes.SUB_TREE, Direction.OUTGOING );
-		return new ValueTraverser( trav );
-	}
-	
-	private static class ValueTraverser implements Iterable<Object>, 
-		Iterator<Object>
-	{
-		private Iterator<Node> itr;
-		
-		ValueTraverser( Traverser trav )
-		{
-			this.itr = trav.iterator();
-		}
-
-		public boolean hasNext()
-        {
-			return itr.hasNext();
-        }
-
-		public Object next()
-        {
-			Node node = itr.next();
-	        return node.getSingleRelationship( RelTypes.KEY_ENTRY, 
-	        	Direction.INCOMING ).getProperty( KeyEntry.VALUE );
-        }
-
-		public void remove()
-        {
-			throw new UnsupportedOperationException();
-        }
-
-		public Iterator<Object> iterator()
-        {
-			return this;
-        }
-	}
-	
-	public Iterable<KeyEntry> entries()
-	{
-		EntryReturnableEvaluator entryEvaluator = 
-			new EntryReturnableEvaluator();
-		
-		Traverser trav = treeRoot.getUnderlyingNode().traverse( 
-			Order.DEPTH_FIRST, StopEvaluator.END_OF_NETWORK, 
-			entryEvaluator, RelTypes.KEY_ENTRY, Direction.OUTGOING, 
-			RelTypes.SUB_TREE, Direction.OUTGOING );
-		return new EntryTraverser( trav, this, entryEvaluator );
-	}
-	
-	private static class EntryTraverser implements Iterable<KeyEntry>, 
-		Iterator<KeyEntry>
-	{
-		private EntryReturnableEvaluator entryEvaluator;
-		private SortedTree bTree;
-		private Iterator<Node> itr;
-		
-		EntryTraverser( Traverser trav, SortedTree tree, 
-			EntryReturnableEvaluator entry )
-		{
-			this.itr = trav.iterator();
-			this.bTree = tree;
-			this.entryEvaluator = entry;
-		}
-	
-		public boolean hasNext()
-	    {
-			return itr.hasNext();
-	    }
-	
-		public KeyEntry next()
-	    {
-			Node node = itr.next();
-			TreeNode treeNode = new TreeNode( bTree, 
-				entryEvaluator.getCurrentTreeNode() );
-	        return new KeyEntry( treeNode, node.getSingleRelationship( 
-	        	RelTypes.KEY_ENTRY, Direction.INCOMING ) );
-	    }
-	
-		public void remove()
-	    {
-			throw new UnsupportedOperationException();
-	    }
-	
-		public Iterator<KeyEntry> iterator()
-	    {
-			return this;
-	    }
-	}
-	
-	private static class EntryReturnableEvaluator implements ReturnableEvaluator
-	{
-		private Node currentTreeNode = null;
-		
-		public Node getCurrentTreeNode()
-		{
-			return currentTreeNode;
-		}
-		
-		public boolean isReturnableNode( TraversalPosition pos )
-        {
-			if ( !pos.notStartNode() )
-			{
-				currentTreeNode = pos.currentNode();
-				return false;
-			}
-			Relationship last = pos.lastRelationshipTraversed();
-			if ( last.isType( RelTypes.KEY_ENTRY ) )
-			{
-				return true;
-			}
-			if ( last.isType( RelTypes.SUB_TREE ) )
-			{
-				currentTreeNode = pos.currentNode();
-			}
-			return false;
-        }
-	}*/
-    
     public Iterable<Node> getSortedNodes()
     {
         List<Node> nodeList = new ArrayList<Node>();
