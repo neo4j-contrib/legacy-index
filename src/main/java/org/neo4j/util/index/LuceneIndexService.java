@@ -8,11 +8,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import javax.transaction.Synchronization;
 import javax.transaction.SystemException;
 import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
 import javax.transaction.xa.XAResource;
+
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.Hits;
@@ -22,10 +24,10 @@ import org.apache.lucene.search.TermQuery;
 import org.neo4j.api.core.EmbeddedNeo;
 import org.neo4j.api.core.NeoService;
 import org.neo4j.api.core.Node;
+import org.neo4j.api.core.NotFoundException;
+import org.neo4j.api.core.NotInTransactionException;
 import org.neo4j.impl.cache.LruCache;
-import org.neo4j.impl.core.NotFoundException;
 import org.neo4j.impl.transaction.LockManager;
-import org.neo4j.impl.transaction.NotInTransactionException;
 import org.neo4j.impl.transaction.TxModule;
 import org.neo4j.impl.util.ArrayMap;
 
