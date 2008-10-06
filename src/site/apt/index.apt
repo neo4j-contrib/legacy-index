@@ -1,4 +1,4 @@
-Neo indexing utilities
+Neo4j indexing utilities
 
 	Neo indexing utilities is a set of components that can provide simple 
 	indexing and simular data strucutres (such as persistent maps). Note that 
