@@ -97,12 +97,14 @@ public class LuceneIndexService extends GenericIndexService
         {
             if ( searcher != null )
             {
-                LruCache<Object,Iterable<Long>> cachedNodesMap = 
+                LruCache<String,Iterable<Long>> cachedNodesMap = 
                     xaDs.getFromCache( key );
                 boolean foundInCache = false;
+                String valueAsString = value.toString();
                 if ( cachedNodesMap != null )
                 {
-                    Iterable<Long> cachedNodes = cachedNodesMap.get( value );
+                    Iterable<Long> cachedNodes =
+                        cachedNodesMap.get( valueAsString );
                     if ( cachedNodes != null )
                     {
                         foundInCache = true;
@@ -124,7 +126,7 @@ public class LuceneIndexService extends GenericIndexService
                     }
                     if ( cachedNodesMap != null )
                     {
-                        cachedNodesMap.add( value, readNodeIds );
+                        cachedNodesMap.add( valueAsString, readNodeIds );
                     }
                 }
             }

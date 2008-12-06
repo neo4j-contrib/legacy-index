@@ -1,6 +1,10 @@
 package index;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
+
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -33,9 +37,8 @@ public class TestLuceneIndexingService extends TestCase
 	public void setUp()
 	{
 		neo = new EmbeddedNeo( "var/index" );
-        indexService = new LuceneIndexService( neo );
+        indexService = new MyTestLuceneIndexService( neo );
 		tx = neo.beginTx();
-		Node node = neo.createNode();
 	}
 	
 	@Override
@@ -125,5 +128,66 @@ public class TestLuceneIndexingService extends TestCase
         tx.success(); tx.finish();
         tx = neo.beginTx();
         assertTrue( indexService.getSingleNode( "a_property", 3 ) == null );
+    }
+    
+    public void testCaching()
+    {
+        System.out.println( "--------------" );
+        String key = "prop";
+        Object value = 10;
+        ( ( MyTestLuceneIndexService ) indexService ).doEnableCache( key );
+        Node node1 = neo.createNode();
+        System.out.println( "node1:" + node1 );
+        indexService.index( node1, key, value );
+        indexService.getNodes( key, value );
+        tx.failure(); tx.finish(); tx = neo.beginTx();
+        
+        Node node2 = neo.createNode();
+        System.out.println( "node2:" + node2 );
+        indexService.getNodes( key, value );
+        indexService.index( node2, key, value );
+        indexService.getNodes( key, value );
+        tx.success(); tx.finish(); tx = neo.beginTx();
+        
+        Node node3 = neo.createNode();
+        System.out.println( "node3:" + node3 );
+        indexService.getNodes( key, value );
+        indexService.index( node3, key, value );
+        indexService.getNodes( key, value );
+        tx.failure(); tx.finish(); tx = neo.beginTx();
+        
+        Node node4 = neo.createNode();
+        System.out.println( "node4:" + node4 );
+        indexService.getNodes( key, value );
+        indexService.index( node4, key, value );
+        indexService.getNodes( key, value );
+        tx.success(); tx.finish(); tx = neo.beginTx();
+        
+        Set<Node> expectedNodes = new HashSet<Node>(
+            Arrays.asList( node2, node4 ) );
+        for ( Node aNode : indexService.getNodes( key, value ) )
+        {
+            System.out.println( "found " + aNode );
+            assertTrue( expectedNodes.remove( aNode ) );
+        }
+        assertTrue( expectedNodes.isEmpty() );
+        
+        indexService.removeIndex( node2, key, value );
+        indexService.removeIndex( node4, key, value );
+        node2.delete();
+        node4.delete();
+    }
+    
+    private static class MyTestLuceneIndexService extends LuceneIndexService
+    {
+        public MyTestLuceneIndexService( NeoService neo )
+        {
+            super( neo );
+        }
+        
+        public void doEnableCache( String cache )
+        {
+            enableCache( cache, 1000 );
+        }
     }
 }
