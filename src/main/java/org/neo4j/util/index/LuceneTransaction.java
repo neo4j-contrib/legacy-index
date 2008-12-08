@@ -172,7 +172,7 @@ class LuceneTransaction extends XaTransaction
             IndexSearcher searcher = luceneDs.acquireIndexSearcher( key );
             try
             {
-                if ( searcher != null )
+                if ( searcher != null ) // meaning such a index exist
                 {
                     List<RemoveCommand> commands = removeCommandMap.get( key );
                     for ( RemoveCommand cmd : commands )
@@ -183,21 +183,12 @@ class LuceneTransaction extends XaTransaction
                             value );
                         luceneDs.invalidateCache( key, value );
                     }
-                    luceneDs.removeIndexSearcher( key );
-                    try
-                    {
-                        searcher.close();
-                    }
-                    catch ( Exception e )
-                    {
-                        throw new RuntimeException(
-                            "Unable to update lucene index", e );
-                    }
                 }
             }
             finally
             {
                 luceneDs.releaseIndexSearcher( key, searcher );
+                luceneDs.removeIndexSearcher( key );
             }
         }
         for ( String key : addCommandMap.keySet() )
@@ -211,11 +202,6 @@ class LuceneTransaction extends XaTransaction
                     indexWriter( writer, cmd.getNodeId(), cmd.getValue() );
                     luceneDs.invalidateCache( key, cmd.getValue() );
                 }
-                IndexSearcher searcher = luceneDs.removeIndexSearcher( key );
-                if ( searcher != null )
-                {
-                    searcher.close();
-                }
             }
             catch ( Exception e )
             {
@@ -225,6 +211,7 @@ class LuceneTransaction extends XaTransaction
             finally
             {
                 luceneDs.releaseAndRemoveWriter( key, writer );
+                luceneDs.removeIndexSearcher( key );
             }
         }
     }

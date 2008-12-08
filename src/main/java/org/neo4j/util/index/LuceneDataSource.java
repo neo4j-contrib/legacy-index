@@ -197,12 +197,24 @@ public class LuceneDataSource extends XaDataSource
         lockManager.releaseReadLock( key );
     }
 
-    IndexSearcher removeIndexSearcher( String key )
+    void removeIndexSearcher( String key )
     {
         lockManager.getWriteLock( key );
         try
         {
-            return indexSearchers.remove( key );
+            IndexSearcher searcher = indexSearchers.remove( key );
+            if ( searcher != null )
+            {
+                try
+                {
+                    searcher.close();
+                }
+                catch ( IOException e )
+                {
+                    throw new RuntimeException(
+                        "Unable to close index searcher[" + key + "]", e );
+                }
+            }
         }
         finally
         {
