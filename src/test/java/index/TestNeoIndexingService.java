@@ -35,7 +35,7 @@ public class TestNeoIndexingService extends TestCase
 		neo = new EmbeddedNeo( "var/index" );
         indexService = new NeoIndexService( neo );
 		tx = neo.beginTx();
-		Node node = neo.createNode();
+//		Node node = neo.createNode();
 	}
 	
 	@Override

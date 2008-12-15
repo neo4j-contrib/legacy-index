@@ -1,13 +1,14 @@
 package index;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Set;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+
 import org.neo4j.api.core.EmbeddedNeo;
 import org.neo4j.api.core.NeoService;
 import org.neo4j.api.core.Node;
@@ -132,50 +133,88 @@ public class TestLuceneIndexingService extends TestCase
     
     public void testCaching()
     {
-        System.out.println( "--------------" );
         String key = "prop";
         Object value = 10;
         ( ( MyTestLuceneIndexService ) indexService ).doEnableCache( key );
         Node node1 = neo.createNode();
-        System.out.println( "node1:" + node1 );
         indexService.index( node1, key, value );
         indexService.getNodes( key, value );
         tx.failure(); tx.finish(); tx = neo.beginTx();
         
         Node node2 = neo.createNode();
-        System.out.println( "node2:" + node2 );
         indexService.getNodes( key, value );
         indexService.index( node2, key, value );
         indexService.getNodes( key, value );
         tx.success(); tx.finish(); tx = neo.beginTx();
         
         Node node3 = neo.createNode();
-        System.out.println( "node3:" + node3 );
         indexService.getNodes( key, value );
         indexService.index( node3, key, value );
         indexService.getNodes( key, value );
         tx.failure(); tx.finish(); tx = neo.beginTx();
         
         Node node4 = neo.createNode();
-        System.out.println( "node4:" + node4 );
         indexService.getNodes( key, value );
         indexService.index( node4, key, value );
         indexService.getNodes( key, value );
         tx.success(); tx.finish(); tx = neo.beginTx();
         
-        Set<Node> expectedNodes = new HashSet<Node>(
+        assertCollection( indexService.getNodes( key, value ),
             Arrays.asList( node2, node4 ) );
-        for ( Node aNode : indexService.getNodes( key, value ) )
-        {
-            System.out.println( "found " + aNode );
-            assertTrue( expectedNodes.remove( aNode ) );
-        }
-        assertTrue( expectedNodes.isEmpty() );
         
         indexService.removeIndex( node2, key, value );
         indexService.removeIndex( node4, key, value );
         node2.delete();
         node4.delete();
+    }
+    
+//    public void testDifferentTypesWithSameValueIssue()
+//    {
+//        String key = "prop";
+//        Integer valueAsInt = 10;
+//        String valueAsString = "10";
+//        
+//        Node node1 = neo.createNode();
+//        indexService.index( node1, key, valueAsInt );
+//        Node node2 = neo.createNode();
+//        indexService.index( node2, key, valueAsString );
+//        
+//        assertCollection( indexService.getNodes( key, valueAsInt ), node1 );
+//        assertCollection( indexService.getNodes( key, valueAsString ), node2 );
+//        
+//        tx.success(); tx.finish(); tx = neo.beginTx();
+//        
+//        assertCollection( indexService.getNodes( key, valueAsInt ), node1 );
+//        assertCollection( indexService.getNodes( key, valueAsString ), node2 );
+//        
+//        indexService.removeIndex( node1, key, valueAsInt );
+//        indexService.removeIndex( node2, key, valueAsString );
+//        
+//        node2.delete();
+//        node1.delete();
+//    }
+    
+    private <T> void assertCollection( Iterable<T> items,
+        Iterable<T> expectedItems )
+    {
+        Collection<T> set = new HashSet<T>();
+        for ( T item : items )
+        {
+            set.add( item );
+        }
+        
+        int counter = 0;
+        for ( T expectedItem : expectedItems )
+        {
+            assertTrue( set.contains( expectedItem ) );
+            counter++;
+        }
+        assertEquals( counter, set.size() );
+    }
+    
+    private <T> void assertCollection( Iterable<T> items, T... expectedItems )
+    {
+        assertCollection( items, Arrays.asList( expectedItems ) );
     }
     
     private static class MyTestLuceneIndexService extends LuceneIndexService
