@@ -460,7 +460,7 @@ class TreeNode
 				nextEntry.move( this, entry.getStartNode(), 
 					nextEntry.getEndNode() );
 			}
-			Node value = entry.getTheNode();
+//			Node value = entry.getTheNode();
 			entry.getEndNode().delete();
 			entry.getUnderlyingRelationship().delete();
 			entryCount--;
@@ -482,7 +482,7 @@ class TreeNode
 			NodeEntry next = successor.getNextKey();
 			next.move( leafTree, successor.getStartNode(), next.getEndNode() );
 			successor.move( this, entry.getStartNode(), entry.getEndNode() );
-			Node value = entry.getTheNode();
+//			Node value = entry.getTheNode();
 			entry.getUnderlyingRelationship().delete();
 			// verify subTree entryCount
 			entryCount = leafTree.getEntryCount();

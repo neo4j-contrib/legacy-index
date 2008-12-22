@@ -351,7 +351,7 @@ public class BTree
 	public Iterable<Object> values()
 	{
 		Traverser trav = treeRoot.getUnderlyingNode().traverse( 
-			Order.DEPTH_FIRST, StopEvaluator.END_OF_NETWORK, 
+			Order.DEPTH_FIRST, StopEvaluator.END_OF_GRAPH, 
 			new ReturnableEvaluator()
 			{
 				public boolean isReturnableNode( TraversalPosition pos )
@@ -408,7 +408,7 @@ public class BTree
 			new EntryReturnableEvaluator();
 		
 		Traverser trav = treeRoot.getUnderlyingNode().traverse( 
-			Order.DEPTH_FIRST, StopEvaluator.END_OF_NETWORK, 
+			Order.DEPTH_FIRST, StopEvaluator.END_OF_GRAPH, 
 			entryEvaluator, RelTypes.KEY_ENTRY, Direction.OUTGOING, 
 			RelTypes.SUB_TREE, Direction.OUTGOING );
 		return new EntryTraverser( trav, this, entryEvaluator );

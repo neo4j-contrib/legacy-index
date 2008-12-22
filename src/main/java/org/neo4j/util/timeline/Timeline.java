@@ -360,7 +360,7 @@ public class Timeline implements TimelineIndex
 		try
 		{
 			Traverser traverser = node.traverse( Traverser.Order.DEPTH_FIRST,
-				StopEvaluator.END_OF_NETWORK, new ReturnableEvaluator()
+				StopEvaluator.END_OF_GRAPH, new ReturnableEvaluator()
 			{
 				public boolean isReturnableNode( TraversalPosition position )
 				{
@@ -588,7 +588,7 @@ public class Timeline implements TimelineIndex
 	public Iterable<Node> getAllNodes()
 	{
 		return underlyingNode.traverse( Order.BREADTH_FIRST, 
-			StopEvaluator.END_OF_NETWORK, 
+			StopEvaluator.END_OF_GRAPH, 
 			new ReturnableEvaluator()
 			{
 				public boolean isReturnableNode( TraversalPosition position )
@@ -609,7 +609,7 @@ public class Timeline implements TimelineIndex
 	Iterable<Node> getAllTimeNodes()
 	{
 		return underlyingNode.traverse( Order.DEPTH_FIRST, 
-			StopEvaluator.END_OF_NETWORK, 
+			StopEvaluator.END_OF_GRAPH, 
 			new ReturnableEvaluator()
 			{
 				public boolean isReturnableNode( TraversalPosition position )
