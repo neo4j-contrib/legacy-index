@@ -18,12 +18,12 @@ import org.apache.lucene.store.RAMDirectory;
 import org.neo4j.api.core.Node;
 import org.neo4j.impl.transaction.xaframework.XaLogicalLog;
 
-public class LuceneFulltextTransaction extends LuceneTransaction
+class LuceneFulltextTransaction extends LuceneTransaction
 {
-    private final Map<String, Directory> fulltextIndexed =
-        new HashMap<String, Directory>();
-    private final Map<String, Directory> fulltextRemoved =
-        new HashMap<String, Directory>();
+    private final Map<String, DirectoryAndWorkers> fulltextIndexed =
+        new HashMap<String, DirectoryAndWorkers>();
+    private final Map<String, DirectoryAndWorkers> fulltextRemoved =
+        new HashMap<String, DirectoryAndWorkers>();
     
     LuceneFulltextTransaction( int identifier, XaLogicalLog xaLog,
         LuceneDataSource luceneDs )
@@ -31,26 +31,28 @@ public class LuceneFulltextTransaction extends LuceneTransaction
         super( identifier, xaLog, luceneDs );
     }
     
-    private Directory getDirectory( Map<String, Directory> map, String key )
+    private DirectoryAndWorkers getDirectory(
+        Map<String, DirectoryAndWorkers> map, String key )
     {
-        Directory directory = map.get( key );
-        if ( directory == null )
+        DirectoryAndWorkers result = map.get( key );
+        if ( result == null )
         {
-            directory = new RAMDirectory();
+            Directory directory = new RAMDirectory();
             try
             {
                 IndexWriter writer = new IndexWriter( directory,
                     getDataSource().getIndexService().getAnalyzer(), true,
                     MaxFieldLength.UNLIMITED );
                 writer.close();
+                result = new DirectoryAndWorkers( directory );
             }
             catch ( IOException e )
             {
                 throw new RuntimeException( e );
             }
-            map.put( key, directory );
+            map.put( key, result );
         }
-        return directory;
+        return result;
     }
     
     private IndexWriter newIndexWriter( Directory directory )
@@ -61,21 +63,21 @@ public class LuceneFulltextTransaction extends LuceneTransaction
             MaxFieldLength.UNLIMITED );
     }
     
-    private void insertAndRemove( Directory insertTo, Directory removeFrom,
-        Node node, String key, Object value )
+    private void insertAndRemove( DirectoryAndWorkers insertTo,
+        DirectoryAndWorkers removeFrom, Node node, String key, Object value )
     {
         try
         {
             Document document = new Document();
             this.getDataSource().fillDocument( document, node.getId(), value );
-            IndexWriter writer = newIndexWriter( insertTo );
+            IndexWriter writer = insertTo.writer;
             writer.addDocument( document );
-            writer.close();
+            insertTo.invalidateSearcher();
             
-            writer = newIndexWriter( removeFrom );
+            writer = removeFrom.writer;
             writer.deleteDocuments( new Term( getDataSource().getIndexService().
                 getDeleteDocumentsKey(), value.toString() ) );
-            writer.close();
+            removeFrom.invalidateSearcher();
         }
         catch ( IOException e )
         {
@@ -113,12 +115,12 @@ public class LuceneFulltextTransaction extends LuceneTransaction
             value );
     }
     
-    private Set<Long> getNodes( Directory directory, String key,
+    private Set<Long> getNodes( DirectoryAndWorkers directory, String key,
         Object value )
     {
         try
         {
-            IndexSearcher searcher = new IndexSearcher( directory );
+            IndexSearcher searcher = directory.getSearcher();
             Hits hits = searcher.search( new TermQuery(
                 new Term( LuceneIndexService.DOC_INDEX_KEY,
                     value.toString() ) ) );
@@ -128,12 +130,94 @@ public class LuceneFulltextTransaction extends LuceneTransaction
                 result.add( Long.parseLong( hits.doc( i ).getField(
                     LuceneIndexService.DOC_ID_KEY ).stringValue() ) );
             }
-            searcher.close();
             return result;
         }
         catch ( IOException e )
         {
             throw new RuntimeException( e );
+        }
+    }
+    
+    @Override
+    protected void doCommit()
+    {
+        for ( DirectoryAndWorkers directory :
+            this.fulltextIndexed.values() )
+        {
+            directory.close();
+        }
+        for ( DirectoryAndWorkers directory :
+            this.fulltextRemoved.values() )
+        {
+            directory.close();
+        }
+        super.doCommit();
+    }
+
+    private class DirectoryAndWorkers
+    {
+        private final Directory directory;
+        private final IndexWriter writer;
+        private IndexSearcher searcher;
+        
+        private DirectoryAndWorkers( Directory directory )
+            throws IOException
+        {
+            this.directory = directory;
+            this.writer = newIndexWriter( directory );
+        }
+        
+        private void safeClose( Object object )
+        {
+            if ( object == null )
+            {
+                return;
+            }
+            
+            try
+            {
+                if ( object instanceof IndexWriter )
+                {
+                    ( ( IndexWriter ) object ).close();
+                }
+                else if ( object instanceof IndexSearcher )
+                {
+                    ( ( IndexSearcher ) object ).close();
+                }
+            }
+            catch ( IOException e )
+            {
+                // Ok
+            }
+        }
+        
+        private void invalidateSearcher()
+        {
+            safeClose( this.searcher );
+            this.searcher = null;
+        }
+        
+        private void close()
+        {
+            safeClose( this.writer );
+            invalidateSearcher();
+        }
+        
+        private IndexSearcher getSearcher()
+        {
+            try
+            {
+                this.writer.commit();
+                if ( this.searcher == null )
+                {
+                    this.searcher = new IndexSearcher( directory );
+                }
+            }
+            catch ( IOException e )
+            {
+                throw new RuntimeException( e );
+            }
+            return this.searcher;
         }
     }
 }

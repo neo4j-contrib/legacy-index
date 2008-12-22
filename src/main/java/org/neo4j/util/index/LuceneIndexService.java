@@ -58,7 +58,7 @@ public class LuceneIndexService extends GenericIndexService
         EmbeddedNeo embeddedNeo = ((EmbeddedNeo) neo);
         String luceneDirectory = 
             embeddedNeo.getConfig().getTxModule().getTxLogDirectory() +
-                "/lucene";
+                "/" + getDirName();
         this.fieldAnalyzer = instantiateAnalyzer();
         TxModule txModule = embeddedNeo.getConfig().getTxModule();
         txManager = txModule.getTxManager();
@@ -68,9 +68,14 @@ public class LuceneIndexService extends GenericIndexService
         params.put( LockManager.class, 
             embeddedNeo.getConfig().getLockManager() );
         params.put( LuceneIndexService.class, this );
-        xaDs = (LuceneDataSource) txModule.registerDataSource( "lucene",
+        xaDs = (LuceneDataSource) txModule.registerDataSource( getDirName(),
             LuceneDataSource.class.getName(), resourceId, params, true );
         broker = new ConnectionBroker( txManager, xaDs );
+    }
+    
+    protected String getDirName()
+    {
+        return "lucene";
     }
     
     protected byte[] getXaResourceId()
@@ -222,12 +227,16 @@ public class LuceneIndexService extends GenericIndexService
     {
         this.sorting = sortingOrNullForNone;
     }
+    
+    protected Query formQuery( Object value )
+    {
+        return new TermQuery( new Term( DOC_INDEX_KEY, value.toString() ) );
+    }
 
     private Iterable<Node> searchForNodes( String key, Object value,
         Set<Long> deletedNodes )
     {
-        Query query = new TermQuery( new Term( DOC_INDEX_KEY,
-            value.toString() ) );
+        Query query = formQuery( value );
         IndexSearcher searcher = xaDs.acquireIndexSearcher( key );
         try
         {

@@ -25,9 +25,8 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
     {
         Node node1 = neo().createNode();
         
-        String partOfValue1 = "tokenize";
         String value1 = "A value with spaces in it which the fulltext " +
-            "index should " + partOfValue1;
+            "index should tokenize";
         String value2 = "Another value with spaces in it";
         String key = "some_property";
         assertTrue( !indexService().getNodes( key, 
@@ -38,7 +37,7 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
         indexService().index( node1, key, value1 );
         
         Iterator<Node> itr = indexService().getNodes( key, 
-            partOfValue1 ).iterator();
+            "fulltext" ).iterator();
         assertEquals( node1, itr.next() );
         assertTrue( !itr.hasNext() );
         
@@ -49,8 +48,9 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
         indexService().index( node1, key, value1 );
         Node node2 = neo().createNode();
         indexService().index( node2, key, value1 );
+        restartTx();
         
-        itr = indexService().getNodes( key, partOfValue1 ).iterator();
+        itr = indexService().getNodes( key, "tokenize" ).iterator();
         assertTrue( itr.next() != null );
         assertTrue( itr.next() != null );
         assertTrue( !itr.hasNext() );
@@ -69,7 +69,7 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
         
         assertTrue( !itr.hasNext() );
         indexService().index( node1, key, value1 );
-        itr = indexService().getNodes( key, partOfValue1 ).iterator();
+        itr = indexService().getNodes( key, "tokenize" ).iterator();
         assertTrue( !itr.hasNext() );
         try
         {
@@ -79,7 +79,7 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
         {
             Thread.interrupted();
         }
-        itr = indexService().getNodes( key, partOfValue1 ).iterator();
+        itr = indexService().getNodes( key, "tokenize" ).iterator();
         assertTrue( itr.hasNext() );
         indexService().setIsolation( Isolation.SYNC_OTHER_TX );
         indexService().removeIndex( node1, key, value1 );
