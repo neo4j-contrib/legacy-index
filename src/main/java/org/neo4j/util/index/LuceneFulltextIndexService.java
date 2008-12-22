@@ -21,7 +21,7 @@ public class LuceneFulltextIndexService extends LuceneIndexService
     @Override
     protected String getDirName()
     {
-        return super.getDirName() + "-ft";
+        return super.getDirName() + "-fulltext";
     }
 
     @Override
