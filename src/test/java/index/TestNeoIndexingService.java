@@ -1,56 +1,33 @@
 package index;
 
 import java.util.Iterator;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import org.neo4j.api.core.EmbeddedNeo;
-import org.neo4j.api.core.NeoService;
+
 import org.neo4j.api.core.Node;
-import org.neo4j.api.core.Transaction;
+import org.neo4j.util.NeoTestCase;
 import org.neo4j.util.index.IndexService;
 import org.neo4j.util.index.Isolation;
 import org.neo4j.util.index.NeoIndexService;
 
-public class TestNeoIndexingService extends TestCase
+public class TestNeoIndexingService extends NeoTestCase
 {
-	public TestNeoIndexingService(String testName)
-	{
-		super( testName );
-	}
-	
-	public static Test suite()
-	{
-		TestSuite suite = new TestSuite( TestNeoIndexingService.class );
-		return suite;
-	}
-	
 	private IndexService indexService;
-	private NeoService neo;
-	private Transaction tx;
 	
 	@Override
-	public void setUp()
+	public void setUp() throws Exception
 	{
-		neo = new EmbeddedNeo( "var/index" );
-        indexService = new NeoIndexService( neo );
-		tx = neo.beginTx();
-//		Node node = neo.createNode();
+	    super.setUp();
+        indexService = new NeoIndexService( neo() );
 	}
 	
 	@Override
-	public void tearDown()
+	protected void beforeNeoShutdown()
 	{
-		// index.drop();
-		tx.success();
-		tx.finish();
         indexService.shutdown();
-		neo.shutdown();
 	}
     
     public void testSimple()
     {
-        Node node1 = neo.createNode();
+        Node node1 = neo().createNode();
         
         assertTrue( !indexService.getNodes( "a_property", 
             1 ).iterator().hasNext() );
@@ -67,7 +44,7 @@ public class TestNeoIndexingService extends TestCase
             1 ).iterator().hasNext() );
 
         indexService.index( node1, "a_property", 1 );
-        Node node2 = neo.createNode();
+        Node node2 = neo().createNode();
         indexService.index( node2, "a_property", 1 );
         
         itr = indexService.getNodes( "a_property", 1 ).iterator();
@@ -82,9 +59,7 @@ public class TestNeoIndexingService extends TestCase
             1 ).iterator().hasNext() );
         itr = indexService.getNodes( "a_property", 1 ).iterator();
         assertTrue( !itr.hasNext() );
-        tx.success();
-        tx.finish();
-        tx = neo.beginTx();
+        restartTx();
         
         indexService.setIsolation( Isolation.ASYNC_OTHER_TX );
         indexService.index( node1, "a_property", 1 );
@@ -106,7 +81,6 @@ public class TestNeoIndexingService extends TestCase
         assertTrue( !itr.hasNext() );
         node1.delete();
         node2.delete();
-        tx.success();
     }
 	
 /*	public void testIllegalStuff()

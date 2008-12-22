@@ -1,8 +1,7 @@
 package map;
 
-import junit.framework.Test;
 import junit.framework.TestCase;
-import junit.framework.TestSuite;
+
 import org.neo4j.api.core.EmbeddedNeo;
 import org.neo4j.api.core.Node;
 import org.neo4j.api.core.Transaction;
@@ -10,17 +9,6 @@ import org.neo4j.util.map.BTreeMap;
 
 public class TestBTreeMap extends TestCase
 {
-	public TestBTreeMap(String testName)
-	{
-		super( testName );
-	}
-	
-	public static Test suite()
-	{
-		TestSuite suite = new TestSuite( TestBTreeMap.class );
-		return suite;
-	}
-	
 	private BTreeMap<Character,Character> bTreeMap;
 	private EmbeddedNeo neo;
 	private Transaction tx;

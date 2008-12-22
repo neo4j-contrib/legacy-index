@@ -5,55 +5,35 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import org.neo4j.api.core.EmbeddedNeo;
-import org.neo4j.api.core.NeoService;
+
 import org.neo4j.api.core.Node;
-import org.neo4j.api.core.Transaction;
+import org.neo4j.util.NeoTestCase;
 import org.neo4j.util.index.Index;
 import org.neo4j.util.index.MultiValueIndex;
 import org.neo4j.util.index.SingleValueIndex;
 
-public class TestSingleIndex extends TestCase
+public class TestSingleIndex extends NeoTestCase
 {
-	public TestSingleIndex(String testName)
-	{
-		super( testName );
-	}
-	
-	public static Test suite()
-	{
-		TestSuite suite = new TestSuite( TestSingleIndex.class );
-		return suite;
-	}
-	
 	private SingleValueIndex index;
-	private NeoService neo;
-	private Transaction tx;
 	
 	@Override
-	public void setUp()
+	public void setUp() throws Exception
 	{
-		neo = new EmbeddedNeo( "var/index" );
-		tx = neo.beginTx();
-		Node node = neo.createNode();
-		index = new SingleValueIndex( "test_simple", node, neo ); 
+	    super.setUp();
+		Node node = neo().createNode();
+		index = new SingleValueIndex( "test_simple", node, neo() ); 
 	}
 	
 	@Override
-	public void tearDown()
+	public void tearDown() throws Exception
 	{
 		index.drop();
-		tx.success();
-		tx.finish();
-		neo.shutdown();
+		super.tearDown();
 	}
 	
 	public void testSimpleIndexBasic()
 	{
-		Node node1 = neo.createNode();
+		Node node1 = neo().createNode();
 		Object key1 = 1;
 		
 		assertTrue( !index.getNodesFor( key1 ).iterator().hasNext() );
@@ -68,7 +48,7 @@ public class TestSingleIndex extends TestCase
 		assertTrue( !index.getNodesFor( key1 ).iterator().hasNext() );
 
 		index.index( node1, key1 );
-		Node node2 = neo.createNode();
+		Node node2 = neo().createNode();
 		Object key2 = 2;
 		index.index( node2, key2 );
 		
@@ -86,15 +66,14 @@ public class TestSingleIndex extends TestCase
 		
 		node1.delete();
 		node2.delete();
-		tx.success();
 	}
 	
 	public void testIllegalStuff()
 	{
-		Node node1 = neo.createNode();
+		Node node1 = neo().createNode();
 		try 
 		{ 
-			new SingleValueIndex( "blabla", null, neo );
+			new SingleValueIndex( "blabla", null, neo() );
 			fail( "Null parameter should throw exception" );
 		} 
 		catch ( IllegalArgumentException e ) { // good
@@ -106,16 +85,15 @@ public class TestSingleIndex extends TestCase
 		} 
 		catch ( IllegalArgumentException e ) { // good
 		}
-		Index mIndex = new MultiValueIndex( "multi", node1, neo );
+		Index mIndex = new MultiValueIndex( "multi", node1, neo() );
 		try 
 		{ 
-			new SingleValueIndex( "blabla", node1, neo );
+			new SingleValueIndex( "blabla", node1, neo() );
 			fail( "Wrong index type should throw exception" );
 		} 
 		catch ( IllegalArgumentException e ) { // good
 		}
 		mIndex.drop();
-		tx.success();
 	}
     
     public void testValues()
@@ -123,7 +101,7 @@ public class TestSingleIndex extends TestCase
         Set<Node> nodes = new HashSet<Node>();
         for ( int i = 0; i < 100; i++ )
         {
-            Node node = neo.createNode();
+            Node node = neo().createNode();
             nodes.add( node );
             index.index( node, i );
         }
@@ -140,7 +118,7 @@ public class TestSingleIndex extends TestCase
         List<Node> nodes = new LinkedList<Node>();
         for ( int i = 0; i < 100; i++ )
         {
-            Node node = neo.createNode();
+            Node node = neo().createNode();
             nodes.add( node );
             index.index( node, i );
         }

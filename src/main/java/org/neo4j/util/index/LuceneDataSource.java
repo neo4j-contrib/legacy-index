@@ -2,25 +2,18 @@ package org.neo4j.util.index;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.Reader;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.LowerCaseFilter;
-import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.WhitespaceTokenizer;
+
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.Term;
-import org.apache.lucene.search.Hits;
+import org.apache.lucene.index.IndexWriter.MaxFieldLength;
 import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.neo4j.impl.cache.LruCache;
@@ -42,6 +35,7 @@ public class LuceneDataSource extends XaDataSource
     private final XaContainer xaContainer;
     private final String storeDir;
     private final LockManager lockManager;
+    private final LuceneIndexService service;
 
     private Map<String,LruCache<String,Iterable<Long>>> caching = 
         Collections.synchronizedMap( 
@@ -53,7 +47,9 @@ public class LuceneDataSource extends XaDataSource
     {
         super( params );
         this.lockManager = (LockManager) params.get( LockManager.class );
-        storeDir = (String) params.get( "dir" );
+        this.storeDir = (String) params.get( "dir" );
+        this.service = ( LuceneIndexService )
+            params.get( LuceneIndexService.class );
         String dir = storeDir;
         File file = new File( dir );
         if ( !file.exists() )
@@ -69,7 +65,7 @@ public class LuceneDataSource extends XaDataSource
             }
         }
         XaCommandFactory cf = new LuceneCommandFactory();
-        XaTransactionFactory tf = new LuceneTransactionFactory( this );
+        XaTransactionFactory tf = new LuceneTransactionFactory();
         xaContainer = XaContainer.create( dir + "/lucene.log", cf, tf );
         try
         {
@@ -118,8 +114,13 @@ public class LuceneDataSource extends XaDataSource
         return new LuceneXaConnection( storeDir, xaContainer
             .getResourceManager(), branchId );
     }
-
-    private static class LuceneCommandFactory extends XaCommandFactory
+    
+    LuceneIndexService getIndexService()
+    {
+        return this.service;
+    }
+    
+    private class LuceneCommandFactory extends XaCommandFactory
     {
         LuceneCommandFactory()
         {
@@ -133,37 +134,19 @@ public class LuceneDataSource extends XaDataSource
             return LuceneCommand.readCommand( fileChannel, buffer );
         }
     }
-    private static class LuceneTransactionFactory extends XaTransactionFactory
+    private class LuceneTransactionFactory extends XaTransactionFactory
     {
-        private final LuceneDataSource luceneDs;
-
-        LuceneTransactionFactory( LuceneDataSource luceneDs )
-        {
-            this.luceneDs = luceneDs;
-        }
-
         @Override
         public XaTransaction create( int identifier )
         {
-            return new LuceneTransaction( identifier, getLogicalLog(), 
-                luceneDs );
+            return service.createTransaction( identifier, this.getLogicalLog(),
+                LuceneDataSource.this );
         }
 
         @Override
         public void lazyDoneWrite( List<Integer> identifiers )
         {
             // TODO Auto-generated method stub
-        }
-    }
-
-    private static final Analyzer DEFAULT_ANALYZER = new DefaultAnalyzer();
-
-    private static class DefaultAnalyzer extends Analyzer
-    {
-        @Override
-        public TokenStream tokenStream( String fieldName, Reader reader )
-        {
-            return new LowerCaseFilter( new WhitespaceTokenizer( reader ) );
         }
     }
 
@@ -228,7 +211,8 @@ public class LuceneDataSource extends XaDataSource
         {
             lockManager.getWriteLock( key );
             Directory dir = FSDirectory.getDirectory( storeDir + "/" + key );
-            return new IndexWriter( dir, false, DEFAULT_ANALYZER );
+            return new IndexWriter( dir, this.service.getAnalyzer(),
+                MaxFieldLength.UNLIMITED );
         }
         catch ( IOException e )
         {
@@ -243,27 +227,7 @@ public class LuceneDataSource extends XaDataSource
         {
             return;
         }
-        Query query = new TermQuery( new Term( "index", value.toString() ) );
-        try
-        {
-            Hits hits = searcher.search( query );
-            for ( int i = 0; i < hits.length(); i++ )
-            {
-                Document document = hits.doc( 0 );
-                int foundId = Integer.parseInt( document.getField( "id" )
-                    .stringValue() );
-                if ( nodeId == foundId )
-                {
-                    int docNum = hits.id( i );
-                    searcher.getIndexReader().deleteDocument( docNum );
-                }
-            }
-        }
-        catch ( IOException e )
-        {
-            throw new RuntimeException( "Unable to delete for " + nodeId + ","
-                + "," + value + " using" + searcher, e );
-        }
+        this.service.deleteDocuments( searcher, nodeId, value );
     }
 
     void releaseAndRemoveWriter( String key, IndexWriter writer )
@@ -318,5 +282,10 @@ public class LuceneDataSource extends XaDataSource
     public void setBranchId( byte[] branchId )
     {
         this.branchId = branchId;
+    }
+    
+    void fillDocument( Document document, long nodeId, Object value )
+    {
+        this.service.fillDocument( document, nodeId, value );
     }
 }

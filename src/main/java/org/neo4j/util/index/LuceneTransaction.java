@@ -8,8 +8,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import org.apache.lucene.document.Document;
-import org.apache.lucene.document.Field;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.search.IndexSearcher;
 import org.neo4j.api.core.Node;
@@ -50,7 +50,7 @@ class LuceneTransaction extends XaTransaction
         insert( node, key, value, txIndexed, txRemoved );
     }
 
-    void insert( Node node, String key, Object value,
+    private void insert( Node node, String key, Object value,
         Map<String,Map<Object,Set<Long>>> toRemoveFrom,
         Map<String,Map<Object,Set<Long>>> toInsertInto )
     {
@@ -70,7 +70,7 @@ class LuceneTransaction extends XaTransaction
         keyIndex.put( value, nodeIds );
     }
 
-    boolean delFromIndex( Node node, String key, Object value,
+    private boolean delFromIndex( Node node, String key, Object value,
         Map<String,Map<Object,Set<Long>>> map )
     {
         Map<Object,Set<Long>> keyIndex = map.get( key );
@@ -113,14 +113,16 @@ class LuceneTransaction extends XaTransaction
         }
         return Collections.emptySet();
     }
-
+    
+    protected LuceneDataSource getDataSource()
+    {
+        return this.luceneDs;
+    }
+    
     private void indexWriter( IndexWriter writer, long nodeId, Object value )
     {
         Document document = new Document();
-        document.add( new Field( "id", String.valueOf( nodeId ),
-            Field.Store.YES, Field.Index.UN_TOKENIZED ) );
-        document.add( new Field( "index", value.toString(), Field.Store.NO,
-            Field.Index.UN_TOKENIZED ) );
+        this.luceneDs.fillDocument( document, nodeId, value );
         try
         {
             writer.addDocument( document );

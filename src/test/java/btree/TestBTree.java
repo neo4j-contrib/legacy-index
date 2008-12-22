@@ -4,50 +4,31 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import org.neo4j.api.core.EmbeddedNeo;
-import org.neo4j.api.core.NeoService;
+
 import org.neo4j.api.core.Node;
-import org.neo4j.api.core.Transaction;
+import org.neo4j.util.NeoTestCase;
 import org.neo4j.util.btree.BTree;
 import org.neo4j.util.btree.BTree.RelTypes;
 
-public class TestBTree extends TestCase
+public class TestBTree extends NeoTestCase
 {
-	public TestBTree(String testName)
-	{
-		super( testName );
-	}
-	
-	public static Test suite()
-	{
-		TestSuite suite = new TestSuite( TestBTree.class );
-		return suite;
-	}
-	
 	private BTree bTree;
-	private NeoService neo;
-	Transaction tx;
 	
 	@Override
-	public void setUp()
+	public void setUp() throws Exception
 	{
-		neo = new EmbeddedNeo( "var/btree" );
-		tx = neo.beginTx();
-		Node bNode = neo.createNode();
-		neo.getReferenceNode().createRelationshipTo( bNode, 
+	    super.setUp();
+		Node bNode = neo().createNode();
+		neo().getReferenceNode().createRelationshipTo( bNode, 
 			RelTypes.TREE_ROOT );
-		bTree = new BTree( neo, bNode );
+		bTree = new BTree( neo(), bNode );
 	}
 	
 	@Override
-	public void tearDown()
+	protected void tearDown() throws Exception
 	{
- 		bTree.delete();
-		tx.finish();
-		neo.shutdown();
+	    bTree.delete();
+	    super.tearDown();
 	}
 	
 	public void testBasicBTree()
@@ -98,7 +79,6 @@ public class TestBTree extends TestCase
 		assert bTree.removeEntry( 'd' ).equals( 'd' );
 		assert bTree.removeEntry( 'f' ).equals( 'f' );
 		bTree.validateTree();
-		tx.success();
 	}
 	
 	private long getNextUniqueLong( Set<Long> usedValues, java.util.Random r )
@@ -141,9 +121,6 @@ public class TestBTree extends TestCase
 				bTree.validateTree();
 			}
 		}
-		tx.success();
-		tx.finish();
-		tx = neo.beginTx();
 	}
 	
 	public void testGetValues()

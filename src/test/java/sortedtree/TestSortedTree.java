@@ -2,43 +2,23 @@ package sortedtree;
 
 import java.util.Comparator;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-
-import org.neo4j.api.core.EmbeddedNeo;
-import org.neo4j.api.core.NeoService;
 import org.neo4j.api.core.Node;
-import org.neo4j.api.core.Transaction;
+import org.neo4j.util.NeoTestCase;
 import org.neo4j.util.btree.BTree.RelTypes;
 import org.neo4j.util.sortedtree.SortedTree;
 
-public class TestSortedTree extends TestCase
+public class TestSortedTree extends NeoTestCase
 {
-	public TestSortedTree(String testName)
-	{
-		super( testName );
-	}
-	
-	public static Test suite()
-	{
-		TestSuite suite = new TestSuite( TestSortedTree.class );
-		return suite;
-	}
-	
 	private SortedTree bTree;
-	private NeoService neo;
-	Transaction tx;
 	
 	@Override
-	public void setUp()
+	public void setUp() throws Exception
 	{
-		neo = new EmbeddedNeo( "var/btree" );
-		tx = neo.beginTx();
-		Node bNode = neo.createNode();
-		neo.getReferenceNode().createRelationshipTo( bNode, 
+	    super.setUp();
+		Node bNode = neo().createNode();
+		neo().getReferenceNode().createRelationshipTo( bNode, 
 			RelTypes.TREE_ROOT );
-		bTree = new SortedTree( neo, bNode, new NodeSorter() );
+		bTree = new SortedTree( neo(), bNode, new NodeSorter() );
 	}
 
     private static final String VALUE = "value";
@@ -54,11 +34,10 @@ public class TestSortedTree extends TestCase
     }
     
 	@Override
-	public void tearDown()
+	public void tearDown() throws Exception
 	{
  		bTree.delete();
-		tx.finish();
-		neo.shutdown();
+ 		super.tearDown();
 	}
     
     public void testBasicSort()
@@ -103,7 +82,7 @@ public class TestSortedTree extends TestCase
     
     public Node createNode( char c )
     {
-        Node node = neo.createNode();
+        Node node = neo().createNode();
         node.setProperty( VALUE, c );
         return node;
     }

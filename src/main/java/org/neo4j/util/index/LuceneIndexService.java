@@ -1,6 +1,7 @@
 package org.neo4j.util.index;
 
 import java.io.IOException;
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -15,11 +16,17 @@ import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
 import javax.transaction.xa.XAResource;
 
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.LowerCaseFilter;
+import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.WhitespaceTokenizer;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.Hits;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.TermQuery;
 import org.neo4j.api.core.EmbeddedNeo;
 import org.neo4j.api.core.NeoService;
@@ -29,36 +36,63 @@ import org.neo4j.api.core.NotInTransactionException;
 import org.neo4j.impl.cache.LruCache;
 import org.neo4j.impl.transaction.LockManager;
 import org.neo4j.impl.transaction.TxModule;
+import org.neo4j.impl.transaction.xaframework.XaLogicalLog;
 import org.neo4j.impl.util.ArrayMap;
 
 // TODO:
 // o Run optimize when starting up
 public class LuceneIndexService extends GenericIndexService
 {
+    protected static final String DOC_ID_KEY = "id";
+    protected static final String DOC_INDEX_KEY = "index";
+    
     private final TransactionManager txManager;
-    private final String luceneDirectory;
     private final ConnectionBroker broker;
     private final LuceneDataSource xaDs;
+    private final Analyzer fieldAnalyzer;
+    private Sort sorting;
 
     public LuceneIndexService( NeoService neo )
     {
         super( neo );
         EmbeddedNeo embeddedNeo = ((EmbeddedNeo) neo);
-        luceneDirectory = 
+        String luceneDirectory = 
             embeddedNeo.getConfig().getTxModule().getTxLogDirectory() +
                 "/lucene";
+        this.fieldAnalyzer = instantiateAnalyzer();
         TxModule txModule = embeddedNeo.getConfig().getTxModule();
         txManager = txModule.getTxManager();
-        byte resourceId[] = "162373".getBytes();
+        byte resourceId[] = getXaResourceId();
         Map<Object,Object> params = getDefaultParams();
         params.put( "dir", luceneDirectory );
         params.put( LockManager.class, 
             embeddedNeo.getConfig().getLockManager() );
+        params.put( LuceneIndexService.class, this );
         xaDs = (LuceneDataSource) txModule.registerDataSource( "lucene",
             LuceneDataSource.class.getName(), resourceId, params, true );
         broker = new ConnectionBroker( txManager, xaDs );
     }
-
+    
+    protected byte[] getXaResourceId()
+    {
+        return "162373".getBytes();
+    }
+    
+    protected Field.Index getIndexStrategy()
+    {
+        return Field.Index.NOT_ANALYZED;
+    }
+    
+    protected Analyzer getAnalyzer()
+    {
+        return this.fieldAnalyzer;
+    }
+    
+    protected Analyzer instantiateAnalyzer()
+    {
+        return new DefaultAnalyzer();
+    }
+    
     private Map<Object,Object> getDefaultParams()
     {
         Map<Object,Object> params = new HashMap<Object,Object>();
@@ -66,7 +100,7 @@ public class LuceneIndexService extends GenericIndexService
         return params;
     }
 
-    protected void enableCache( String key, int maxNumberOfCachedEntries )
+    public void enableCache( String key, int maxNumberOfCachedEntries )
     {
         xaDs.enableCache( key, maxNumberOfCachedEntries );
     }
@@ -75,6 +109,52 @@ public class LuceneIndexService extends GenericIndexService
     protected void indexThisTx( Node node, String key, Object value )
     {
         getConnection().index( node, key, value );
+    }
+    
+    protected void fillDocument( Document document, long nodeId, Object value )
+    {
+        document.add( new Field( DOC_ID_KEY, String.valueOf( nodeId ),
+            Field.Store.YES, Field.Index.NOT_ANALYZED ) );
+        document.add( new Field( DOC_INDEX_KEY, value.toString(),
+            Field.Store.NO, getIndexStrategy() ) );
+    }
+    
+    protected void deleteDocuments( IndexSearcher searcher, long nodeId,
+        Object value )
+    {
+        Query query = new TermQuery( new Term( getDeleteDocumentsKey(),
+            value.toString() ) );
+        try
+        {
+            Hits hits = searcher.search( query );
+            for ( int i = 0; i < hits.length(); i++ )
+            {
+                Document document = hits.doc( i );
+                int foundId = Integer.parseInt( document.getField( DOC_ID_KEY )
+                    .stringValue() );
+                if ( nodeId == foundId )
+                {
+                    int docNum = hits.id( i );
+                    searcher.getIndexReader().deleteDocument( docNum );
+                }
+            }
+        }
+        catch ( IOException e )
+        {
+            throw new RuntimeException( "Unable to delete for " + nodeId + ","
+                + "," + value + " using" + searcher, e );
+        }
+    }
+    
+    protected String getDeleteDocumentsKey()
+    {
+        return DOC_INDEX_KEY;
+    }
+    
+    protected LuceneTransaction createTransaction( int identifier,
+        XaLogicalLog logicalLog, LuceneDataSource dataSource )
+    {
+        return new LuceneTransaction( identifier, logicalLog, dataSource );
     }
 
     public Iterable<Node> getNodes( String key, Object value )
@@ -137,22 +217,30 @@ public class LuceneIndexService extends GenericIndexService
         }
         return nodes;
     }
+    
+    public void setSorting( Sort sortingOrNullForNone )
+    {
+        this.sorting = sortingOrNullForNone;
+    }
 
     private Iterable<Node> searchForNodes( String key, Object value,
         Set<Long> deletedNodes )
     {
-        Query query = new TermQuery( new Term( "index", value.toString() ) );
+        Query query = new TermQuery( new Term( DOC_INDEX_KEY,
+            value.toString() ) );
         IndexSearcher searcher = xaDs.acquireIndexSearcher( key );
         try
         {
             ArrayList<Node> nodes = new ArrayList<Node>();
-            Hits hits = searcher.search( query );
+            Hits hits = sorting != null ?
+                searcher.search( query, sorting ) :
+                searcher.search( query );
             for ( int i = 0; i < hits.length(); i++ )
             {
                 Document document = hits.doc( i );
                 try
                 {
-                    long id = Integer.parseInt( document.getField( "id" )
+                    long id = Long.parseLong( document.getField( DOC_ID_KEY )
                         .stringValue() );
                     if ( !deletedNodes.contains( id ) )
                     {
@@ -327,6 +415,15 @@ public class LuceneIndexService extends GenericIndexService
             {
                 delistResourcesForTransaction();
             }
+        }
+    }
+
+    protected static class DefaultAnalyzer extends Analyzer
+    {
+        @Override
+        public TokenStream tokenStream( String fieldName, Reader reader )
+        {
+            return new LowerCaseFilter( new WhitespaceTokenizer( reader ) );
         }
     }
 }

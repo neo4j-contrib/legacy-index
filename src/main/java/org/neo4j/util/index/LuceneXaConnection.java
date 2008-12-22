@@ -1,8 +1,8 @@
 package org.neo4j.util.index;
 
-import java.util.Set;
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
+
 import org.neo4j.api.core.Node;
 import org.neo4j.impl.transaction.xaframework.XaConnectionHelpImpl;
 import org.neo4j.impl.transaction.xaframework.XaResourceHelpImpl;
@@ -74,15 +74,5 @@ class LuceneXaConnection extends XaConnectionHelpImpl
     public void removeIndex( Node node, String key, Object value )
     {
         getLuceneTx().removeIndex( node, key, value );
-    }
-    
-    public Set<Long> getDeletedNodesFor( String key, Object value )
-    {
-        return getLuceneTx().getDeletedNodesFor( key, value );
-    }
-    
-    public Set<Long> getAddedNodesFor( String key, Object value )
-    {
-        return getLuceneTx().getNodesFor( key, value );
     }
 }

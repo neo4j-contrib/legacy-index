@@ -2,48 +2,28 @@ package timeline;
 
 import java.util.Iterator;
 import java.util.LinkedList;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import org.neo4j.api.core.EmbeddedNeo;
-import org.neo4j.api.core.NeoService;
+
 import org.neo4j.api.core.Node;
-import org.neo4j.api.core.Transaction;
+import org.neo4j.util.NeoTestCase;
 import org.neo4j.util.timeline.Timeline;
 
-public class TestTimeline extends TestCase
+public class TestTimeline extends NeoTestCase
 {
-	public TestTimeline(String testName)
-	{
-		super( testName );
-	}
-	
-	public static Test suite()
-	{
-		TestSuite suite = new TestSuite( TestTimeline.class );
-		return suite;
-	}
-	
 	private Timeline timeline;
-	private NeoService neo;
-	private Transaction tx;
 	
 	@Override
-	public void setUp()
+	public void setUp() throws Exception
 	{
-		neo = new EmbeddedNeo( "var/timeline" );
-		tx = neo.beginTx();
-		Node node = neo.createNode();
-		timeline = new Timeline( "test_timeline", node, false, neo ); 
+	    super.setUp();
+		Node node = neo().createNode();
+		timeline = new Timeline( "test_timeline", node, false, neo() ); 
 	}
 	
 	@Override
-	public void tearDown()
+	public void tearDown() throws Exception
 	{
 		timeline.delete();
-		tx.success();
-		tx.finish();
-		neo.shutdown();
+		super.tearDown();
 	}
 	
 	private long getStamp()
@@ -62,7 +42,7 @@ public class TestTimeline extends TestCase
 	
 	public void testTimelineBasic()
 	{
-		Node node1 = neo.createNode();
+		Node node1 = neo().createNode();
 		long stamp1 = getStamp();
 		node1.setProperty( "timestamp", stamp1 );
 		
@@ -103,7 +83,7 @@ public class TestTimeline extends TestCase
 
 		timeline.addNode( node1, stamp1 );
 		assertEquals( stamp1, timeline.getTimestampForNode( node1 ) );
-		Node node2 = neo.createNode();
+		Node node2 = neo().createNode();
 		long stamp2 = getStamp();
 		node2.setProperty( "timestamp", stamp2 );
 		timeline.addNode( node2, stamp2 );
@@ -141,7 +121,7 @@ public class TestTimeline extends TestCase
 		
 		timeline.addNode( node1, stamp1 );
 		timeline.addNode( node2, stamp2 );
-		Node node3 = neo.createNode();
+		Node node3 = neo().createNode();
 		long stamp3 = getStamp();
 		node3.setProperty( "timestamp", stamp3 );
 		timeline.addNode( node3, stamp3 );
@@ -214,16 +194,15 @@ public class TestTimeline extends TestCase
 		node1.delete();
 		node2.delete();
 		node3.delete();
-		tx.success();
 	}
 	
 	public void testIllegalStuff()
 	{
-		Node node1 = neo.createNode();
+		Node node1 = neo().createNode();
 		long stamp1 = System.currentTimeMillis();
 		try 
 		{ 
-			new Timeline( "blabla", null, true, neo );
+			new Timeline( "blabla", null, true, neo() );
 			fail( "Null parameter should throw exception" );
 		} 
 		catch ( IllegalArgumentException e ) { // good
@@ -262,18 +241,17 @@ public class TestTimeline extends TestCase
 		}
 		
 		node1.delete();
-		tx.success();
 	}
 	
 	public void testIndexedTimeline()
 	{
-		Node tlNode = neo.createNode();
-		Timeline timeline = new Timeline( "test", tlNode, true, neo ); 
+		Node tlNode = neo().createNode();
+		Timeline timeline = new Timeline( "test", tlNode, true, neo() ); 
 		LinkedList<Node> after = new LinkedList<Node>();
 		LinkedList<Node> before = new LinkedList<Node>();
 		for ( long i = 1; i < 128; i++ )
 		{
-			Node node = neo.createNode();
+			Node node = neo().createNode();
 			timeline.addNode( node, i );
 			if ( i > 64 )
 			{
@@ -313,12 +291,12 @@ public class TestTimeline extends TestCase
 	
 	public void testTimelineSameTimestamp()
 	{
-		Node tlNode = neo.createNode();
-		Timeline timeline = new Timeline( "test", tlNode, true, neo );
-		Node node0 = neo.createNode();
-		Node node1_1 = neo.createNode();
-		Node node1_2 = neo.createNode();
-		Node node2 = neo.createNode();
+		Node tlNode = neo().createNode();
+		Timeline timeline = new Timeline( "test", tlNode, true, neo() );
+		Node node0 = neo().createNode();
+		Node node1_1 = neo().createNode();
+		Node node1_2 = neo().createNode();
+		Node node2 = neo().createNode();
 		timeline.addNode( node1_1, 1 );
 		timeline.addNode( node1_2, 1 );
 		timeline.addNode( node0, 0 );
@@ -363,14 +341,14 @@ public class TestTimeline extends TestCase
 	
 	public void testMultipleTimelines()
 	{
-		Node tlNode1 = neo.createNode();
-		Timeline timeline1 = new Timeline( "test1", tlNode1, true, neo );
-		Node tlNode2 = neo.createNode();
-		Timeline timeline2 = new Timeline( "test2", tlNode2, true, neo );
-		Node node1 = neo.createNode();
-		Node node2 = neo.createNode();
-		Node node3 = neo.createNode();
-		Node node4 = neo.createNode();
+		Node tlNode1 = neo().createNode();
+		Timeline timeline1 = new Timeline( "test1", tlNode1, true, neo() );
+		Node tlNode2 = neo().createNode();
+		Timeline timeline2 = new Timeline( "test2", tlNode2, true, neo() );
+		Node node1 = neo().createNode();
+		Node node2 = neo().createNode();
+		Node node3 = neo().createNode();
+		Node node4 = neo().createNode();
 		
 		timeline1.addNode( node1, 1 );
 		timeline1.addNode( node2, 2 );
@@ -401,11 +379,11 @@ public class TestTimeline extends TestCase
 
     public void testTimelineRemoveNode()
     {
-        Node tlNode = neo.createNode();
-        Timeline indexedTimeline = new Timeline( "test", tlNode, true, neo ); 
+        Node tlNode = neo().createNode();
+        Timeline indexedTimeline = new Timeline( "test", tlNode, true, neo() ); 
         for ( long i = 1; i < 128; i++ )
         {
-            Node node = neo.createNode();
+            Node node = neo().createNode();
             indexedTimeline.addNode( node, i );
         }
         for ( Node node : indexedTimeline.getAllNodes() )
@@ -417,7 +395,7 @@ public class TestTimeline extends TestCase
         LinkedList<Node> nodes = new LinkedList<Node>();
         for ( long i = 1; i < 128; i++ )
         {
-            Node node = neo.createNode();
+            Node node = neo().createNode();
             indexedTimeline.addNode( node, i );
             nodes.add( node );
         }
