@@ -1,4 +1,4 @@
-package sortedtree;
+package org.neo4j.util.sortedtree;
 
 import java.util.Comparator;
 

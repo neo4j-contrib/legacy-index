@@ -1,4 +1,4 @@
-package timeline;
+package org.neo4j.util.timeline;
 
 import java.util.Iterator;
 import java.util.LinkedList;

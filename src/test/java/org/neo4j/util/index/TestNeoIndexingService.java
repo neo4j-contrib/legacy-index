@@ -1,4 +1,4 @@
-package index;
+package org.neo4j.util.index;
 
 import java.util.Iterator;
 

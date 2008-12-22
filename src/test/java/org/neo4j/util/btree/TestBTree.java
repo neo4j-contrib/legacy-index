@@ -1,4 +1,4 @@
-package btree;
+package org.neo4j.util.btree;
 
 import java.util.Arrays;
 import java.util.Collections;

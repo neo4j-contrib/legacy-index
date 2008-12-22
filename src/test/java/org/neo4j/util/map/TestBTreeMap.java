@@ -1,4 +1,4 @@
-package map;
+package org.neo4j.util.map;
 
 import junit.framework.TestCase;
 
