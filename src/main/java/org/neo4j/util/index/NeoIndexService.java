@@ -106,7 +106,7 @@ public class NeoIndexService extends GenericIndexService
         Index valueIndex = getValueIndex( key, false );
         if ( valueIndex == null )
         {
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
         return valueIndex.getNodesFor( value );
     }
