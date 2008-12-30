@@ -41,7 +41,7 @@ class LuceneFulltextTransaction extends LuceneTransaction
             try
             {
                 IndexWriter writer = new IndexWriter( directory,
-                    getDataSource().getIndexService().getAnalyzer(), true,
+                    getDataSource().getAnalyzer(), true,
                     MaxFieldLength.UNLIMITED );
                 writer.close();
                 result = new DirectoryAndWorkers( directory );
@@ -59,7 +59,7 @@ class LuceneFulltextTransaction extends LuceneTransaction
         throws IOException
     {
         return new IndexWriter( directory,
-            getDataSource().getIndexService().getAnalyzer(),
+            getDataSource().getAnalyzer(),
             MaxFieldLength.UNLIMITED );
     }
     
@@ -75,7 +75,7 @@ class LuceneFulltextTransaction extends LuceneTransaction
             insertTo.invalidateSearcher();
             
             writer = removeFrom.writer;
-            writer.deleteDocuments( new Term( getDataSource().getIndexService().
+            writer.deleteDocuments( new Term( getDataSource().
                 getDeleteDocumentsKey(), value.toString() ) );
             removeFrom.invalidateSearcher();
         }
