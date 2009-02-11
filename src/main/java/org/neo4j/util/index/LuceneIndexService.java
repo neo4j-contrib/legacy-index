@@ -64,6 +64,11 @@ public class LuceneIndexService extends GenericIndexService
         broker = new ConnectionBroker( txManager, xaDs );
     }
     
+    public void rotate() throws IOException
+    {
+        xaDs.rotateLogicalLog();
+    }
+    
     protected Class<? extends LuceneDataSource> getDataSourceClass()
     {
         return LuceneDataSource.class;

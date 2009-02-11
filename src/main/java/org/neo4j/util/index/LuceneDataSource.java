@@ -4,11 +4,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
+import java.nio.channels.ReadableByteChannel;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.LowerCaseFilter;
@@ -28,7 +28,6 @@ import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.neo4j.impl.cache.LruCache;
-import org.neo4j.impl.transaction.LockManager;
 import org.neo4j.impl.transaction.xaframework.XaCommand;
 import org.neo4j.impl.transaction.xaframework.XaCommandFactory;
 import org.neo4j.impl.transaction.xaframework.XaConnection;
@@ -46,19 +45,25 @@ public class LuceneDataSource extends XaDataSource
 
     private final XaContainer xaContainer;
     private final String storeDir;
-    private final LockManager lockManager;
+    // private final LockManager lockManager;
+    private final int LOCK_STRIPE_SIZE = 5;
+    private ReentrantReadWriteLock[] keyLocks = 
+        new ReentrantReadWriteLock[LOCK_STRIPE_SIZE];
     private final Analyzer fieldAnalyzer;
-
+    private final LuceneIndexStore store;
+    
     private Map<String,LruCache<String,Iterable<Long>>> caching = 
         Collections.synchronizedMap( 
             new HashMap<String,LruCache<String,Iterable<Long>>>() );
 
-    private byte[] branchId = null;
-
     public LuceneDataSource( Map<?,?> params ) throws InstantiationException
     {
         super( params );
-        this.lockManager = (LockManager) params.get( LockManager.class );
+        // this.lockManager = (LockManager) params.get( LockManager.class );
+        for ( int i = 0; i < keyLocks.length; i++ )
+        {
+            keyLocks[i] = new ReentrantReadWriteLock();
+        }
         this.storeDir = (String) params.get( "dir" );
         this.fieldAnalyzer = instantiateAnalyzer();
         String dir = storeDir;
@@ -75,8 +80,9 @@ public class LuceneDataSource extends XaDataSource
                     "Unable to create directory " + dir, e );
             }
         }
+        this.store = new LuceneIndexStore( storeDir + "/lucene-store.db" );
         XaCommandFactory cf = new LuceneCommandFactory();
-        XaTransactionFactory tf = new LuceneTransactionFactory();
+        XaTransactionFactory tf = new LuceneTransactionFactory( store );
         xaContainer = XaContainer.create( dir + "/lucene.log", cf, tf );
         try
         {
@@ -129,13 +135,14 @@ public class LuceneDataSource extends XaDataSource
             }
         }
         xaContainer.close();
+        store.close();
     }
 
     @Override
     public XaConnection getXaConnection()
     {
         return new LuceneXaConnection( storeDir, xaContainer
-            .getResourceManager(), branchId );
+            .getResourceManager(), getBranchId() );
     }
     
     protected Analyzer getAnalyzer()
@@ -151,15 +158,22 @@ public class LuceneDataSource extends XaDataSource
         }
 
         @Override
-        public XaCommand readCommand( FileChannel fileChannel, 
+        public XaCommand readCommand( ReadableByteChannel channel, 
             ByteBuffer buffer ) throws IOException
         {
-            return LuceneCommand.readCommand( fileChannel, buffer );
+            return LuceneCommand.readCommand( channel, buffer );
         }
     }
     
     private class LuceneTransactionFactory extends XaTransactionFactory
     {
+        private final LuceneIndexStore store;
+        
+        LuceneTransactionFactory( LuceneIndexStore store )
+        {
+            this.store = store;
+        }
+        
         @Override
         public XaTransaction create( int identifier )
         {
@@ -167,15 +181,50 @@ public class LuceneDataSource extends XaDataSource
         }
 
         @Override
-        public void lazyDoneWrite( List<Integer> identifiers )
+        public void flushAll()
         {
-            // TODO Auto-generated method stub
+            // Not much we can do...
+        }
+
+        public long getCurrentVersion()
+        {
+            return store.getVersion();
+        }
+        
+        @Override
+        public long getAndSetNewVersion()
+        {
+            return store.incrementVersion();
         }
     }
+    
+    private void getReadLock( String key )
+    {
+        keyLocks[ Math.abs( key.hashCode() ) % 
+            LOCK_STRIPE_SIZE ].readLock().lock();
+    }
+    
+    private void releaseReadLock( String key )
+    {
+        keyLocks[ Math.abs( key.hashCode() ) % 
+            LOCK_STRIPE_SIZE ].readLock().unlock();
+    }
 
+    private void getWriteLock( String key )
+    {
+        keyLocks[ Math.abs( key.hashCode() ) % 
+            LOCK_STRIPE_SIZE ].writeLock().lock();
+    }
+    
+    private void releaseWriteLock( String key )
+    {
+        keyLocks[ Math.abs( key.hashCode() ) % 
+            LOCK_STRIPE_SIZE ].writeLock().unlock();
+    }
+    
     IndexSearcher acquireIndexSearcher( String key )
     {
-        lockManager.getReadLock( key );
+        getReadLock( key );
         IndexSearcher searcher = indexSearchers.get( key );
         if ( searcher == null )
         {
@@ -206,12 +255,12 @@ public class LuceneDataSource extends XaDataSource
 
     void releaseIndexSearcher( String key, IndexSearcher searcher )
     {
-        lockManager.releaseReadLock( key );
+        releaseReadLock( key );
     }
 
     void removeIndexSearcher( String key )
     {
-        lockManager.getWriteLock( key );
+        getWriteLock( key );
         try
         {
             IndexSearcher searcher = indexSearchers.remove( key );
@@ -230,7 +279,7 @@ public class LuceneDataSource extends XaDataSource
         }
         finally
         {
-            lockManager.releaseWriteLock( key );
+            releaseWriteLock( key );
         }
     }
 
@@ -238,7 +287,7 @@ public class LuceneDataSource extends XaDataSource
     {
         try
         {
-            lockManager.getWriteLock( key );
+            getWriteLock( key );
             Directory dir = FSDirectory.getDirectory( storeDir + "/" + key );
             return new IndexWriter( dir, getAnalyzer(),
                 MaxFieldLength.UNLIMITED );
@@ -303,7 +352,7 @@ public class LuceneDataSource extends XaDataSource
         }
         finally
         {
-            lockManager.releaseWriteLock( key );
+            releaseWriteLock( key );
         }
     }
 
@@ -327,18 +376,6 @@ public class LuceneDataSource extends XaDataSource
         }
     }
 
-    @Override
-    public byte[] getBranchId()
-    {
-        return branchId;
-    }
-
-    @Override
-    public void setBranchId( byte[] branchId )
-    {
-        this.branchId = branchId;
-    }
-    
     protected void fillDocument( Document document, long nodeId, Object value )
     {
         document.add( new Field( LuceneIndexService.DOC_ID_KEY,
@@ -351,5 +388,87 @@ public class LuceneDataSource extends XaDataSource
     protected Index getIndexStrategy()
     {
         return Field.Index.NOT_ANALYZED;
+    }
+
+    public void keepLogicalLogs( boolean keep )
+    {
+        xaContainer.getLogicalLog().setKeepLogs( keep );
+    }
+    
+    @Override
+    public long getCreationTime()
+    {
+        return store.getCreationTime();
+    }
+    
+    @Override
+    public long getRandomIdentifier()
+    {
+        return store.getRandomNumber();
+    }
+    
+    @Override
+    public long getCurrentLogVersion()
+    {
+        return store.getVersion();
+    }
+    
+    public long incrementAndGetLogVersion()
+    {
+        return store.incrementVersion();
+    }
+    
+    public void setCurrentLogVersion( long version )
+    {
+        store.setVersion( version );
+    }
+    
+    @Override
+    public void applyLog( ReadableByteChannel byteChannel ) throws IOException
+    {
+        xaContainer.getLogicalLog().applyLog( byteChannel );
+    }
+    
+    @Override
+    public void rotateLogicalLog() throws IOException
+    {
+        // flush done inside rotate
+        xaContainer.getLogicalLog().rotate();
+    }
+    
+    @Override
+    public ReadableByteChannel getLogicalLog( long version ) throws IOException
+    {
+        return xaContainer.getLogicalLog().getLogicalLog( version );
+    }
+    
+    @Override
+    public boolean hasLogicalLog( long version )
+    {
+        return xaContainer.getLogicalLog().hasLogicalLog( version );
+    }
+    
+    @Override
+    public boolean deleteLogicalLog( long version )
+    {
+        return xaContainer.getLogicalLog().deleteLogicalLog( version );
+    }
+    
+    @Override
+    public void setAutoRotate( boolean rotate )
+    {
+        xaContainer.getLogicalLog().setAutoRotateLogs( rotate );
+    }
+    
+    @Override
+    public void setLogicalLogTargetSize( long size )
+    {
+        xaContainer.getLogicalLog().setLogicalLogTargetSize( size );
+    }
+    
+    @Override
+    public void makeBackupSlave()
+    {
+        xaContainer.getLogicalLog().makeBackupSlave();
     }
 }

@@ -2,7 +2,8 @@ package org.neo4j.util.index;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
+import java.nio.channels.ReadableByteChannel;
+
 import org.neo4j.impl.transaction.xaframework.LogBuffer;
 import org.neo4j.impl.transaction.xaframework.XaCommand;
 
@@ -122,11 +123,11 @@ abstract class LuceneCommand extends XaCommand
         }
     }
     
-    static CommandData readCommandData( FileChannel fileChannel, 
+    static CommandData readCommandData( ReadableByteChannel channel, 
         ByteBuffer buffer ) throws IOException
     {
         buffer.clear(); buffer.limit( 16 );
-        if ( fileChannel.read( buffer ) != buffer.limit() )
+        if ( channel.read( buffer ) != buffer.limit() )
         {
             return null;
         }
@@ -136,7 +137,7 @@ abstract class LuceneCommand extends XaCommand
         int valueCharLength = buffer.getInt();
 
         char[] keyChars = new char[keyCharLength];
-        keyChars = readCharArray( fileChannel, buffer, keyChars );
+        keyChars = readCharArray( channel, buffer, keyChars );
         if ( keyChars == null )
         {
             return null;
@@ -144,7 +145,7 @@ abstract class LuceneCommand extends XaCommand
         String key = new String( keyChars );
 
         char[] valueChars = new char[valueCharLength];
-        valueChars = readCharArray( fileChannel, buffer, valueChars );
+        valueChars = readCharArray( channel, buffer, valueChars );
         if ( valueChars == null )
         {
             return null;
@@ -153,12 +154,12 @@ abstract class LuceneCommand extends XaCommand
         return new CommandData( nodeId, key, value );
     }
     
-    private static char[] readCharArray( FileChannel fileChannel, 
+    private static char[] readCharArray( ReadableByteChannel channel, 
         ByteBuffer buffer, char[] charArray ) throws IOException
     {
         buffer.clear();
         int bytesLeft = charArray.length * 2;
-        int maxSize = buffer.capacity() / 2 * 2;
+        int maxSize = buffer.capacity();
         int offset = 0; // offset in chars
         while ( bytesLeft > 0 )
         {
@@ -172,7 +173,7 @@ abstract class LuceneCommand extends XaCommand
                 buffer.limit( bytesLeft );
                 bytesLeft = 0;
             }
-            if ( fileChannel.read( buffer ) != buffer.limit() )
+            if ( channel.read( buffer ) != buffer.limit() )
             {
                 return null;
             }
@@ -185,17 +186,18 @@ abstract class LuceneCommand extends XaCommand
         return charArray;
     }
     
-    static XaCommand readCommand( FileChannel fileChannel, ByteBuffer buffer )
+    static XaCommand readCommand( ReadableByteChannel channel, 
+        ByteBuffer buffer )
         throws IOException
     {
         buffer.clear(); buffer.limit( 1 );
-        if ( fileChannel.read( buffer ) != buffer.limit() )
+        if ( channel.read( buffer ) != buffer.limit() )
         {
             return null;
         }
         buffer.flip();
         byte commandType = buffer.get();
-        CommandData data = readCommandData( fileChannel, buffer );
+        CommandData data = readCommandData( channel, buffer );
         if ( data == null )
         {
             return null;
