@@ -148,6 +148,21 @@ public class TestLuceneIndexingService extends NeoTestCase
         node4.delete();
     }
     
+    public void testRollback()
+    {
+        Node node1 = neo().createNode();
+        Node node2 = neo().createNode();
+        restartTx();
+        indexService().index( node1, "a_property", 3 );
+        assertEquals( node1, indexService().getSingleNode( "a_property", 3 ) );
+        restartTx( false );
+        assertEquals( null, indexService().getSingleNode( "a_property", 3 ) );
+        indexService().index( node2, "a_property", 3 );
+        assertEquals( node2, indexService().getSingleNode( "a_property", 3 ) );
+        restartTx();
+        assertEquals( node2, indexService().getSingleNode( "a_property", 3 ) );
+    }
+    
 //    public void testDifferentTypesWithSameValueIssue()
 //    {
 //        String key = "prop";

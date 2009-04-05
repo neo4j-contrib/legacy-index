@@ -8,7 +8,7 @@ import org.neo4j.impl.transaction.xaframework.XaConnectionHelpImpl;
 import org.neo4j.impl.transaction.xaframework.XaResourceHelpImpl;
 import org.neo4j.impl.transaction.xaframework.XaResourceManager;
 
-class LuceneXaConnection extends XaConnectionHelpImpl
+public class LuceneXaConnection extends XaConnectionHelpImpl
 {
     private final LuceneXaResource xaResource;
 

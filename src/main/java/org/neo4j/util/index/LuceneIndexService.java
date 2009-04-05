@@ -224,10 +224,13 @@ public class LuceneIndexService extends GenericIndexService
         // TODO Temporary code, this can be implemented better
         Iterator<Node> nodes = getNodes( key, value ).iterator();
         Node node = nodes.hasNext() ? nodes.next() : null;
-        if ( nodes.hasNext() )
+        while ( nodes.hasNext() )
         {
-            throw new RuntimeException( "More than one node for " + key + "="
-                + value );
+            if ( !nodes.next().equals( node ) )
+            {
+                throw new RuntimeException( "More than one node for " + key + "="
+                    + value );
+            }
         }
         return node;
     }
@@ -242,6 +245,9 @@ public class LuceneIndexService extends GenericIndexService
     public synchronized void shutdown()
     {
         super.shutdown();
+        EmbeddedNeo embeddedNeo = ((EmbeddedNeo) getNeo());
+        TxModule txModule = embeddedNeo.getConfig().getTxModule();
+        txModule.getXaDataSourceManager().unregisterDataSource( getDirName() );
         xaDs.close();
     }
 
