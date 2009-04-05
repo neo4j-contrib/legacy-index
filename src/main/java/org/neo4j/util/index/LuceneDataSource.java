@@ -231,7 +231,7 @@ public class LuceneDataSource extends XaDataSource
             try
             {
                 Directory dir = FSDirectory.getDirectory( 
-                    storeDir + "/" + key );
+                    new File( storeDir + "/" + key ) );
                 if ( dir.list().length == 0 )
                 {
                     return null;
@@ -288,7 +288,8 @@ public class LuceneDataSource extends XaDataSource
         try
         {
             getWriteLock( key );
-            Directory dir = FSDirectory.getDirectory( storeDir + "/" + key );
+            Directory dir = FSDirectory.getDirectory( 
+                new File( storeDir + "/" + key ) );
             return new IndexWriter( dir, getAnalyzer(),
                 MaxFieldLength.UNLIMITED );
         }
