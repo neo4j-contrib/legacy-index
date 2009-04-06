@@ -134,6 +134,7 @@ public class LuceneDataSource extends XaDataSource
                 e.printStackTrace();
             }
         }
+        indexSearchers.clear();
         xaContainer.close();
         store.close();
     }

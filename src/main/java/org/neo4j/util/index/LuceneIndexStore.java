@@ -117,6 +117,11 @@ class LuceneIndexStore
 
     public void close()
     {
+        if ( !fileChannel.isOpen() )
+        {
+            return;
+        }
+        
         try
         {
             fileChannel.close();

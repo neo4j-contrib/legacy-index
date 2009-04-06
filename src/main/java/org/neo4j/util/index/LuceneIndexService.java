@@ -245,9 +245,13 @@ public class LuceneIndexService extends GenericIndexService
     public synchronized void shutdown()
     {
         super.shutdown();
-        EmbeddedNeo embeddedNeo = ((EmbeddedNeo) getNeo());
+        EmbeddedNeo embeddedNeo = ( ( EmbeddedNeo ) getNeo() );
         TxModule txModule = embeddedNeo.getConfig().getTxModule();
-        txModule.getXaDataSourceManager().unregisterDataSource( getDirName() );
+        if ( txModule.getXaDataSourceManager().hasDataSource( getDirName() ) )
+        {
+            txModule.getXaDataSourceManager().unregisterDataSource(
+                getDirName() );
+        }
         xaDs.close();
     }
 
