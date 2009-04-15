@@ -187,6 +187,7 @@ public class LuceneDataSource extends XaDataSource
             // Not much we can do...
         }
 
+        @Override
         public long getCurrentVersion()
         {
             return store.getVersion();
@@ -392,6 +393,7 @@ public class LuceneDataSource extends XaDataSource
         return Field.Index.NOT_ANALYZED;
     }
 
+    @Override
     public void keepLogicalLogs( boolean keep )
     {
         xaContainer.getLogicalLog().setKeepLogs( keep );
