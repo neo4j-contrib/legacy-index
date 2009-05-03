@@ -1,0 +1,10 @@
+0.6 (2009-05-03)
+-------------------
+o Upgraded to lucene 2.4.0 making use of the
+  IndexWriter.deleteDocument( Query ) method.
+o Fixed caching invalidation bug for Lucene index service.
+o Fixed deadlock problem when hammering requests on lucene index with
+  different transactions.
+o Fixed some recovery issues with Lucene index service.
+o Pathed Lucene index service to have new log rotation features (on line backup).
+o Fixed so IndexService.shutdown can handle multiple calls.
