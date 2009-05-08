@@ -21,15 +21,15 @@ package org.neo4j.util.index;
 
 import java.io.File;
 
-import org.neo4j.impl.batchinsert.BatchInserter;
-import org.neo4j.util.NeoTestCase;
+import junit.framework.TestCase;
 
-public class TestBatchInsert extends NeoTestCase
+import org.neo4j.impl.batchinsert.BatchInserter;
+
+public class TestBatchInsert extends TestCase
 {
     @Override
     public void tearDown() throws Exception
     {
-        super.tearDown();
         deleteRecursivley( new File( "var/batch-insert") );
     }
     
@@ -37,9 +37,9 @@ public class TestBatchInsert extends NeoTestCase
     {
         if ( file.isDirectory() )
         {
-            for ( String child : file.list() )
+            for ( File child : file.listFiles() )
             {
-                deleteRecursivley( new File( child ) );
+                deleteRecursivley( child );
             }
         }
         file.delete();
@@ -49,12 +49,19 @@ public class TestBatchInsert extends NeoTestCase
     {
         BatchInserter neo = new BatchInserter( "var/batch-insert" );
         LuceneIndexBatchInserter index = new LuceneIndexBatchInserter( neo );
-        
-        long node = neo.createNode( null );
-        assertTrue( !index.getNodes( "test-key", 
-            "test-value" ).iterator().hasNext() );
-        index.index( node, "test-key", "test-value" );
-        assertTrue( index.getNodes( "test-key", 
-        "test-value" ).iterator().hasNext() );
+        try
+        {
+            long node = neo.createNode( null );
+            assertTrue( !index.getNodes( "test-key", 
+                "test-value" ).iterator().hasNext() );
+            index.index( node, "test-key", "test-value" );
+            assertTrue( index.getNodes( "test-key", 
+                "test-value" ).iterator().hasNext() );
+        }
+        finally
+        {
+            index.close();
+            neo.shutdown();
+        }
     }
 }
