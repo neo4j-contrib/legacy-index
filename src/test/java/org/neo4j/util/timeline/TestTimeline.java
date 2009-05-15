@@ -127,6 +127,23 @@ public class TestTimeline extends NeoTestCase
 		assertEquals( node1, timeline.getFirstNode() );
 		assertEquals( node2, timeline.getLastNode() );		
 		
+        itr = timeline.getAllNodes( null, null ).iterator();
+        assertEquals( node1, itr.next() );
+        assertEquals( node2, itr.next() );
+        assertTrue( !itr.hasNext() );
+        itr = timeline.getAllNodes( 0L, null ).iterator(); 
+        assertEquals( node1, itr.next() );
+        assertEquals( node2, itr.next() );
+        assertTrue( !itr.hasNext() );
+        itr = timeline.getAllNodes( null, stamp2 + 1 ).iterator(); 
+        assertEquals( node1, itr.next() );
+        assertEquals( node2, itr.next() );
+        assertTrue( !itr.hasNext() );
+        itr = timeline.getAllNodes( 0L, stamp2 + 1 ).iterator();
+        assertEquals( node1, itr.next() );
+        assertEquals( node2, itr.next() );
+        assertTrue( !itr.hasNext() );
+
 		timeline.removeNode( node1 );
 		timeline.removeNode( node2 );
 		assertTrue( !timeline.getAllNodes().iterator().hasNext() );

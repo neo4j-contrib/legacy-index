@@ -600,6 +600,30 @@ public class Timeline implements TimelineIndex
 		}
 	}
 	
+	public Iterable<Node> getAllNodes( Long afterTimestampOrNull,
+	    Long beforeTimestampOrNull )
+    {
+	    Iterable<Node> result = null;
+	    if ( afterTimestampOrNull == null && beforeTimestampOrNull == null )
+	    {
+	        result = getAllNodes();
+	    }
+	    else if ( afterTimestampOrNull == null )
+	    {
+	        result = getAllNodesBefore( beforeTimestampOrNull );
+	    }
+	    else if ( beforeTimestampOrNull == null )
+	    {
+	        result = getAllNodesAfter( afterTimestampOrNull );
+	    }
+	    else
+	    {
+	        result = getAllNodesBetween( afterTimestampOrNull,
+	            beforeTimestampOrNull );
+	    }
+	    return result;
+    }
+	
 	/**
 	 * Returns all nodes in the timeline ordered by increasing timestamp.
 	 * 
