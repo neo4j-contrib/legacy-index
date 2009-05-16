@@ -22,8 +22,10 @@ package org.neo4j.util.index;
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.lucene.analysis.Analyzer;
@@ -117,14 +119,18 @@ public class LuceneIndexBatchInserter
         try
         {
             writer.addDocument( document );
+            if ( key.equals( cachedForKey ) )
+            {
+                if ( cachedIndexSearcher != null )
+                {
+                    cachedIndexSearcher.close();
+                    cachedIndexSearcher = null;
+                }
+            }
         }
         catch ( IOException e )
         {
             throw new RuntimeException( e );
-        }
-        if ( key.equals( cachedForKey ) )
-        {
-            cachedIndexSearcher = null;
         }
     }
     
@@ -150,7 +156,7 @@ public class LuceneIndexBatchInserter
     private IndexSearcher cachedIndexSearcher = null;
     private String cachedForKey = null;
     
-    Iterable<Long> getNodes( String key, Object value )
+    public Iterable<Long> getNodes( String key, Object value )
     {
         IndexWriter writer = indexWriters.remove( key );
         if ( writer != null )
@@ -205,5 +211,27 @@ public class LuceneIndexBatchInserter
             throw new RuntimeException( e );
         }
         return nodeSet;
+    }
+    
+    public void optimize()
+    {
+        try
+        {
+            List<IndexWriter> writers = new ArrayList<IndexWriter>();
+            for ( IndexWriter writer : indexWriters.values() )
+            {
+                writer.optimize( true );
+                writers.add( writer );
+            }
+            indexWriters.clear();
+            for ( IndexWriter writer : writers )
+            {
+                writer.close();
+            }
+        }
+        catch ( IOException e )
+        {
+            throw new RuntimeException( e );
+        }
     }
 }
