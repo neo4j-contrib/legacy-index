@@ -21,11 +21,9 @@ package org.neo4j.util.index;
 
 import java.util.Iterator;
 
+import org.neo4j.api.core.DynamicRelationshipType;
 import org.neo4j.api.core.Node;
 import org.neo4j.util.NeoTestCase;
-import org.neo4j.util.index.IndexService;
-import org.neo4j.util.index.Isolation;
-import org.neo4j.util.index.NeoIndexService;
 
 public class TestNeoIndexingService extends NeoTestCase
 {
@@ -101,7 +99,64 @@ public class TestNeoIndexingService extends NeoTestCase
         node1.delete();
         node2.delete();
     }
+    
+    public void testProgramaticNeoMultiCommit() 
+    {
+        String testValue = String.valueOf(System.nanoTime());
+        assertTrue("No node expected", !hasNewNode(testValue));
+
+        insertNewNodeAndCommit(testValue);
+        assertTrue("Node expected", hasNewNode(testValue));
+
+        testValue = String.valueOf(System.nanoTime());
+        assertTrue("No node expected", !hasNewNode(testValue));
+
+        insertNewNodeAndCommit(testValue);
+        assertTrue("Node expected", hasNewNode(testValue));
+    }
+    
+    private void insertNewNodeAndCommit( String testValue )
+    {
+        restartTx();
+        try 
+        {
+            Node newNode = neo().createNode();
+            newNode.setProperty("id", testValue);
+            neo().getReferenceNode().createRelationshipTo(newNode,
+                DynamicRelationshipType.withName( "LINKS_TO" ));
+            indexService.index(newNode, "id", testValue);
+            restartTx( true );
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
+        }        
+    }
 	
+    private void insertNewNodeAndRollback( String testValue )
+    {
+        restartTx();
+        try 
+        {
+            Node newNode = neo().createNode();
+            newNode.setProperty("id", testValue);
+            neo().getReferenceNode().createRelationshipTo(newNode,
+                DynamicRelationshipType.withName( "LINKS_TO" ));
+            indexService.index(newNode, "id", testValue);
+            restartTx( false );
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
+        }        
+    }
+
+    private boolean hasNewNode(String testValue) 
+    {
+        restartTx();
+        Node node = indexService.getSingleNode("id", testValue);
+        restartTx( true );
+        return node != null;
+    }
+    
 /*	public void testIllegalStuff()
 	{
 		Node node1 = neo.createNode();

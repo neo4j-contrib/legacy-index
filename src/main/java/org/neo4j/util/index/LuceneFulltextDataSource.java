@@ -29,7 +29,7 @@ import org.neo4j.impl.transaction.xaframework.XaTransaction;
 
 public class LuceneFulltextDataSource extends LuceneDataSource
 {
-    public LuceneFulltextDataSource( Map<?, ?> params )
+    public LuceneFulltextDataSource( Map<Object, Object> params )
         throws InstantiationException
     {
         super( params );

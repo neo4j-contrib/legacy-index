@@ -75,7 +75,8 @@ public class LuceneDataSource extends XaDataSource
         Collections.synchronizedMap( 
             new HashMap<String,LruCache<String,Iterable<Long>>>() );
 
-    public LuceneDataSource( Map<?,?> params ) throws InstantiationException
+    public LuceneDataSource( Map<Object,Object> params ) 
+        throws InstantiationException
     {
         super( params );
         // this.lockManager = (LockManager) params.get( LockManager.class );
@@ -102,7 +103,7 @@ public class LuceneDataSource extends XaDataSource
         this.store = new LuceneIndexStore( storeDir + "/lucene-store.db" );
         XaCommandFactory cf = new LuceneCommandFactory();
         XaTransactionFactory tf = new LuceneTransactionFactory( store );
-        xaContainer = XaContainer.create( dir + "/lucene.log", cf, tf );
+        xaContainer = XaContainer.create( dir + "/lucene.log", cf, tf, params );
         try
         {
             xaContainer.openLogicalLog();

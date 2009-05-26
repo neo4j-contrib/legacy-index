@@ -24,6 +24,7 @@ import java.io.File;
 import junit.framework.TestCase;
 
 import org.neo4j.impl.batchinsert.BatchInserter;
+import org.neo4j.impl.batchinsert.BatchInserterImpl;
 
 public class TestBatchInsert extends TestCase
 {
@@ -47,7 +48,7 @@ public class TestBatchInsert extends TestCase
     
     public void testSimpleBatchInsert()
     {
-        BatchInserter neo = new BatchInserter( "var/batch-insert" );
+        BatchInserter neo = new BatchInserterImpl( "var/batch-insert" );
         LuceneIndexBatchInserter index = new LuceneIndexBatchInserter( neo );
         try
         {

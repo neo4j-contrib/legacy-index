@@ -125,7 +125,7 @@ public class TestRecovery extends TestCase
         Node refNode = neo.getReferenceNode();
         tx.finish();
         idx.shutdown();
-        Map<String,String> params = new HashMap<String,String>();
+        Map<Object,Object> params = new HashMap<Object,Object>();
         params.put( "dir", path + "/lucene" );
         try
         {
