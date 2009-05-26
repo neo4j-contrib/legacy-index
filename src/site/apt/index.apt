@@ -32,6 +32,13 @@ IndexService
     Node node = index.getSingleNodeFor( "name", someName );
 ---
 
+Performance tweaks
+
+	The <<LuceneIndexService>> has the
+	<<enableCache( String index, int maxCacheSize )>> method which will speed
+	things up significantly for reads for the given index. Just use it in
+	conjunction with instantiating the index.
+
 Index interface
 
 	In the <<org.neo4j.util.index>> package you will find an <<Index>> interface
