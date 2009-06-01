@@ -49,7 +49,8 @@ public class TestBatchInsert extends TestCase
     public void testSimpleBatchInsert()
     {
         BatchInserter neo = new BatchInserterImpl( "var/batch-insert" );
-        LuceneIndexBatchInserter index = new LuceneIndexBatchInserter( neo );
+        LuceneIndexBatchInserter index = 
+            new LuceneIndexBatchInserterImpl( neo );
         try
         {
             long node = neo.createNode( null );
@@ -61,7 +62,7 @@ public class TestBatchInsert extends TestCase
         }
         finally
         {
-            index.close();
+            index.shutdown();
             neo.shutdown();
         }
     }
