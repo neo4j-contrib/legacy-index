@@ -325,6 +325,27 @@ public class TestTimeline extends NeoTestCase
 		timeline.delete();
 	}
 	
+    public void testIndexedTimeline2()
+    {
+        Node tlNode = neo().createNode();
+        Timeline timeline = new Timeline( "test", tlNode, true, neo() );
+        Node nodes[] = new Node[1000];
+        for ( int i = 0; i < 1000; i++ )
+        {
+            Node node = neo().createNode();
+            nodes[i] = node;
+            timeline.addNode( node, i );
+        }
+        Iterator<Node> itr = timeline.getNodes( 670 ).iterator();
+        assertEquals( nodes[670], itr.next() );
+        assertTrue( !itr.hasNext() );
+        timeline.delete();
+        for ( Node node : nodes )
+        {
+            node.delete();
+        }
+    }
+    
 	public void testTimelineSameTimestamp()
 	{
 		Node tlNode = neo().createNode();

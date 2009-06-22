@@ -684,11 +684,20 @@ public class Timeline implements TimelineIndex
     {
         Node currentNode = getIndexedStartNode( timestamp );
         List<Node> nodeList = new ArrayList<Node>();
+        if ( currentNode.equals( underlyingNode ) )
+        {
+            if ( !currentNode.hasRelationship( RelTypes.TIMELINE_NEXT_ENTRY, 
+                Direction.OUTGOING ) )
+            {
+                // empty timeline
+                return nodeList;
+            }
+            // no index or best start node is underlying node
+            currentNode = currentNode.getSingleRelationship( 
+                RelTypes.TIMELINE_NEXT_ENTRY, Direction.OUTGOING ).getEndNode();
+        }
         do
         {
-            Relationship rel = currentNode.getSingleRelationship( 
-                RelTypes.TIMELINE_NEXT_ENTRY, Direction.OUTGOING );
-            currentNode = rel.getEndNode();
             long currentTime = (Long) currentNode.getProperty( TIMESTAMP );
             if ( currentTime == timestamp )
             {
@@ -703,6 +712,9 @@ public class Timeline implements TimelineIndex
             {
                 break;
             }
+            Relationship rel = currentNode.getSingleRelationship( 
+                RelTypes.TIMELINE_NEXT_ENTRY, Direction.OUTGOING );
+            currentNode = rel.getEndNode();
         } while ( !currentNode.equals( underlyingNode ) );
         return nodeList;
     }
