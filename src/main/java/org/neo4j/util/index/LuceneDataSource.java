@@ -399,16 +399,18 @@ public class LuceneDataSource extends XaDataSource
         }
     }
 
-    protected void fillDocument( Document document, long nodeId, Object value )
+    protected void fillDocument( Document document, long nodeId, String key,
+        Object value )
     {
         document.add( new Field( LuceneIndexService.DOC_ID_KEY,
             String.valueOf( nodeId ), Field.Store.YES,
             Field.Index.NOT_ANALYZED ) );
         document.add( new Field( LuceneIndexService.DOC_INDEX_KEY,
-            value.toString(), Field.Store.NO, getIndexStrategy() ) );
+            value.toString(), Field.Store.NO,
+            getIndexStrategy( key, value ) ) );
     }
 
-    protected Index getIndexStrategy()
+    protected Index getIndexStrategy( String key, Object value )
     {
         return Field.Index.NOT_ANALYZED;
     }

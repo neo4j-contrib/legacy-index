@@ -138,10 +138,11 @@ class LuceneTransaction extends XaTransaction
         return this.luceneDs;
     }
     
-    private void indexWriter( IndexWriter writer, long nodeId, Object value )
+    private void indexWriter( IndexWriter writer, long nodeId, String key,
+        Object value )
     {
         Document document = new Document();
-        this.luceneDs.fillDocument( document, nodeId, value );
+        this.luceneDs.fillDocument( document, nodeId, key, value );
         try
         {
             writer.addDocument( document );
@@ -220,7 +221,7 @@ class LuceneTransaction extends XaTransaction
                 List<AddCommand> commands = addCommandMap.get( key );
                 for ( AddCommand cmd : commands )
                 {
-                    indexWriter( writer, cmd.getNodeId(), cmd.getValue() );
+                    indexWriter( writer, cmd.getNodeId(), key, cmd.getValue() );
                     luceneDs.invalidateCache( key, cmd.getValue() );
                 }
             }

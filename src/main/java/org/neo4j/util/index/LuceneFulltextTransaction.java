@@ -88,7 +88,8 @@ class LuceneFulltextTransaction extends LuceneTransaction
         try
         {
             Document document = new Document();
-            this.getDataSource().fillDocument( document, node.getId(), value );
+            this.getDataSource().fillDocument( document, node.getId(), key,
+                value );
             IndexWriter writer = insertTo.writer;
             writer.addDocument( document );
             insertTo.invalidateSearcher();

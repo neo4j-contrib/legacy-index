@@ -43,7 +43,7 @@ public class LuceneFulltextDataSource extends LuceneDataSource
     }
 
     @Override
-    protected Index getIndexStrategy()
+    protected Index getIndexStrategy( String key, Object value )
     {
         return Index.ANALYZED;
     }
@@ -55,9 +55,10 @@ public class LuceneFulltextDataSource extends LuceneDataSource
     }
     
     @Override
-    protected void fillDocument( Document document, long nodeId, Object value )
+    protected void fillDocument( Document document, long nodeId, String key,
+        Object value )
     {
-        super.fillDocument( document, nodeId, value );
+        super.fillDocument( document, nodeId, key, value );
         document.add( new Field(
             LuceneFulltextIndexService.DOC_INDEX_SOURCE_KEY, value.toString(),
             Field.Store.NO, Field.Index.NOT_ANALYZED ) );
