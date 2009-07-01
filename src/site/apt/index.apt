@@ -32,6 +32,57 @@ IndexService
     Node node = index.getSingleNodeFor( "name", someName );
 ---
 
+LuceneIndexService
+
+	The <<org.neo4j.util.index.LuceneIndexService>> uses lucene as the back-end.
+	It also has one great feature, caching, which can enhance performance
+	greatly if used properly. You can enable caching per key and decide the
+	max size of the cache.
+
+---
+	LuceneIndexService indexService = new LuceneIndexService( neo );
+	
+	// This will enable caching for the "users" index. The 10000 most frequently
+	// used values will be kept in cache.
+	indexService.enableCache( "users", 10000 );
+---
+
+LuceneFulltextIndexService
+
+	The <<org.neo4j.util.index.LuceneFulltextIndexService>> class can perform
+	more complex indexing and querying than the 1-to-1 <<LuceneIndexService>>.
+	By extending the <<LuceneFulltextIndexService>> (and optionally
+	<<LuceneFulltextDataSource>> as well) you can do the indexing and querying
+	that you need. Caching is disabled for this implementation.
+	
+---
+	public class MyDataSource extends LuceneFulltextDataSource
+	{
+		@Override
+		protected Index getIndexStrategy( String key, Object value )
+		{
+			// This will decide how lucene analyzes your values when indexing.
+		}
+	}
+
+	IndexService indexService = new LuceneFulltextIndexService( neo )
+	{
+		...
+		
+		@Override
+		protected Class<? extends LuceneDataSource> getDataSourceClass()
+		{
+			return MyDataSource.class;
+		}
+		
+		@Override
+		protected Query formQuery( String key, Object value )
+		{
+			// Implement you querying here.
+		}
+	};
+---
+
 Performance tweaks
 
 	The <<LuceneIndexService>> has the
