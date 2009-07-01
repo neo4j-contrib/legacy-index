@@ -192,7 +192,7 @@ public class LuceneIndexService extends GenericIndexService
         this.sorting = sortingOrNullForNone;
     }
     
-    protected Query formQuery( Object value )
+    protected Query formQuery( String key, Object value )
     {
         return new TermQuery( new Term( DOC_INDEX_KEY, value.toString() ) );
     }
@@ -200,7 +200,7 @@ public class LuceneIndexService extends GenericIndexService
     private Iterable<Node> searchForNodes( String key, Object value,
         Set<Long> deletedNodes )
     {
-        Query query = formQuery( value );
+        Query query = formQuery( key, value );
         IndexSearcher searcher = xaDs.acquireIndexSearcher( key );
         try
         {

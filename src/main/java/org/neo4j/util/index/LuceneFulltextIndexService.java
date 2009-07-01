@@ -52,7 +52,7 @@ public class LuceneFulltextIndexService extends LuceneIndexService
     }
 
     @Override
-    protected Query formQuery( Object value )
+    protected Query formQuery( String key, Object value )
     {
         return new TermQuery( new Term( DOC_INDEX_KEY,
             value.toString().toLowerCase() ) );
