@@ -31,7 +31,6 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
 import org.apache.lucene.search.Hits;
 import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.RAMDirectory;
 import org.neo4j.api.core.Node;
@@ -141,9 +140,8 @@ class LuceneFulltextTransaction extends LuceneTransaction
         try
         {
             IndexSearcher searcher = directory.getSearcher();
-            Hits hits = searcher.search( new TermQuery(
-                new Term( LuceneIndexService.DOC_INDEX_KEY,
-                    value.toString() ) ) );
+            Hits hits = searcher.search(
+                getDataSource().getIndexService().formQuery( key, value ) );
             HashSet<Long> result = new HashSet<Long>();
             for ( int i = 0; i < hits.length(); i++ )
             {

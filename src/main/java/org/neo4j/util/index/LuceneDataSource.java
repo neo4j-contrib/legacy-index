@@ -70,6 +70,7 @@ public class LuceneDataSource extends XaDataSource
         new ReentrantReadWriteLock[LOCK_STRIPE_SIZE];
     private final Analyzer fieldAnalyzer;
     private final LuceneIndexStore store;
+    private LuceneIndexService indexService;
     
     private Map<String,LruCache<String,Iterable<Long>>> caching = 
         Collections.synchronizedMap( 
@@ -113,6 +114,22 @@ public class LuceneDataSource extends XaDataSource
             throw new RuntimeException( "Unable to open lucene log in " + dir,
                 e );
         }
+    }
+    
+    /**
+     * This is here so that {@link LuceneIndexService#formQuery(String, Object)}
+     * can be used when getting stuff from inside a transaction.
+     * @param indexService the {@link LuceneIndexService} instance which
+     * created it.
+     */
+    protected void setIndexService( LuceneIndexService indexService )
+    {
+        this.indexService = indexService;
+    }
+    
+    protected LuceneIndexService getIndexService()
+    {
+        return this.indexService;
     }
 
     private Analyzer instantiateAnalyzer()

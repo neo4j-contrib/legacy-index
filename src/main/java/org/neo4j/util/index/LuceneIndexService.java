@@ -81,6 +81,7 @@ public class LuceneIndexService extends GenericIndexService
         xaDs = ( LuceneDataSource ) txModule.registerDataSource( getDirName(),
             getDataSourceClass().getName(), resourceId, params, true );
         broker = new ConnectionBroker( txManager, xaDs );
+        xaDs.setIndexService( this );
     }
     
     public void rotate() throws IOException
