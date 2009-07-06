@@ -19,16 +19,10 @@
  */
 package org.neo4j.util.index;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
 
 import org.neo4j.api.core.Node;
 import org.neo4j.util.NeoTestCase;
-import org.neo4j.util.index.IndexService;
-import org.neo4j.util.index.Isolation;
-import org.neo4j.util.index.LuceneIndexService;
 
 public class TestLuceneIndexingService extends NeoTestCase
 {
@@ -158,8 +152,8 @@ public class TestLuceneIndexingService extends NeoTestCase
         indexService().getNodes( key, value );
         restartTx();
         
-        assertCollection( indexService().getNodes( key, value ),
-            Arrays.asList( node2, node4 ) );
+        assertCollection( asCollection( indexService().getNodes( key, value ) ),
+            node2, node4 );
         
         indexService().removeIndex( node2, key, value );
         indexService().removeIndex( node4, key, value );
@@ -207,25 +201,7 @@ public class TestLuceneIndexingService extends NeoTestCase
 //        node2.delete();
 //        node1.delete();
 //    }
-    
-    private <T> void assertCollection( Iterable<T> items,
-        Iterable<T> expectedItems )
-    {
-        Collection<T> set = new HashSet<T>();
-        for ( T item : items )
-        {
-            set.add( item );
-        }
-        
-        int counter = 0;
-        for ( T expectedItem : expectedItems )
-        {
-            assertTrue( set.contains( expectedItem ) );
-            counter++;
-        }
-        assertEquals( counter, set.size() );
-    }
-    
+//    
 //    private <T> void assertCollection( Iterable<T> items, T... expectedItems )
 //    {
 //        assertCollection( items, Arrays.asList( expectedItems ) );
