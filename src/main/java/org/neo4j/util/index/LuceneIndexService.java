@@ -176,7 +176,7 @@ public class LuceneIndexService extends GenericIndexService
                     }
                     if ( cachedNodesMap != null )
                     {
-                        cachedNodesMap.add( valueAsString, readNodeIds );
+                        cachedNodesMap.put( valueAsString, readNodeIds );
                     }
                 }
             }
