@@ -336,9 +336,12 @@ public class TestTimeline extends NeoTestCase
             nodes[i] = node;
             timeline.addNode( node, i );
         }
-        Iterator<Node> itr = timeline.getNodes( 670 ).iterator();
-        assertEquals( nodes[670], itr.next() );
-        assertTrue( !itr.hasNext() );
+        for ( int i = 0; i < 1000; i++ )
+        {
+            Iterator<Node> itr = timeline.getNodes( i ).iterator();
+            assertEquals( nodes[i], itr.next() );
+            assertTrue( !itr.hasNext() );
+        }
         timeline.delete();
         for ( Node node : nodes )
         {

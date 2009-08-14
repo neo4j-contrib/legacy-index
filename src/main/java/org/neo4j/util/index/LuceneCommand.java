@@ -226,7 +226,7 @@ abstract class LuceneCommand extends XaCommand
             case ADD_COMMAND: return new AddCommand( data ); 
             case REMOVE_COMMAND: return new RemoveCommand( data );
             default:
-                throw new IOException( "Unkown command type[" + 
+                throw new IOException( "Unknown command type[" + 
                     commandType + "]" );
         }
     }

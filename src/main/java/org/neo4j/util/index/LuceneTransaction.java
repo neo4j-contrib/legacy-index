@@ -182,7 +182,7 @@ class LuceneTransaction extends XaTransaction
         }
         else
         {
-            throw new RuntimeException( "Unkown command: " + command );
+            throw new RuntimeException( "Unknown command: " + command );
         }
     }
 
