@@ -142,9 +142,10 @@ public class LuceneIndexService extends GenericIndexService
             }
             deletedNodes = luceneTx.getDeletedNodesFor( key, value );
         }
-        IndexSearcher searcher = xaDs.acquireIndexSearcher( key );
+        xaDs.getReadLock();
         try
         {
+            IndexSearcher searcher = xaDs.getIndexSearcher( key );
             if ( searcher != null )
             {
                 LruCache<String,Iterable<Long>> cachedNodesMap = 
@@ -183,7 +184,7 @@ public class LuceneIndexService extends GenericIndexService
         }
         finally
         {
-            xaDs.releaseIndexSearcher( key, searcher );
+            xaDs.releaseReadLock();
         }
         return nodes;
     }
@@ -202,9 +203,10 @@ public class LuceneIndexService extends GenericIndexService
         Set<Long> deletedNodes )
     {
         Query query = formQuery( key, value );
-        IndexSearcher searcher = xaDs.acquireIndexSearcher( key );
+        xaDs.getReadLock();
         try
         {
+            IndexSearcher searcher = xaDs.getIndexSearcher( key );
             ArrayList<Node> nodes = new ArrayList<Node>();
             Hits hits = sorting != null ?
                 searcher.search( query, sorting ) :
@@ -235,7 +237,7 @@ public class LuceneIndexService extends GenericIndexService
         }
         finally
         {
-            xaDs.releaseIndexSearcher( key, searcher );
+            xaDs.releaseReadLock();
         }
     }
 

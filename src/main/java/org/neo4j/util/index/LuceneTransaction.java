@@ -189,11 +189,12 @@ class LuceneTransaction extends XaTransaction
     @Override
     protected void doCommit()
     {
-        for ( String key : removeCommandMap.keySet() )
+        luceneDs.getWriteLock();
+        try
         {
-            IndexSearcher searcher = luceneDs.acquireIndexSearcher( key );
-            try
+            for ( String key : removeCommandMap.keySet() )
             {
+                IndexSearcher searcher = luceneDs.getIndexSearcher( key );
                 if ( searcher != null ) // meaning such a index exist
                 {
                     List<RemoveCommand> commands = removeCommandMap.get( key );
@@ -206,38 +207,27 @@ class LuceneTransaction extends XaTransaction
                         luceneDs.invalidateCache( key, value );
                     }
                 }
-            }
-            finally
-            {
-                luceneDs.releaseIndexSearcher( key, searcher );
                 luceneDs.removeIndexSearcher( key );
             }
-        }
-        for ( String key : addCommandMap.keySet() )
-        {
-            IndexWriter writer = luceneDs.getIndexWriter( key );
-            try
+            for ( String key : addCommandMap.keySet() )
             {
+                IndexWriter writer = luceneDs.getIndexWriter( key );
                 List<AddCommand> commands = addCommandMap.get( key );
                 for ( AddCommand cmd : commands )
                 {
                     indexWriter( writer, cmd.getNodeId(), key, cmd.getValue() );
                     luceneDs.invalidateCache( key, cmd.getValue() );
                 }
-            }
-            catch ( Exception e )
-            {
-                throw new RuntimeException( "Unable to update lucene index", 
-                    e );
-            }
-            finally
-            {
-                luceneDs.releaseAndRemoveWriter( key, writer );
+                luceneDs.removeWriter( key, writer );
                 luceneDs.removeIndexSearcher( key );
             }
         }
+        finally
+        {
+            luceneDs.releaseWriteLock();
+        }
     }
-
+    
     @Override
     protected void doPrepare()
     {

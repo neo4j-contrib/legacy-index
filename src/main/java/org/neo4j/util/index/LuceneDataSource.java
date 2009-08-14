@@ -64,10 +64,7 @@ public class LuceneDataSource extends XaDataSource
 
     private final XaContainer xaContainer;
     private final String storeDir;
-    // private final LockManager lockManager;
-    private final int LOCK_STRIPE_SIZE = 5;
-    private ReentrantReadWriteLock[] keyLocks = 
-        new ReentrantReadWriteLock[LOCK_STRIPE_SIZE];
+    private ReentrantReadWriteLock lock = new ReentrantReadWriteLock(); 
     private final Analyzer fieldAnalyzer;
     private final LuceneIndexStore store;
     private LuceneIndexService indexService;
@@ -80,11 +77,6 @@ public class LuceneDataSource extends XaDataSource
         throws InstantiationException
     {
         super( params );
-        // this.lockManager = (LockManager) params.get( LockManager.class );
-        for ( int i = 0; i < keyLocks.length; i++ )
-        {
-            keyLocks[i] = new ReentrantReadWriteLock();
-        }
         this.storeDir = (String) params.get( "dir" );
         this.fieldAnalyzer = instantiateAnalyzer();
         String dir = storeDir;
@@ -237,33 +229,28 @@ public class LuceneDataSource extends XaDataSource
         }
     }
     
-    private void getReadLock( String key )
+    public void getReadLock()
     {
-        keyLocks[ Math.abs( key.hashCode() ) % 
-            LOCK_STRIPE_SIZE ].readLock().lock();
+        lock.readLock().lock();
     }
     
-    private void releaseReadLock( String key )
+    public void releaseReadLock()
     {
-        keyLocks[ Math.abs( key.hashCode() ) % 
-            LOCK_STRIPE_SIZE ].readLock().unlock();
-    }
-
-    private void getWriteLock( String key )
-    {
-        keyLocks[ Math.abs( key.hashCode() ) % 
-            LOCK_STRIPE_SIZE ].writeLock().lock();
+        lock.readLock().unlock();
     }
     
-    private void releaseWriteLock( String key )
+    public void getWriteLock()
     {
-        keyLocks[ Math.abs( key.hashCode() ) % 
-            LOCK_STRIPE_SIZE ].writeLock().unlock();
+        lock.writeLock().lock();
     }
     
-    IndexSearcher acquireIndexSearcher( String key )
+    public void releaseWriteLock()
     {
-        getReadLock( key );
+        lock.writeLock().unlock();
+    }
+    
+    IndexSearcher getIndexSearcher( String key )
+    {
         IndexSearcher searcher = indexSearchers.get( key );
         if ( searcher == null )
         {
@@ -292,33 +279,20 @@ public class LuceneDataSource extends XaDataSource
         return new LuceneTransaction( identifier, logicalLog, this );
     }
 
-    void releaseIndexSearcher( String key, IndexSearcher searcher )
-    {
-        releaseReadLock( key );
-    }
-
     void removeIndexSearcher( String key )
     {
-        getWriteLock( key );
-        try
+        IndexSearcher searcher = indexSearchers.remove( key );
+        if ( searcher != null )
         {
-            IndexSearcher searcher = indexSearchers.remove( key );
-            if ( searcher != null )
+            try
             {
-                try
-                {
-                    searcher.close();
-                }
-                catch ( IOException e )
-                {
-                    throw new RuntimeException(
-                        "Unable to close index searcher[" + key + "]", e );
-                }
+                searcher.close();
             }
-        }
-        finally
-        {
-            releaseWriteLock( key );
+            catch ( IOException e )
+            {
+                throw new RuntimeException(
+                    "Unable to close index searcher[" + key + "]", e );
+            }
         }
     }
 
@@ -326,7 +300,6 @@ public class LuceneDataSource extends XaDataSource
     {
         try
         {
-            getWriteLock( key );
             Directory dir = FSDirectory.getDirectory( 
                 new File( storeDir + "/" + key ) );
             return new IndexWriter( dir, getAnalyzer(),
@@ -374,7 +347,7 @@ public class LuceneDataSource extends XaDataSource
         return LuceneIndexService.DOC_INDEX_KEY;
     }
 
-    void releaseAndRemoveWriter( String key, IndexWriter writer )
+    void removeWriter( String key, IndexWriter writer )
     {
         try
         {
@@ -389,10 +362,6 @@ public class LuceneDataSource extends XaDataSource
         {
             throw new RuntimeException( "Unable to close lucene writer "
                 + writer, e );
-        }
-        finally
-        {
-            releaseWriteLock( key );
         }
     }
 
