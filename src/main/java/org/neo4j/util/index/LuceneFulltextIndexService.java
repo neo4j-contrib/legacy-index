@@ -27,6 +27,7 @@ import org.neo4j.api.core.NeoService;
 public class LuceneFulltextIndexService extends LuceneIndexService
 {
     protected static final String DOC_INDEX_SOURCE_KEY = "index_source";
+    protected static final String FULLTEXT_DIR_NAME_POSTFIX = "-fulltext";
     
     public LuceneFulltextIndexService( NeoService neo )
     {
@@ -42,7 +43,7 @@ public class LuceneFulltextIndexService extends LuceneIndexService
     @Override
     protected String getDirName()
     {
-        return super.getDirName() + "-fulltext";
+        return super.getDirName() + FULLTEXT_DIR_NAME_POSTFIX;
     }
 
     @Override

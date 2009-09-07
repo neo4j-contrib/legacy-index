@@ -28,6 +28,7 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.neo4j.impl.batchinsert.BatchInserter;
 import org.neo4j.impl.util.ArrayMap;
+import org.neo4j.impl.util.FileUtils;
 
 public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
 {
@@ -47,21 +48,17 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
     
     public LuceneIndexBatchInserterImpl( BatchInserter neo )
     {
-        this.storeDir = fixPath( neo.getStore() + "/lucene" );
+        this.storeDir = fixPath( neo.getStore() + "/" + getDirName() );
+    }
+    
+    protected String getDirName()
+    {
+        return LuceneIndexService.DIR_NAME;
     }
     
     private String fixPath( String dir )
     {
-        String store = dir;
-        String fileSeparator = System.getProperty( "file.separator" );
-        if ( "\\".equals( fileSeparator ) )
-        {
-            store = dir.replace( '/', '\\' );
-        }
-        else if ( "/".equals( fileSeparator ) )
-        {
-            store = dir.replace( '\\', '/' );
-        }
+        String store = FileUtils.fixSeparatorsInPath( dir );
         File directories = new File( dir );
         if ( !directories.exists() )
         {
@@ -74,6 +71,11 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
         return store;
     }
     
+    private Directory instantiateDirectory( String key ) throws IOException
+    {
+        return FSDirectory.getDirectory( new File( storeDir + "/" + key ) );
+    }
+    
     public void index( long node, String key, Object value )
     {
         IndexWriter writer = indexWriters.get( key );
@@ -81,8 +83,7 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
         {
             try
             {
-                Directory dir = FSDirectory.getDirectory( 
-                    new File( storeDir + "/" + key ) );
+                Directory dir = instantiateDirectory( key );
                 writer = new IndexWriter( dir, fieldAnalyzer,
                     MaxFieldLength.UNLIMITED );
             }
@@ -93,11 +94,7 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
             indexWriters.put( key, writer );
         }
         Document document = new Document();
-        document.add( new Field( LuceneIndexService.DOC_ID_KEY,
-            String.valueOf( node ), Field.Store.YES,
-            Field.Index.NOT_ANALYZED ) );
-        document.add( new Field( LuceneIndexService.DOC_INDEX_KEY,
-            value.toString(), Field.Store.NO, Field.Index.NOT_ANALYZED ) );
+        fillDocument( document, node, key, value );
         try
         {
             writer.addDocument( document );
@@ -114,6 +111,21 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
         {
             throw new RuntimeException( e );
         }
+    }
+
+    protected void fillDocument( Document document, long nodeId, String key,
+        Object value )
+    {
+        document.add( new Field( LuceneIndexService.DOC_ID_KEY,
+            String.valueOf( nodeId ), Field.Store.YES,
+            Field.Index.NOT_ANALYZED ) );
+        document.add( new Field( LuceneIndexService.DOC_INDEX_KEY,
+            value.toString(), Field.Store.NO, getIndexStrategy() ) );
+    }
+    
+    protected Field.Index getIndexStrategy()
+    {
+        return Field.Index.NOT_ANALYZED;
     }
     
     public void shutdown()
@@ -161,12 +173,11 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
         {
             try
             {
-                Directory dir = FSDirectory.getDirectory( 
-                    new File( storeDir + "/" + key ) );
+                Directory dir = instantiateDirectory( key );
                 cachedForKey = key;
                 if ( dir.list().length == 0 )
                 {
-                    return Collections.EMPTY_SET;
+                    return Collections.emptySet();
                 }
                 cachedIndexSearcher = new IndexSearcher( dir );
             }
@@ -175,8 +186,7 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
                 throw new RuntimeException( e );
             }
         }
-        Query query = new TermQuery( new Term( LuceneIndexService.DOC_INDEX_KEY, 
-            value.toString() ) );
+        Query query = formQuery( key, value );
         try
         {
             Hits hits = cachedIndexSearcher.search( query );
@@ -193,6 +203,12 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
             throw new RuntimeException( e );
         }
         return nodeSet;
+    }
+    
+    protected Query formQuery( String key, Object value )
+    {
+        return new TermQuery( new Term( LuceneIndexService.DOC_INDEX_KEY, 
+            value.toString() ) );
     }
     
     public void optimize()

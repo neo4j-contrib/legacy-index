@@ -20,6 +20,7 @@
 package org.neo4j.util.index;
 
 import java.io.File;
+import java.util.regex.Pattern;
 
 import junit.framework.TestCase;
 
@@ -59,6 +60,37 @@ public class TestBatchInsert extends TestCase
             index.index( node, "test-key", "test-value" );
             assertTrue( index.getNodes( "test-key", 
                 "test-value" ).iterator().hasNext() );
+        }
+        finally
+        {
+            index.shutdown();
+            neo.shutdown();
+        }
+    }
+
+    public void testSimpleFulltextBatchInsert()
+    {
+        BatchInserter neo = new BatchInserterImpl( "var/batch-insert" );
+        LuceneIndexBatchInserter index = 
+            new LuceneFulltextIndexBatchInserter( neo );
+        try
+        {
+            long node = neo.createNode( null );
+            assertTrue( !index.getNodes( "test-key", 
+                "test-value" ).iterator().hasNext() );
+            index.index( node, "test-key", "test-value" );
+            assertTrue( index.getNodes( "test-key", 
+                "test-value" ).iterator().hasNext() );
+            
+            String value = "A decent value for indexing";
+            String key = "my key";
+            index.index( node, key, value );
+            for ( String word : value.split( Pattern.quote( " " ) ) )
+            {
+                assertTrue( index.getNodes( key, word ).iterator().hasNext() );
+            }
+            assertFalse( index.getNodes( key,
+                "abcdefghijklmnop" ).iterator().hasNext() );
         }
         finally
         {

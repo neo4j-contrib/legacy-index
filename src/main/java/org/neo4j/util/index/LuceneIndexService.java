@@ -35,7 +35,6 @@ import javax.transaction.TransactionManager;
 import javax.transaction.xa.XAResource;
 
 import org.apache.lucene.document.Document;
-import org.apache.lucene.document.Field;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.Hits;
 import org.apache.lucene.search.IndexSearcher;
@@ -58,6 +57,7 @@ public class LuceneIndexService extends GenericIndexService
 {
     protected static final String DOC_ID_KEY = "id";
     protected static final String DOC_INDEX_KEY = "index";
+    protected static final String DIR_NAME = "lucene";
     
     private final TransactionManager txManager;
     private final ConnectionBroker broker;
@@ -96,17 +96,12 @@ public class LuceneIndexService extends GenericIndexService
     
     protected String getDirName()
     {
-        return "lucene";
+        return DIR_NAME;
     }
     
     protected byte[] getXaResourceId()
     {
         return "162373".getBytes();
-    }
-    
-    protected Field.Index getIndexStrategy()
-    {
-        return Field.Index.NOT_ANALYZED;
     }
     
     private Map<Object,Object> getDefaultParams()
