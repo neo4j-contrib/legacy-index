@@ -37,13 +37,14 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Index;
 import org.apache.lucene.index.CorruptIndexException;
+import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
-import org.apache.lucene.search.Hits;
+import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.neo4j.impl.cache.LruCache;
@@ -249,28 +250,67 @@ public class LuceneDataSource extends XaDataSource
         lock.writeLock().unlock();
     }
     
+    /**
+     * If nothing has changed underneath (since the searcher was last created
+     * or refreshed) {@code null} is returned. But if something has changed a
+     * refreshed searcher is returned. It makes use if the
+     * {@link IndexReader#reopen()} which faster than opening an index from
+     * scratch.
+     * 
+     * @param searcher the {@link IndexSearcher} to refresh.
+     * @return a refreshed version of the searcher or, if nothing has changed,
+     * {@code null}.
+     * @throws IOException if there's a problem with the index.
+     */
+    private IndexSearcher refreshSearcher( IndexSearcher searcher )
+    {
+        try
+        {
+            IndexReader reopened = searcher.getIndexReader().reopen();
+            if ( reopened != null )
+            {
+                return new IndexSearcher( reopened );
+            }
+            return null;
+        }
+        catch ( IOException e )
+        {
+            throw new RuntimeException( e );
+        }
+    }
+    
+    private Directory getDirectory( String key ) throws IOException
+    {
+        return FSDirectory.getDirectory( new File( storeDir, key ) );
+    }
+    
+    /**
+     * @param key the key for the index, i.e. which index to return a searcher
+     * for
+     * @return an {@link IndexSearcher} for the index for {@key}. If no such
+     * searcher has been opened before it is opened here.
+     */
     IndexSearcher getIndexSearcher( String key )
     {
-        IndexSearcher searcher = indexSearchers.get( key );
-        if ( searcher == null )
+        try
         {
-            try
+            IndexSearcher searcher = indexSearchers.get( key );
+            if ( searcher == null )
             {
-                Directory dir = FSDirectory.getDirectory( 
-                    new File( storeDir + "/" + key ) );
+                Directory dir = getDirectory( key );
                 if ( dir.list().length == 0 )
                 {
                     return null;
                 }
                 searcher = new IndexSearcher( dir );
+                indexSearchers.put( key, searcher );
             }
-            catch ( IOException e )
-            {
-                throw new RuntimeException( e );
-            }
-            indexSearchers.put( key, searcher );
+            return searcher;
         }
-        return searcher;
+        catch ( IOException e )
+        {
+            throw new RuntimeException( e );
+        }
     }
 
     public XaTransaction createTransaction( int identifier,
@@ -279,19 +319,15 @@ public class LuceneDataSource extends XaDataSource
         return new LuceneTransaction( identifier, logicalLog, this );
     }
 
-    void removeIndexSearcher( String key )
+    void invalidateIndexSearcher( String key )
     {
-        IndexSearcher searcher = indexSearchers.remove( key );
+        IndexSearcher searcher = indexSearchers.get( key );
         if ( searcher != null )
         {
-            try
+            IndexSearcher refreshedSearcher = refreshSearcher( searcher );
+            if ( refreshedSearcher != null )
             {
-                searcher.close();
-            }
-            catch ( IOException e )
-            {
-                throw new RuntimeException(
-                    "Unable to close index searcher[" + key + "]", e );
+                indexSearchers.put( key, refreshedSearcher );
             }
         }
     }
@@ -300,8 +336,7 @@ public class LuceneDataSource extends XaDataSource
     {
         try
         {
-            Directory dir = FSDirectory.getDirectory( 
-                new File( storeDir + "/" + key ) );
+            Directory dir = getDirectory( key );
             return new IndexWriter( dir, getAnalyzer(),
                 MaxFieldLength.UNLIMITED );
         }
@@ -310,35 +345,23 @@ public class LuceneDataSource extends XaDataSource
             throw new RuntimeException( e );
         }
     }
-
-    protected void deleteDocumentUsingReader( IndexSearcher searcher,
+    
+    protected void deleteDocumentsUsingWriter( IndexWriter writer,
         long nodeId, Object value )
     {
-        if ( searcher == null )
-        {
-            return;
-        }
-        Query query = new TermQuery( new Term( getDeleteDocumentsKey(),
-            value.toString() ) );
         try
         {
-            Hits hits = searcher.search( query );
-            for ( int i = 0; i < hits.length(); i++ )
-            {
-                Document document = hits.doc( i );
-                int foundId = Integer.parseInt( document.getField(
-                    LuceneIndexService.DOC_ID_KEY ).stringValue() );
-                if ( nodeId == foundId )
-                {
-                    int docNum = hits.id( i );
-                    searcher.getIndexReader().deleteDocument( docNum );
-                }
-            }
+            BooleanQuery query = new BooleanQuery();
+            query.add( new TermQuery( new Term( getDeleteDocumentsKey(),
+                value.toString() ) ), Occur.MUST );
+            query.add( new TermQuery( new Term( LuceneIndexService.DOC_ID_KEY,
+                "" + nodeId ) ), Occur.MUST );
+            writer.deleteDocuments( query );
         }
         catch ( IOException e )
         {
             throw new RuntimeException( "Unable to delete for " + nodeId + ","
-                + "," + value + " using" + searcher, e );
+                + "," + value + " using" + writer, e );
         }
     }
     

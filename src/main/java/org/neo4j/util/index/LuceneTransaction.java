@@ -30,7 +30,6 @@ import java.util.Set;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.search.IndexSearcher;
 import org.neo4j.api.core.Node;
 import org.neo4j.impl.transaction.xaframework.XaCommand;
 import org.neo4j.impl.transaction.xaframework.XaLogicalLog;
@@ -47,10 +46,8 @@ class LuceneTransaction extends XaTransaction
 
     private final LuceneDataSource luceneDs;
 
-    private final Map<String,List<AddCommand>> addCommandMap = 
-        new HashMap<String,List<AddCommand>>();
-    private final Map<String,List<RemoveCommand>> removeCommandMap = 
-        new HashMap<String,List<RemoveCommand>>();
+    private final Map<String,List<LuceneCommand>> commandMap = 
+        new HashMap<String,List<LuceneCommand>>();
 
     LuceneTransaction( int identifier, XaLogicalLog xaLog,
         LuceneDataSource luceneDs )
@@ -156,34 +153,15 @@ class LuceneTransaction extends XaTransaction
     @Override
     protected void doAddCommand( XaCommand command )
     {
-        // command added either through addCommand or injectCommand
-        if ( command instanceof AddCommand )
+        LuceneCommand luceneCommand = ( LuceneCommand ) command;
+        String key = luceneCommand.getKey();
+        List<LuceneCommand> list = commandMap.get( key );
+        if ( list == null )
         {
-            AddCommand addCommand = (AddCommand) command;
-            List<AddCommand> list = addCommandMap.get( addCommand.getKey() );
-            if ( list == null )
-            {
-                list = new ArrayList<AddCommand>();
-                addCommandMap.put( addCommand.getKey(), list );
-            }
-            list.add( addCommand );
+            list = new ArrayList<LuceneCommand>();
+            commandMap.put( key, list );
         }
-        else if ( command instanceof RemoveCommand )
-        {
-            RemoveCommand removeCommand = (RemoveCommand) command;
-            List<RemoveCommand> list = removeCommandMap.get( removeCommand
-                .getKey() );
-            if ( list == null )
-            {
-                list = new ArrayList<RemoveCommand>();
-                removeCommandMap.put( removeCommand.getKey(), list );
-            }
-            list.add( removeCommand );
-        }
-        else
-        {
-            throw new RuntimeException( "Unknown command: " + command );
-        }
+        list.add( luceneCommand );
     }
 
     @Override
@@ -192,34 +170,32 @@ class LuceneTransaction extends XaTransaction
         luceneDs.getWriteLock();
         try
         {
-            for ( String key : removeCommandMap.keySet() )
+            for ( Map.Entry<String, List<LuceneCommand>> entry :
+                this.commandMap.entrySet() )
             {
-                IndexSearcher searcher = luceneDs.getIndexSearcher( key );
-                if ( searcher != null ) // meaning such a index exist
-                {
-                    List<RemoveCommand> commands = removeCommandMap.get( key );
-                    for ( RemoveCommand cmd : commands )
-                    {
-                        String value = cmd.getValue();
-                        long id = cmd.getNodeId();
-                        luceneDs.deleteDocumentUsingReader( searcher, id, 
-                            value );
-                        luceneDs.invalidateCache( key, value );
-                    }
-                }
-                luceneDs.removeIndexSearcher( key );
-            }
-            for ( String key : addCommandMap.keySet() )
-            {
+                String key = entry.getKey();
                 IndexWriter writer = luceneDs.getIndexWriter( key );
-                List<AddCommand> commands = addCommandMap.get( key );
-                for ( AddCommand cmd : commands )
+                for ( LuceneCommand command : entry.getValue() )
                 {
-                    indexWriter( writer, cmd.getNodeId(), key, cmd.getValue() );
-                    luceneDs.invalidateCache( key, cmd.getValue() );
+                    if ( command instanceof AddCommand )
+                    {
+                        indexWriter( writer, command.getNodeId(), key,
+                            command.getValue() );
+                    }
+                    else if ( command instanceof RemoveCommand )
+                    {
+                        luceneDs.deleteDocumentsUsingWriter(
+                            writer, command.getNodeId(), command.getValue() );
+                    }
+                    else
+                    {
+                        throw new RuntimeException( "Unknown command type " +
+                            command + ", " + command.getClass() );
+                    }
+                    luceneDs.invalidateCache( key, command.getValue() );
                 }
                 luceneDs.removeWriter( key, writer );
-                luceneDs.removeIndexSearcher( key );
+                luceneDs.invalidateIndexSearcher( key );
             }
         }
         finally
@@ -227,7 +203,7 @@ class LuceneTransaction extends XaTransaction
             luceneDs.releaseWriteLock();
         }
     }
-    
+
     @Override
     protected void doPrepare()
     {
@@ -260,8 +236,7 @@ class LuceneTransaction extends XaTransaction
     protected void doRollback()
     {
         // TODO Auto-generated method stub
-        addCommandMap.clear();
-        removeCommandMap.clear();
+        commandMap.clear();
         txIndexed.clear();
         txRemoved.clear();
     }
