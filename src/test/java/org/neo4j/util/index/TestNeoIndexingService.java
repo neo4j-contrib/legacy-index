@@ -113,6 +113,12 @@ public class TestNeoIndexingService extends NeoTestCase
 
         insertNewNodeAndCommit(testValue);
         assertTrue("Node expected", hasNewNode(testValue));
+
+        testValue = String.valueOf(System.nanoTime());
+        assertTrue("No node expected", !hasNewNode(testValue));
+
+        insertNewNodeAndRollback(testValue);
+        assertTrue("No node expected", !hasNewNode(testValue));
     }
     
     private void insertNewNodeAndCommit( String testValue )

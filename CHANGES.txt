@@ -1,3 +1,11 @@
+0.8 (2009-11-02)
+----------------
+
+o Added read only lucene index service.
+o Improved LuceneFulltextIndexService query syntax.
+o Added batch inserte for lucene fulltext indexer.
+o Improved lucene index performance by use of IndexReader#reopen
+
 0.6 (2009-05-03)
 -------------------
 o Upgraded to lucene 2.4.0 making use of the
