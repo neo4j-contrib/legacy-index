@@ -76,13 +76,13 @@ public class LuceneReadOnlyDataSource // extends XaDataSource
         {
             try
             {
-                Directory dir = FSDirectory.getDirectory( 
+                Directory dir = FSDirectory.open( 
                     new File( storeDir + "/" + key ) );
-                if ( dir.list().length == 0 )
+                if ( dir.listAll().length == 0 )
                 {
                     return null;
                 }
-                searcher = new IndexSearcher( dir );
+                searcher = new IndexSearcher( dir, true );
             }
             catch ( IOException e )
             {

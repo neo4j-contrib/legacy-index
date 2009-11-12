@@ -17,6 +17,7 @@ import org.apache.lucene.analysis.WhitespaceTokenizer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.index.CorruptIndexException;
+import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
@@ -73,7 +74,7 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
     
     private Directory instantiateDirectory( String key ) throws IOException
     {
-        return FSDirectory.getDirectory( new File( storeDir + "/" + key ) );
+        return FSDirectory.open( new File( storeDir + "/" + key ) );
     }
     
     public void index( long node, String key, Object value )
@@ -102,8 +103,9 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
             {
                 if ( cachedIndexSearcher != null )
                 {
-                    cachedIndexSearcher.close();
-                    cachedIndexSearcher = null;
+//                    cachedIndexSearcher.close();
+//                    cachedIndexSearcher = null;
+                    cachedIndexSearcherNeedsRefresh = true;
                 }
             }
         }
@@ -149,6 +151,7 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
 
     private IndexSearcher cachedIndexSearcher = null;
     private String cachedForKey = null;
+    private boolean cachedIndexSearcherNeedsRefresh;
     
     public Iterable<Long> getNodes( String key, Object value )
     {
@@ -158,10 +161,6 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
             try
             {
                 writer.close();
-            }
-            catch ( CorruptIndexException e )
-            {
-                throw new RuntimeException( e );
             }
             catch ( IOException e )
             {
@@ -175,17 +174,43 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
             {
                 Directory dir = instantiateDirectory( key );
                 cachedForKey = key;
-                if ( dir.list().length == 0 )
+                try
+                {
+                    if ( dir.listAll().length == 0 )
+                    {
+                        return Collections.emptySet();
+                    }
+                }
+                catch ( IOException e )
                 {
                     return Collections.emptySet();
                 }
-                cachedIndexSearcher = new IndexSearcher( dir );
+                cachedIndexSearcher = new IndexSearcher( dir, true );
+                cachedIndexSearcherNeedsRefresh = false;
             }
             catch ( IOException e )
             {
                 throw new RuntimeException( e );
             }
         }
+        else if ( cachedIndexSearcherNeedsRefresh )
+        {
+            try
+            {
+                IndexReader reopenedReader =
+                    cachedIndexSearcher.getIndexReader().reopen();
+                if ( reopenedReader != null )
+                {
+                    cachedIndexSearcher = new IndexSearcher( reopenedReader );
+                }
+            }
+            catch ( IOException e )
+            {
+                throw new RuntimeException( e );
+            }
+            cachedIndexSearcherNeedsRefresh = false;
+        }
+        
         Query query = formQuery( key, value );
         try
         {

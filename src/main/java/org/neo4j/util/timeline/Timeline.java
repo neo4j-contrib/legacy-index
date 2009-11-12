@@ -866,7 +866,7 @@ public class Timeline implements TimelineIndex
 	 * 
 	 * @param startTime The start timestamp, nodes with greater timestamp 
 	 * value will be returned
-	 * @param startTime The end timestamp, nodes with lesser timestamp 
+	 * @param endTime The end timestamp, nodes with lesser timestamp 
 	 * value will be returned
 	 * @return All nodes in the timeline between the specified timestamps
 	 */

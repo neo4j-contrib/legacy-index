@@ -281,7 +281,7 @@ public class LuceneDataSource extends XaDataSource
     
     private Directory getDirectory( String key ) throws IOException
     {
-        return FSDirectory.getDirectory( new File( storeDir, key ) );
+        return FSDirectory.open( new File( storeDir, key ) );
     }
     
     /**
@@ -298,11 +298,18 @@ public class LuceneDataSource extends XaDataSource
             if ( searcher == null )
             {
                 Directory dir = getDirectory( key );
-                if ( dir.list().length == 0 )
+                try
+                {
+                    if ( dir.listAll().length == 0 )
+                    {
+                        return null;
+                    }
+                }
+                catch ( IOException e )
                 {
                     return null;
                 }
-                searcher = new IndexSearcher( dir );
+                searcher = new IndexSearcher( dir, false );
                 indexSearchers.put( key, searcher );
             }
             return searcher;

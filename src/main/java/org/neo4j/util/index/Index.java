@@ -23,8 +23,6 @@ import org.neo4j.api.core.Node;
 
 /**
  * A index that indexes nodes with a key. 
- * 
- * @see SimpleIndex, MultiIndex
  */
 public interface Index
 {
