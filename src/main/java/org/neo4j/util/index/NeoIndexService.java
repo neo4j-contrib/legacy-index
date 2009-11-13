@@ -120,12 +120,12 @@ public class NeoIndexService extends GenericIndexService
         return valueIndex;
     }
 
-    public Iterable<Node> getNodes( String key, Object value )
+    public IndexHits getNodes( String key, Object value )
     {
         Index valueIndex = getValueIndex( key, false );
         if ( valueIndex == null )
         {
-            return Collections.emptyList();
+            return new SimpleIndexHits( Collections.<Node>emptyList(), 0 );
         }
         return valueIndex.getNodesFor( value );
     }

@@ -50,7 +50,9 @@ public class TestMultiIndex extends NeoTestCase
 
 		index.index( node1, key1 );
 		
-		Iterator<Node> itr = index.getNodesFor( key1 ).iterator();
+		IndexHits hits = index.getNodesFor( key1 );
+		Iterator<Node> itr = hits.iterator();
+		assertEquals( 1, hits.size() );
 		assertEquals( node1, itr.next() );
 		assertTrue( !itr.hasNext() );
 		
@@ -61,11 +63,13 @@ public class TestMultiIndex extends NeoTestCase
 		Node node2 = neo().createNode();
 		index.index( node2, key1 );
 		
-		itr = index.getNodesFor( key1 ).iterator();
+		hits = index.getNodesFor( key1 );
+		itr = hits.iterator();
 		assertTrue( itr.next() != null );
 		assertTrue( itr.next() != null );
 		assertTrue( !itr.hasNext() );
 		assertTrue( !itr.hasNext() );		
+		assertEquals( 2, hits.size() );
 		
 		index.remove( node1, key1 );
 		index.remove( node2, key1 );

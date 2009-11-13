@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -70,9 +71,9 @@ public class LuceneDataSource extends XaDataSource
     private final LuceneIndexStore store;
     private LuceneIndexService indexService;
     
-    private Map<String,LruCache<String,Iterable<Long>>> caching = 
+    private Map<String,LruCache<String,Collection<Long>>> caching = 
         Collections.synchronizedMap( 
-            new HashMap<String,LruCache<String,Iterable<Long>>>() );
+            new HashMap<String,LruCache<String,Collection<Long>>>() );
 
     public LuceneDataSource( Map<Object,Object> params ) 
         throws InstantiationException
@@ -395,20 +396,20 @@ public class LuceneDataSource extends XaDataSource
         }
     }
 
-    public LruCache<String,Iterable<Long>> getFromCache( String key )
+    public LruCache<String,Collection<Long>> getFromCache( String key )
     {
         return caching.get( key );
     }
 
     public void enableCache( String key, int maxNumberOfCachedEntries )
     {
-        this.caching.put( key, new LruCache<String,Iterable<Long>>( key,
+        this.caching.put( key, new LruCache<String,Collection<Long>>( key,
             maxNumberOfCachedEntries, null ) );
     }
 
     void invalidateCache( String key, Object value )
     {
-        LruCache<String,Iterable<Long>> cache = caching.get( key );
+        LruCache<String,Collection<Long>> cache = caching.get( key );
         if ( cache != null )
         {
             cache.remove( value.toString() );

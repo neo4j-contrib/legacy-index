@@ -60,9 +60,10 @@ public class TestLuceneIndexingService extends NeoTestCase
 
         indexService().index( node1, "a_property", 1 );
         
-        Iterator<Node> itr = indexService().getNodes( "a_property", 
-            1 ).iterator();
+        IndexHits hits = indexService().getNodes( "a_property", 1 );
+        Iterator<Node> itr = hits.iterator();
         assertEquals( node1, itr.next() );
+        assertEquals( 1, hits.size() );
         assertTrue( !itr.hasNext() );
         
         indexService().removeIndex( node1, "a_property", 1 );
@@ -73,11 +74,13 @@ public class TestLuceneIndexingService extends NeoTestCase
         Node node2 = neo().createNode();
         indexService().index( node2, "a_property", 1 );
         
-        itr = indexService().getNodes( "a_property", 1 ).iterator();
+        hits = indexService().getNodes( "a_property", 1 );
+        itr = hits.iterator();
         assertTrue( itr.next() != null );
         assertTrue( itr.next() != null );
         assertTrue( !itr.hasNext() );
         assertTrue( !itr.hasNext() );       
+        assertEquals( 2, hits.size() );
         
         indexService().removeIndex( node1, "a_property", 1 );
         indexService().removeIndex( node2, "a_property", 1 );

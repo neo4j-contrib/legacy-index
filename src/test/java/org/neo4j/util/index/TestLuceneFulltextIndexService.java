@@ -69,11 +69,13 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
         indexService().index( node2, key, value1 );
         restartTx();
         
-        itr = indexService().getNodes( key, "tokenize" ).iterator();
+        IndexHits hits = indexService().getNodes( key, "tokenize" );
+        itr = hits.iterator();
         assertTrue( itr.next() != null );
         assertTrue( itr.next() != null );
         assertTrue( !itr.hasNext() );
         assertTrue( !itr.hasNext() );       
+        assertEquals( 2, hits.size() );
         
         indexService().removeIndex( node1, key, value1 );
         indexService().removeIndex( node2, key, value1 );

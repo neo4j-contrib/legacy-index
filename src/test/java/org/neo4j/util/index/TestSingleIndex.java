@@ -59,8 +59,10 @@ public class TestSingleIndex extends NeoTestCase
 
 		index.index( node1, key1 );
 		
-		Iterator<Node> itr = index.getNodesFor( key1 ).iterator();
+		IndexHits hits = index.getNodesFor( key1 );
+		Iterator<Node> itr = hits.iterator();
 		assertEquals( node1, itr.next() );
+		assertEquals( 1, hits.size() );
 		assertTrue( !itr.hasNext() );
 		
 		index.remove( node1, key1 );

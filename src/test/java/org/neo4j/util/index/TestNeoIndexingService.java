@@ -64,7 +64,9 @@ public class TestNeoIndexingService extends NeoTestCase
         Node node2 = neo().createNode();
         indexService.index( node2, "a_property", 1 );
         
-        itr = indexService.getNodes( "a_property", 1 ).iterator();
+        IndexHits hits = indexService.getNodes( "a_property", 1 );
+        assertEquals( 2, hits.size() );
+        itr = hits.iterator();
         assertTrue( itr.next() != null );
         assertTrue( itr.next() != null );
         assertTrue( !itr.hasNext() );

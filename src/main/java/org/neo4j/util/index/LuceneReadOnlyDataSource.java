@@ -21,6 +21,7 @@ package org.neo4j.util.index;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,9 +39,9 @@ public class LuceneReadOnlyDataSource // extends XaDataSource
 
     private final String storeDir;
     
-    private Map<String,LruCache<String,Iterable<Long>>> caching = 
+    private Map<String,LruCache<String,Collection<Long>>> caching = 
         Collections.synchronizedMap( 
-            new HashMap<String,LruCache<String,Iterable<Long>>>() );
+            new HashMap<String,LruCache<String,Collection<Long>>>() );
 
     public LuceneReadOnlyDataSource( String directory ) 
     {
@@ -93,20 +94,20 @@ public class LuceneReadOnlyDataSource // extends XaDataSource
         return searcher;
     }
 
-    public LruCache<String,Iterable<Long>> getFromCache( String key )
+    public LruCache<String,Collection<Long>> getFromCache( String key )
     {
         return caching.get( key );
     }
 
     public void enableCache( String key, int maxNumberOfCachedEntries )
     {
-        this.caching.put( key, new LruCache<String,Iterable<Long>>( key,
+        this.caching.put( key, new LruCache<String,Collection<Long>>( key,
             maxNumberOfCachedEntries, null ) );
     }
 
     void invalidateCache( String key, Object value )
     {
-        LruCache<String,Iterable<Long>> cache = caching.get( key );
+        LruCache<String,Collection<Long>> cache = caching.get( key );
         if ( cache != null )
         {
             cache.remove( value.toString() );

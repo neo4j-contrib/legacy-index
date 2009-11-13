@@ -21,6 +21,7 @@ package org.neo4j.util.index;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
@@ -37,6 +38,7 @@ import org.neo4j.api.core.EmbeddedReadOnlyNeo;
 import org.neo4j.api.core.NeoService;
 import org.neo4j.api.core.Node;
 import org.neo4j.api.core.NotFoundException;
+import org.neo4j.commons.iterator.IterableWrapper;
 import org.neo4j.impl.cache.LruCache;
 
 public class LuceneReadOnlyIndexService extends GenericIndexService
@@ -87,37 +89,34 @@ public class LuceneReadOnlyIndexService extends GenericIndexService
         throw new ReadOnlyIndexException();
     }
     
-    public Iterable<Node> getNodes( String key, Object value )
+    public IndexHits getNodes( String key, Object value )
     {
-        List<Node> nodes = new ArrayList<Node>();
+        List<Long> nodeIds = new ArrayList<Long>();
         IndexSearcher searcher = xaDs.getIndexSearcher( key );
         if ( searcher != null )
         {
-            LruCache<String,Iterable<Long>> cachedNodesMap = 
+            LruCache<String,Collection<Long>> cachedNodesMap = 
                 xaDs.getFromCache( key );
             boolean foundInCache = false;
             String valueAsString = value.toString();
             if ( cachedNodesMap != null )
             {
-                Iterable<Long> cachedNodes =
+                Collection<Long> cachedNodes =
                     cachedNodesMap.get( valueAsString );
                 if ( cachedNodes != null )
                 {
                     foundInCache = true;
-                    for ( Long cachedNodeId : cachedNodes )
-                    {
-                        nodes.add( getNeo().getNodeById( cachedNodeId ) );
-                    }
+                    nodeIds.addAll( cachedNodes );
                 }
             }
             if ( !foundInCache )
             {
-                Iterable<Node> readNodes = searchForNodes( key, value );
+                Iterable<Long> searchedNodeIds = searchForNodes( key, value );
                 ArrayList<Long> readNodeIds = new ArrayList<Long>();
-                for ( Node readNode : readNodes )
+                for ( Long readNodeId : searchedNodeIds )
                 {
-                    nodes.add( readNode );
-                    readNodeIds.add( readNode.getId() );
+                    nodeIds.add( readNodeId );
+                    readNodeIds.add( readNodeId );
                 }
                 if ( cachedNodesMap != null )
                 {
@@ -125,7 +124,20 @@ public class LuceneReadOnlyIndexService extends GenericIndexService
                 }
             }
         }
-        return nodes;
+        return new SimpleIndexHits(
+            instantiateIdToNodeIterable( nodeIds ), nodeIds.size() );
+    }
+    
+    protected Iterable<Node> instantiateIdToNodeIterable( Iterable<Long> ids )
+    {
+        return new IterableWrapper<Node, Long>( ids )
+        {
+            @Override
+            protected Node underlyingObjectToObject( Long id )
+            {
+                return getNeo().getNodeById( id );
+            }
+        };
     }
     
     public void setSorting( Sort sortingOrNullForNone )
@@ -138,13 +150,13 @@ public class LuceneReadOnlyIndexService extends GenericIndexService
         return new TermQuery( new Term( DOC_INDEX_KEY, value.toString() ) );
     }
 
-    private Iterable<Node> searchForNodes( String key, Object value )
+    private Iterable<Long> searchForNodes( String key, Object value )
     {
         Query query = formQuery( key, value );
         try
         {
             IndexSearcher searcher = xaDs.getIndexSearcher( key );
-            ArrayList<Node> nodes = new ArrayList<Node>();
+            ArrayList<Long> nodes = new ArrayList<Long>();
             Hits hits = sorting != null ?
                 searcher.search( query, sorting ) :
                 searcher.search( query );
@@ -155,7 +167,7 @@ public class LuceneReadOnlyIndexService extends GenericIndexService
                 {
                     long id = Long.parseLong( document.getField( DOC_ID_KEY )
                         .stringValue() );
-                    nodes.add( getNeo().getNodeById( id ) );
+                    nodes.add( id );
                 }
                 catch ( NotFoundException e )
                 {

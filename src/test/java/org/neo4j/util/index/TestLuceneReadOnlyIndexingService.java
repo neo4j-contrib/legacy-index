@@ -60,13 +60,15 @@ public class TestLuceneReadOnlyIndexingService extends NeoTestCase
         
         assertTrue( !indexService().getNodes( "a_property", 
             1 ).iterator().hasNext() );
+        assertEquals( 0, indexService().getNodes( "a_property", 1 ).size() );
 
         indexService().index( node1, "a_property", 1 );
         
-        Iterator<Node> itr = indexService().getNodes( "a_property", 
-            1 ).iterator();
+        IndexHits hits = indexService().getNodes( "a_property", 1 );
+        Iterator<Node> itr = hits.iterator();
         assertEquals( node1, itr.next() );
         assertTrue( !itr.hasNext() );
+        assertEquals( 1, hits.size() );
         restartTx();
         
         NeoService readOnlyNeo = new EmbeddedReadOnlyNeo( "var/test/neo" );
