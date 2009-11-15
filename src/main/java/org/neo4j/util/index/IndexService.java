@@ -56,7 +56,7 @@ public interface IndexService
      * @param value value for index
      * @return nodes that has been indexed with key and value
      */
-    IndexHits getNodes( String key, Object value );
+    IndexHits<Node> getNodes( String key, Object value );
 
     /**
      * Removes a index for a node. If no such indexing exist this method 

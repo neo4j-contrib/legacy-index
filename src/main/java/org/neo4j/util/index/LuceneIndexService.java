@@ -124,7 +124,7 @@ public class LuceneIndexService extends GenericIndexService
         getConnection().index( node, key, value );
     }
     
-    public IndexHits getNodes( String key, Object value )
+    public IndexHits<Node> getNodes( String key, Object value )
     {
         List<Long> nodeIds = new ArrayList<Long>();
         LuceneTransaction luceneTx = getConnection().getLuceneTx();
@@ -178,7 +178,7 @@ public class LuceneIndexService extends GenericIndexService
             xaDs.releaseReadLock();
         }
         
-        return new SimpleIndexHits(
+        return new SimpleIndexHits<Node>(
             instantiateIdToNodeIterable( nodeIds ), nodeIds.size() );
     }
     

@@ -21,13 +21,13 @@ package org.neo4j.util.index;
 
 public interface LuceneIndexBatchInserter
 {
-    public void index( long node, String key, Object value );
+    void index( long node, String key, Object value );
     
-    public void shutdown();
+    void shutdown();
 
-    public Iterable<Long> getNodes( String key, Object value );
+    IndexHits<Long> getNodes( String key, Object value );
     
-    public void optimize();
+    void optimize();
 
     /**
      * 
@@ -35,5 +35,7 @@ public interface LuceneIndexBatchInserter
      * @param value
      * @return the node id or -1 if no node found
      */
-    public long getSingleNode( String key, Object value );
+    long getSingleNode( String key, Object value );
+    
+    IndexService getIndexService();
 }

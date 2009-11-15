@@ -4,10 +4,13 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.lucene.analysis.Analyzer;
@@ -27,16 +30,24 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
+import org.neo4j.api.core.Node;
+import org.neo4j.commons.iterator.IterableWrapper;
 import org.neo4j.impl.batchinsert.BatchInserter;
+import org.neo4j.impl.cache.LruCache;
 import org.neo4j.impl.util.ArrayMap;
 import org.neo4j.impl.util.FileUtils;
 
 public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
 {
+    private static final int DEFAULT_CACHE_SIZE = 10000;
+    
     private final String storeDir;
+    private final BatchInserter neo;
 
     private final ArrayMap<String,IndexWriter> indexWriters = 
         new ArrayMap<String,IndexWriter>( 6, false, false );
+    private Map<String,LruCache<String,IndexElement>> caching = 
+        new HashMap<String,LruCache<String,IndexElement>>();
 
     private final Analyzer fieldAnalyzer = new Analyzer()
     {
@@ -49,6 +60,7 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
     
     public LuceneIndexBatchInserterImpl( BatchInserter neo )
     {
+        this.neo = neo;
         this.storeDir = fixPath( neo.getStore() + "/" + getDirName() );
     }
     
@@ -93,26 +105,70 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
                 throw new RuntimeException( e );
             }
             indexWriters.put( key, writer );
+            cacheIndex( node, key, value, true );
         }
         Document document = new Document();
         fillDocument( document, node, key, value );
         try
         {
             writer.addDocument( document );
-            if ( key.equals( cachedForKey ) )
-            {
-                if ( cachedIndexSearcher != null )
-                {
-//                    cachedIndexSearcher.close();
-//                    cachedIndexSearcher = null;
-                    cachedIndexSearcherNeedsRefresh = true;
-                }
-            }
+//            if ( key.equals( cachedForKey ) )
+//            {
+//                if ( cachedIndexSearcher != null )
+//                {
+//                    cachedIndexSearcherNeedsRefresh = true;
+//                }
+//            }
         }
         catch ( IOException e )
         {
             throw new RuntimeException( e );
         }
+    }
+    
+    private void cacheIndex( long node, String key, Object value,
+        boolean written )
+    {
+        LruCache<String, IndexElement> cache = getCache( key );
+        String valueString = value.toString();
+        IndexElement element = cache.get( valueString );
+        if ( element == null )
+        {
+            element = new IndexElement( written, new ArrayList<Long>() );
+            cache.put( valueString, element );
+        }
+        element.ids.add( node );
+        if ( written )
+        {
+            element.written = written;
+        }
+    }
+
+    public void enableCache( String key, int size )
+    {
+        getCache( key ).resize( size );
+    }
+    
+    protected LruCache<String, IndexElement> getCache( String key )
+    {
+        LruCache<String, IndexElement> cache = this.caching.get( key );
+        if ( cache == null )
+        {
+            cache = new LruCache<String,IndexElement>( key,
+                DEFAULT_CACHE_SIZE, null )
+            {
+                @Override
+                public void elementCleaned( IndexElement element )
+                {
+                    if ( element.written )
+                    {
+                        cachedIndexSearcherNeedsRefresh = true;
+                    }
+                }
+            };
+            this.caching.put( key, cache );
+        }
+        return cache;
     }
 
     protected void fillDocument( Document document, long nodeId, String key,
@@ -153,14 +209,14 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
     private String cachedForKey = null;
     private boolean cachedIndexSearcherNeedsRefresh;
     
-    public Iterable<Long> getNodes( String key, Object value )
+    public IndexHits<Long> getNodes( String key, Object value )
     {
-        IndexWriter writer = indexWriters.remove( key );
-        if ( writer != null )
+        IndexWriter writer = indexWriters.get( key );
+        if ( writer != null && cachedIndexSearcherNeedsRefresh )
         {
             try
             {
-                writer.close();
+                writer.commit();
             }
             catch ( IOException e )
             {
@@ -178,12 +234,14 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
                 {
                     if ( dir.listAll().length == 0 )
                     {
-                        return Collections.emptySet();
+                        return new SimpleIndexHits<Long>(
+                            Collections.<Long>emptyList(), 0 );
                     }
                 }
                 catch ( IOException e )
                 {
-                    return Collections.emptySet();
+                    return new SimpleIndexHits<Long>(
+                        Collections.<Long>emptyList(), 0 );
                 }
                 cachedIndexSearcher = new IndexSearcher( dir, true );
                 cachedIndexSearcherNeedsRefresh = false;
@@ -227,7 +285,7 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
         {
             throw new RuntimeException( e );
         }
-        return nodeSet;
+        return new SimpleIndexHits<Long>( nodeSet, nodeSet.size() );
     }
     
     protected Query formQuery( String key, Object value )
@@ -271,5 +329,73 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
             }
         }
         return node;
+    }
+    
+    private static class IndexElement
+    {
+        private boolean written;
+        private final Collection<Long> ids;
+        
+        public IndexElement( boolean written, Collection<Long> ids )
+        {
+            this.written = written;
+            this.ids = ids;
+        }
+    }
+    
+    private IndexService asIndexService;
+    
+    public IndexService getIndexService()
+    {
+        if ( asIndexService == null )
+        {
+            asIndexService = new AsIndexService();
+        }
+        return asIndexService;
+    }
+    
+    private class AsIndexService implements IndexService
+    {
+        public IndexHits<Node> getNodes( String key, Object value )
+        {
+            IndexHits<Long> ids = LuceneIndexBatchInserterImpl.this.getNodes(
+                key, value );
+            Iterable<Node> nodes = new IterableWrapper<Node, Long>( ids )
+            {
+                @Override
+                protected Node underlyingObjectToObject( Long id )
+                {
+                    return neo.getNeoService().getNodeById( id );
+                }
+            };
+            return new SimpleIndexHits<Node>( nodes, ids.size() );
+        }
+
+        public Node getSingleNode( String key, Object value )
+        {
+            long id =
+                LuceneIndexBatchInserterImpl.this.getSingleNode( key, value );
+            return id == -1 ? null : neo.getNeoService().getNodeById( id );
+        }
+
+        public void index( Node node, String key, Object value )
+        {
+            LuceneIndexBatchInserterImpl.this.index( node.getId(), key, value );
+        }
+
+        public void removeIndex( Node node, String key, Object value )
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        public void setIsolation( Isolation level )
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        public void shutdown()
+        {
+            LuceneIndexBatchInserterImpl.this.shutdown();
+        }
     }
 }

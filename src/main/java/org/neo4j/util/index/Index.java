@@ -40,7 +40,7 @@ public interface Index
 	 * @param indexKey the index key
 	 * @return nodes mapped to <CODE>indexKey</CODE>
 	 */
-	public IndexHits getNodesFor( Object indexKey );
+	public IndexHits<Node> getNodesFor( Object indexKey );
 	
 	/**
 	 * Returns a single node indexed with <CODE>indexKey</CODE>. If more 

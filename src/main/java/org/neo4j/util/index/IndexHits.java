@@ -1,8 +1,6 @@
 package org.neo4j.util.index;
 
-import org.neo4j.api.core.Node;
-
-public interface IndexHits extends Iterable<Node>
+public interface IndexHits<T> extends Iterable<T>
 {
     int size();
 }

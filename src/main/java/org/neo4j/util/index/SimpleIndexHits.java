@@ -2,22 +2,20 @@ package org.neo4j.util.index;
 
 import java.util.Iterator;
 
-import org.neo4j.api.core.Node;
-
-public class SimpleIndexHits implements IndexHits
+public class SimpleIndexHits<T> implements IndexHits<T>
 {
-    private final Iterable<Node> nodes;
+    private final Iterable<T> hits;
     private final int size;
     
-    public SimpleIndexHits( Iterable<Node> nodes, int size )
+    public SimpleIndexHits( Iterable<T> hits, int size )
     {
-        this.nodes = nodes;
+        this.hits = hits;
         this.size = size;
     }
     
-    public Iterator<Node> iterator()
+    public Iterator<T> iterator()
     {
-        return this.nodes.iterator();
+        return this.hits.iterator();
     }
 
     public int size()

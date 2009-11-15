@@ -89,7 +89,7 @@ public class LuceneReadOnlyIndexService extends GenericIndexService
         throw new ReadOnlyIndexException();
     }
     
-    public IndexHits getNodes( String key, Object value )
+    public IndexHits<Node> getNodes( String key, Object value )
     {
         List<Long> nodeIds = new ArrayList<Long>();
         IndexSearcher searcher = xaDs.getIndexSearcher( key );
@@ -124,7 +124,7 @@ public class LuceneReadOnlyIndexService extends GenericIndexService
                 }
             }
         }
-        return new SimpleIndexHits(
+        return new SimpleIndexHits<Node>(
             instantiateIdToNodeIterable( nodeIds ), nodeIds.size() );
     }
     

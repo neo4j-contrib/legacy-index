@@ -321,7 +321,7 @@ abstract class AbstractIndex implements Index
 	 * @param indexKey the key
 	 * @return the node mapped to the key
 	 */
-	public IndexHits getNodesFor( Object indexKey )
+	public IndexHits<Node> getNodesFor( Object indexKey )
 	{
 		if ( indexKey == null ) 
 		{
@@ -346,7 +346,7 @@ abstract class AbstractIndex implements Index
 							nodes[i] = neo.getNodeById( nodeIds[i] );
 						}
 						tx.success();
-						return new SimpleIndexHits(
+						return new SimpleIndexHits<Node>(
 						    Arrays.asList( nodes ), nodes.length );
 					}
 				}
@@ -368,13 +368,14 @@ abstract class AbstractIndex implements Index
 								nodes[i] = neo.getNodeById( nodeIds[i] );
 							}
 							tx.success();
-							return new SimpleIndexHits(
+							return new SimpleIndexHits<Node>(
 							    Arrays.asList( nodes ), nodes.length );
 						}
 					}
 				}
 			}
-			return new SimpleIndexHits( Collections.<Node>emptyList(), 0 );
+			return new SimpleIndexHits<Node>(
+			    Collections.<Node>emptyList(), 0 );
 		}
 		finally
 		{
