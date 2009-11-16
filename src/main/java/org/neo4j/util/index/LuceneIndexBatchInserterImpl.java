@@ -4,13 +4,10 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.apache.lucene.analysis.Analyzer;
@@ -19,8 +16,6 @@ import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.WhitespaceTokenizer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
-import org.apache.lucene.index.CorruptIndexException;
-import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
@@ -33,21 +28,18 @@ import org.apache.lucene.store.FSDirectory;
 import org.neo4j.api.core.Node;
 import org.neo4j.commons.iterator.IterableWrapper;
 import org.neo4j.impl.batchinsert.BatchInserter;
-import org.neo4j.impl.cache.LruCache;
 import org.neo4j.impl.util.ArrayMap;
 import org.neo4j.impl.util.FileUtils;
 
 public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
 {
-    private static final int DEFAULT_CACHE_SIZE = 10000;
-    
     private final String storeDir;
     private final BatchInserter neo;
 
     private final ArrayMap<String,IndexWriter> indexWriters = 
         new ArrayMap<String,IndexWriter>( 6, false, false );
-    private Map<String,LruCache<String,IndexElement>> caching = 
-        new HashMap<String,LruCache<String,IndexElement>>();
+    private final ArrayMap<String,IndexSearcher> indexSearchers = 
+        new ArrayMap<String,IndexSearcher>( 6, false, false );
 
     private final Analyzer fieldAnalyzer = new Analyzer()
     {
@@ -58,10 +50,13 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
         }
     };
     
+    private IndexService asIndexService;
+    
     public LuceneIndexBatchInserterImpl( BatchInserter neo )
     {
         this.neo = neo;
         this.storeDir = fixPath( neo.getStore() + "/" + getDirName() );
+        this.asIndexService = new AsIndexService();
     }
     
     protected String getDirName()
@@ -89,10 +84,10 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
         return FSDirectory.open( new File( storeDir + "/" + key ) );
     }
     
-    public void index( long node, String key, Object value )
+    private IndexWriter getWriter( String key, boolean allowCreate )
     {
         IndexWriter writer = indexWriters.get( key );
-        if ( writer == null )
+        if ( writer == null && allowCreate )
         {
             try
             {
@@ -105,20 +100,18 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
                 throw new RuntimeException( e );
             }
             indexWriters.put( key, writer );
-            cacheIndex( node, key, value, true );
         }
+        return writer;
+    }
+    
+    public void index( long node, String key, Object value )
+    {
+        IndexWriter writer = getWriter( key, true );
         Document document = new Document();
         fillDocument( document, node, key, value );
         try
         {
             writer.addDocument( document );
-//            if ( key.equals( cachedForKey ) )
-//            {
-//                if ( cachedIndexSearcher != null )
-//                {
-//                    cachedIndexSearcherNeedsRefresh = true;
-//                }
-//            }
         }
         catch ( IOException e )
         {
@@ -126,51 +119,6 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
         }
     }
     
-    private void cacheIndex( long node, String key, Object value,
-        boolean written )
-    {
-        LruCache<String, IndexElement> cache = getCache( key );
-        String valueString = value.toString();
-        IndexElement element = cache.get( valueString );
-        if ( element == null )
-        {
-            element = new IndexElement( written, new ArrayList<Long>() );
-            cache.put( valueString, element );
-        }
-        element.ids.add( node );
-        if ( written )
-        {
-            element.written = written;
-        }
-    }
-
-    public void enableCache( String key, int size )
-    {
-        getCache( key ).resize( size );
-    }
-    
-    protected LruCache<String, IndexElement> getCache( String key )
-    {
-        LruCache<String, IndexElement> cache = this.caching.get( key );
-        if ( cache == null )
-        {
-            cache = new LruCache<String,IndexElement>( key,
-                DEFAULT_CACHE_SIZE, null )
-            {
-                @Override
-                public void elementCleaned( IndexElement element )
-                {
-                    if ( element.written )
-                    {
-                        cachedIndexSearcherNeedsRefresh = true;
-                    }
-                }
-            };
-            this.caching.put( key, cache );
-        }
-        return cache;
-    }
-
     protected void fillDocument( Document document, long nodeId, String key,
         Object value )
     {
@@ -194,10 +142,6 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
             {
                 writer.close();
             }
-            catch ( CorruptIndexException e )
-            {
-                throw new RuntimeException( e );
-            }
             catch ( IOException e )
             {
                 throw new RuntimeException( e );
@@ -205,74 +149,26 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
         }
     }
 
-    private IndexSearcher cachedIndexSearcher = null;
-    private String cachedForKey = null;
-    private boolean cachedIndexSearcherNeedsRefresh;
-    
     public IndexHits<Long> getNodes( String key, Object value )
     {
-        IndexWriter writer = indexWriters.get( key );
-        if ( writer != null && cachedIndexSearcherNeedsRefresh )
-        {
-            try
-            {
-                writer.commit();
-            }
-            catch ( IOException e )
-            {
-                throw new RuntimeException( e );
-            }
-        }
         Set<Long> nodeSet = new HashSet<Long>();
-        if ( !key.equals( cachedForKey ) || cachedIndexSearcher == null )
+        IndexWriter writer = getWriter( key, false );
+        if ( writer == null )
         {
-            try
-            {
-                Directory dir = instantiateDirectory( key );
-                cachedForKey = key;
-                try
-                {
-                    if ( dir.listAll().length == 0 )
-                    {
-                        return new SimpleIndexHits<Long>(
-                            Collections.<Long>emptyList(), 0 );
-                    }
-                }
-                catch ( IOException e )
-                {
-                    return new SimpleIndexHits<Long>(
-                        Collections.<Long>emptyList(), 0 );
-                }
-                cachedIndexSearcher = new IndexSearcher( dir, true );
-                cachedIndexSearcherNeedsRefresh = false;
-            }
-            catch ( IOException e )
-            {
-                throw new RuntimeException( e );
-            }
-        }
-        else if ( cachedIndexSearcherNeedsRefresh )
-        {
-            try
-            {
-                IndexReader reopenedReader =
-                    cachedIndexSearcher.getIndexReader().reopen();
-                if ( reopenedReader != null )
-                {
-                    cachedIndexSearcher = new IndexSearcher( reopenedReader );
-                }
-            }
-            catch ( IOException e )
-            {
-                throw new RuntimeException( e );
-            }
-            cachedIndexSearcherNeedsRefresh = false;
+            return new SimpleIndexHits<Long>(
+                Collections.<Long>emptyList(), 0 );
         }
         
-        Query query = formQuery( key, value );
         try
         {
-            Hits hits = cachedIndexSearcher.search( query );
+            Query query = formQuery( key, value );
+            IndexSearcher indexSearcher = indexSearchers.get( key );
+            if ( indexSearcher == null )
+            {
+                indexSearcher = new IndexSearcher( writer.getReader() );
+                indexSearchers.put( key, indexSearcher );
+            }
+            Hits hits = indexSearcher.search( query );
             for ( int i = 0; i < hits.length(); i++ )
             {
                 Document document = hits.doc( i );
@@ -330,27 +226,9 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
         }
         return node;
     }
-    
-    private static class IndexElement
-    {
-        private boolean written;
-        private final Collection<Long> ids;
-        
-        public IndexElement( boolean written, Collection<Long> ids )
-        {
-            this.written = written;
-            this.ids = ids;
-        }
-    }
-    
-    private IndexService asIndexService;
-    
+
     public IndexService getIndexService()
     {
-        if ( asIndexService == null )
-        {
-            asIndexService = new AsIndexService();
-        }
         return asIndexService;
     }
     
