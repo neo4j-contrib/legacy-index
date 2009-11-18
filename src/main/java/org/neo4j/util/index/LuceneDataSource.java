@@ -301,7 +301,8 @@ public class LuceneDataSource extends XaDataSource
                 Directory dir = getDirectory( key );
                 try
                 {
-                    if ( dir.listAll().length == 0 )
+                    String[] files = dir.listAll();
+                    if ( files == null || files.length == 0 )
                     {
                         return null;
                     }
