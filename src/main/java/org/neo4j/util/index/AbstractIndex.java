@@ -77,8 +77,7 @@ abstract class AbstractIndex implements Index
 	 * be a new (just created) node or a node that already represents a 
 	 * previously created index.
 	 *
-	 * @param name The unique name of the index or null if index already
-	 * created (using specified underlying node)
+	 * @param name The unique name of the index
 	 * @param underlyingNode The underlying node representing the index
 	 * @param neo The embedded neo instance
 	 * @throws IllegalArgumentException if the underlying node is a index with
