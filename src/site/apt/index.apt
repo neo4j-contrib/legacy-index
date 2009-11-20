@@ -110,11 +110,13 @@ Index interface
     // getting a node using the index
     Node node = index.getSingleNodeFor( somePersonId );
     
-    // re-create an already existing index
+    // restore an already existing index
     Node indexNode = //... get the underlying index node
-    // we can pass in null as name if the index already exist (name will then
-    // be loaded from the underlying node)
-    Index myIndex = new SingleValueIndex( null, indexNode, neo ); 
+    // The name passed in needs to be the same as the one stored in the
+    // index, if not an exception is thrown to prevent you from working
+    // with another index than the one you were expecting.
+    Index myIndex = new SingleValueIndex( "my_index", indexNode, neo ); 
+    // the index is loaded from the indexNode again and ready for use
 ---
 
 Map package
