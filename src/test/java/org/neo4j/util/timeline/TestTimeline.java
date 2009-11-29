@@ -465,4 +465,30 @@ public class TestTimeline extends NeoTestCase
             node.delete();
         }
     }
+    
+    public void testDeleteTimeline()
+    {
+        Node tlNode = neo().createNode();
+        Timeline indexedTimeline = new Timeline( "test", tlNode, true, neo() );
+        Node[] nodes = new Node[20];
+        for ( int i = 1; i < nodes.length; i++ )
+        {
+            nodes[i] = neo().createNode();
+            indexedTimeline.addNode( nodes[i], i );
+        }
+        indexedTimeline.delete();
+        restartTx();
+        tlNode = neo().createNode();
+        indexedTimeline = new Timeline( "test", tlNode, true, neo() );
+        for ( int i = 1; i < nodes.length; i++ )
+        {
+            indexedTimeline.addNode( nodes[i], i );
+        }
+        indexedTimeline.delete();
+        restartTx();
+        for ( int i = 1; i < nodes.length; i++ )
+        {
+            nodes[i].delete();
+        }
+    }
 }
