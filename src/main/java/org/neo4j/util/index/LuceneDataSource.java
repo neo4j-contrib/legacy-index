@@ -59,6 +59,9 @@ import org.neo4j.impl.transaction.xaframework.XaTransaction;
 import org.neo4j.impl.transaction.xaframework.XaTransactionFactory;
 import org.neo4j.impl.util.ArrayMap;
 
+/**
+ * An {@link XaDataSource} optimized for the {@link LuceneIndexService}.
+ */
 public class LuceneDataSource extends XaDataSource
 {
     private final ArrayMap<String,IndexSearcher> indexSearchers = 
@@ -75,6 +78,12 @@ public class LuceneDataSource extends XaDataSource
         Collections.synchronizedMap( 
             new HashMap<String,LruCache<String,Collection<Long>>>() );
 
+    /**
+     * Constructs this data source.
+     * 
+     * @param params XA parameters.
+     * @throws InstantiationException
+     */
     public LuceneDataSource( Map<Object,Object> params ) 
         throws InstantiationException
     {
@@ -231,22 +240,22 @@ public class LuceneDataSource extends XaDataSource
         }
     }
     
-    public void getReadLock()
+    void getReadLock()
     {
         lock.readLock().lock();
     }
     
-    public void releaseReadLock()
+    void releaseReadLock()
     {
         lock.readLock().unlock();
     }
     
-    public void getWriteLock()
+    void getWriteLock()
     {
         lock.writeLock().lock();
     }
     
-    public void releaseWriteLock()
+    void releaseWriteLock()
     {
         lock.writeLock().unlock();
     }
@@ -267,10 +276,13 @@ public class LuceneDataSource extends XaDataSource
     {
         try
         {
-            IndexReader reopened = searcher.getIndexReader().reopen();
-            if ( reopened != null )
+            IndexReader reader = searcher.getIndexReader();
+            IndexReader reopened = reader.reopen();
+            if ( reopened != reader )
             {
-                return new IndexSearcher( reopened );
+                IndexSearcher newSearcher = new IndexSearcher( reopened );
+                reader.close();
+                return newSearcher;
             }
             return null;
         }
@@ -322,7 +334,7 @@ public class LuceneDataSource extends XaDataSource
         }
     }
 
-    public XaTransaction createTransaction( int identifier,
+    XaTransaction createTransaction( int identifier,
         XaLogicalLog logicalLog )
     {
         return new LuceneTransaction( identifier, logicalLog, this );
@@ -397,12 +409,12 @@ public class LuceneDataSource extends XaDataSource
         }
     }
 
-    public LruCache<String,Collection<Long>> getFromCache( String key )
+    LruCache<String,Collection<Long>> getFromCache( String key )
     {
         return caching.get( key );
     }
 
-    public void enableCache( String key, int maxNumberOfCachedEntries )
+    void enableCache( String key, int maxNumberOfCachedEntries )
     {
         this.caching.put( key, new LruCache<String,Collection<Long>>( key,
             maxNumberOfCachedEntries, null ) );
@@ -455,16 +467,6 @@ public class LuceneDataSource extends XaDataSource
     public long getCurrentLogVersion()
     {
         return store.getVersion();
-    }
-    
-    public long incrementAndGetLogVersion()
-    {
-        return store.incrementVersion();
-    }
-    
-    public void setCurrentLogVersion( long version )
-    {
-        store.setVersion( version );
     }
     
     @Override
