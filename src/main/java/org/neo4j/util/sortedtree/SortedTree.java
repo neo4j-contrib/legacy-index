@@ -29,10 +29,12 @@ import org.neo4j.api.core.Node;
 import org.neo4j.api.core.Relationship;
 import org.neo4j.api.core.RelationshipType;
 
-//not thread safe yet
+/**
+ * A sorted list of nodes (structured as a tree in neo4j)
+ */
 public class SortedTree
 {
-	public static enum RelTypes implements RelationshipType
+	static enum RelTypes implements RelationshipType
 	{
 		TREE_ROOT,
 		SUB_TREE,
@@ -44,6 +46,13 @@ public class SortedTree
     private final Comparator<Node> nodeComparator;
 	private TreeNode treeRoot;
 	
+	/**
+	 * @param neo the {@link NeoService} instance.
+	 * @param rootNode the root of this tree.
+	 * @param nodeComparator the {@link Comparator} to use to sort the nodes.
+	 * It's important to use the same {@link Comparator} for a given root node
+	 * to get the expected results.
+	 */
 	public SortedTree( NeoService neo, Node rootNode, 
         Comparator<Node> nodeComparator )
 	{
@@ -88,16 +97,33 @@ public class SortedTree
 		rel.delete();
 	}
 	
+	/**
+	 * Adds a {@link Node} to this list.
+	 * @param node the {@link Node} to add.
+	 * @return {@code true} if this call modified the tree, i.e. if the node
+	 * wasn't already added.
+	 */
 	public boolean addNode( Node node )
 	{
 		return treeRoot.addEntry( node, true );
 	}
     
+    /**
+     * @param node the {@link Node} to check if it's in the list.
+     * @return {@code true} if this list contains the node, otherwise
+     * {@code false}.
+     */
     public boolean containsNode( Node node )
     {
         return treeRoot.containsEntry( node );
     }
 	
+	/**
+	 * Removes the node from this list.
+	 * @param node the {@link Node} to remove from this list.
+	 * @return whether or not this call modified the list, i.e. if the node
+	 * existed in this list.
+	 */
 	public boolean removeNode( Node node )
 	{
 		return treeRoot.removeEntry( node );
@@ -113,11 +139,17 @@ public class SortedTree
 		return neo;
 	}
     
+    /**
+     * @return the {@link Comparator} used for this list.
+     */
     public Comparator<Node> getComparator()
     {
         return nodeComparator;
     }
 	
+    /**
+     * @return all the nodes in this list.
+     */
     public Iterable<Node> getSortedNodes()
     {
         List<Node> nodeList = new ArrayList<Node>();

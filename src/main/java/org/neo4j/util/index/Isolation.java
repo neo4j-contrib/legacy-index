@@ -19,9 +19,26 @@
  */
 package org.neo4j.util.index;
 
+/**
+ * The isolation level of the indexing, f.ex. do we do the actual indexing
+ * right now and in the same transaction? Or do we put it in a queue and
+ * perform it at a later time?
+ */
 public enum Isolation
 {
+    /**
+     * Happens right now and in the same transaction.
+     */
     SAME_TX,
+    
+    /**
+     * Happens right now, but in its own transaction.
+     */
     SYNC_OTHER_TX,
+    
+    /**
+     * The actual indexing will happen in the future and is typically put
+     * in a queue for indexing later on.
+     */
     ASYNC_OTHER_TX
 }

@@ -46,7 +46,7 @@ import org.neo4j.util.btree.BTree;
 // not thread safe yet
 public class Timeline implements TimelineIndex
 {
-	public static enum RelTypes implements RelationshipType
+	static enum RelTypes implements RelationshipType
 	{
 		TIMELINE_INSTANCE,
 		TIMELINE_NEXT_ENTRY,
@@ -177,12 +177,6 @@ public class Timeline implements TimelineIndex
 		return underlyingNode;
 	}
 	
-	/**
-	 * Return the last node in the timeline or <CODE>null</CODE> if timeline
-	 * is empty.
-	 * 
-	 * @return The last node in the timeline
-	 */
 	public Node getLastNode()
 	{
 		if ( lastNode != null )
@@ -210,12 +204,6 @@ public class Timeline implements TimelineIndex
 		}
 	}
 	
-	/**
-	 * Returns the first node in the timeline or <CODE>null</CODE> if timeline
-	 * is empty.
-	 * 
-	 * @return The first node in the timeline
-	 */
 	public Node getFirstNode()
 	{
 		if ( firstNode != null )
@@ -243,14 +231,6 @@ public class Timeline implements TimelineIndex
 		}
 	}
 	
-	/**
-	 * Adds a node in the timeline using <CODE>timestamp</CODE>.
-	 * 
-	 * @param nodeToAdd The node to add to the timeline
-	 * @param timestamp The timestamp to use
-	 * @throws IllegalArgumentException If already added to this timeline or or 
-	 * <CODE>null</CODE> node
-	 */
 	public void addNode( Node nodeToAdd, long timestamp )
 	{
 		if ( nodeToAdd == null )
@@ -374,6 +354,10 @@ public class Timeline implements TimelineIndex
 		return node;
 	}
 	
+	/**
+	 * @param node the {@link Node} to get the timestamp for.
+	 * @return the timestamp for when {@code node} was added to this timeline.
+	 */
 	public long getTimestampForNode( Node node )
 	{
 		Transaction tx = neo.beginTx();
@@ -470,13 +454,6 @@ public class Timeline implements TimelineIndex
 		return newCount;
 	}
 	
-	/**
-	 * Removes a node from the timeline. 
-	 * 
-	 * @param nodeToRemove The node to remove from this timeline
-	 * @throws IllegalArgumentException if <CODE>null</CODE> node or node not 
-	 * connected to this timeline.
-	 */
 	public void removeNode( Node nodeToRemove )
 	{
 		if ( nodeToRemove == null )
@@ -624,11 +601,6 @@ public class Timeline implements TimelineIndex
 	    return result;
     }
 	
-	/**
-	 * Returns all nodes in the timeline ordered by increasing timestamp.
-	 * 
-	 * @return All nodes in the timeline
-	 */
 	public Iterable<Node> getAllNodes()
 	{
 		return underlyingNode.traverse( Order.BREADTH_FIRST, 
@@ -719,14 +691,6 @@ public class Timeline implements TimelineIndex
         return nodeList;
     }
     
-	/**
-	 * Returns all nodes after (not including) the specified timestamp 
-	 * ordered by increasing timestamp.
-	 * 
-	 * @param timestamp The timestamp value, nodes with greater timestamp 
-	 * value will be returned
-	 * @return All nodes in the timeline after specified timestamp
-	 */
 	public Iterable<Node> getAllNodesAfter( final long timestamp )
 	{
 		Node startNode = getIndexedStartNode( timestamp );
@@ -816,14 +780,6 @@ public class Timeline implements TimelineIndex
 			RelTypes.TIMELINE_NEXT_ENTRY, Direction.OUTGOING );
 	}
 	
-	/**
-	 * Returns all nodes before (not including) the specified timestamp 
-	 * ordered by increasing timestamp.
-	 * 
-	 * @param timestamp The timestamp value, nodes with lesser timestamp 
-	 * value will be returned
-	 * @return All nodes in the timeline after specified timestamp
-	 */
 	public Iterable<Node> getAllNodesBefore( final long timestamp )
 	{
 		return underlyingNode.traverse( Order.DEPTH_FIRST, 
@@ -860,16 +816,6 @@ public class Timeline implements TimelineIndex
 			RelTypes.TIMELINE_INSTANCE, Direction.OUTGOING );
 	}
 	
-	/**
-	 * Returns all nodes between (not including) the specified timestamps 
-	 * ordered by increasing timestamp.
-	 * 
-	 * @param startTime The start timestamp, nodes with greater timestamp 
-	 * value will be returned
-	 * @param endTime The end timestamp, nodes with lesser timestamp 
-	 * value will be returned
-	 * @return All nodes in the timeline between the specified timestamps
-	 */
 	public Iterable<Node> getAllNodesBetween( final long startTime, 
 		final long endTime )
 	{
@@ -933,10 +879,6 @@ public class Timeline implements TimelineIndex
 			RelTypes.TIMELINE_INSTANCE, Direction.OUTGOING );
 	}
 	
-	/**
-	 * Deletes this timeline. Nodes added to the timeline will not be deleted, 
-	 * they are just disconnected from this timeline.
-	 */
 	public void delete()
 	{
 		if ( useIndexing )

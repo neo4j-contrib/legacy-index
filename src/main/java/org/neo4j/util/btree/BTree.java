@@ -32,20 +32,35 @@ import org.neo4j.api.core.Traverser;
 import org.neo4j.api.core.Traverser.Order;
 
 /**
- * A b-tree implementation ontop of neo (using nodes/relationships 
+ * A b-tree implementation on top of neo (using nodes/relationships 
  * and properties).
  * <p>
  * This implementation is not thread safe (yet).
  */
-//not thread safe yet
 public class BTree
 {
+    /**
+     * All {@link RelationshipType}s used internally in this b-tree
+     * implementation.
+     */
 	public static enum RelTypes implements RelationshipType
 	{
+	    /**
+	     * A relationship which goes from the supplied root node to a node
+	     * which represents the current root. The root can change when the tree
+	     * is balanced.
+	     */
 		TREE_ROOT,
+		
+		/**
+		 * Relationships between a parent and its children is of this type.
+		 */
 		SUB_TREE,
 		
-		// a relationship type where relationship actually is the *key entry*
+		/**
+		 * A relationship type where the relationship actually is the
+		 * *key entry*. i.e. the relationship holds information about the entry.
+		 */
 		KEY_ENTRY 
 	};
 	
@@ -421,6 +436,9 @@ public class BTree
         }
 	}
 	
+	/**
+	 * @return an Iterable of all the entries in this b-tree
+	 */
 	public Iterable<KeyEntry> entries()
 	{
 		EntryReturnableEvaluator entryEvaluator = 

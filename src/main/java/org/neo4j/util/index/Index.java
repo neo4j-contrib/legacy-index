@@ -74,6 +74,9 @@ public interface Index
 	 */
 	public void drop( int commitInterval );
     
+    /**
+     * Removes all the entries from this index.
+     */
     public void clear();
     
 	/**

@@ -8,9 +8,15 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.neo4j.impl.batchinsert.BatchInserter;
 
+/**
+ * The "batch inserter" version of {@link LuceneFulltextIndexService}.
+ */
 public class LuceneFulltextIndexBatchInserter
     extends LuceneIndexBatchInserterImpl
 {
+    /**
+     * @param neo the {@link BatchInserter} to use.
+     */
     public LuceneFulltextIndexBatchInserter( BatchInserter neo )
     {
         super( neo );

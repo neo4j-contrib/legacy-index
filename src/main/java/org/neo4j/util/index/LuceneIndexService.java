@@ -53,8 +53,9 @@ import org.neo4j.impl.transaction.LockManager;
 import org.neo4j.impl.transaction.TxModule;
 import org.neo4j.impl.util.ArrayMap;
 
-// TODO:
-// o Run optimize when starting up
+/**
+ * An {@link IndexService} with Lucene as backend.
+ */
 public class LuceneIndexService extends GenericIndexService
 {
     protected static final String DOC_ID_KEY = "id";
@@ -66,6 +67,9 @@ public class LuceneIndexService extends GenericIndexService
     private final LuceneDataSource xaDs;
     private Sort sorting;
 
+    /**
+     * @param neo the {@link NeoService} to use.
+     */
     public LuceneIndexService( NeoService neo )
     {
         super( neo );
@@ -84,11 +88,6 @@ public class LuceneIndexService extends GenericIndexService
             getDataSourceClass().getName(), resourceId, params, true );
         broker = new ConnectionBroker( txManager, xaDs );
         xaDs.setIndexService( this );
-    }
-    
-    public void rotate() throws IOException
-    {
-        xaDs.rotateLogicalLog();
     }
     
     protected Class<? extends LuceneDataSource> getDataSourceClass()
@@ -113,6 +112,16 @@ public class LuceneIndexService extends GenericIndexService
         return params;
     }
 
+    /**
+     * Enables an LRU cache for a specific index (specified by {@code key})
+     * so that the {@code maxNumberOfCachedEntries} number of results found with
+     * {@link #getNodes(String, Object)} are cached for faster consecutive
+     * lookups. It's prefered to enable cache at construction time.
+     * 
+     * @param key the index to enable cache for.
+     * @param maxNumberOfCachedEntries the max size of the cache before old
+     * ones are flushed from the cache.
+     */
     public void enableCache( String key, int maxNumberOfCachedEntries )
     {
         xaDs.enableCache( key, maxNumberOfCachedEntries );
@@ -194,6 +203,12 @@ public class LuceneIndexService extends GenericIndexService
         };
     }
     
+    /**
+     * Sets how lucene should sort the results when performing queries.
+     * 
+     * @param sortingOrNullForNone which Lucene {@link Sort} to use when
+     * querying the lucene indexes. {@code null} means no sorting.
+     */
     public void setSorting( Sort sortingOrNullForNone )
     {
         this.sorting = sortingOrNullForNone;

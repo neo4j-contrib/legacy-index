@@ -24,11 +24,17 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.neo4j.api.core.NeoService;
 
+/**
+ * A {@link LuceneIndexService} which indexes the values with fulltext indexing.
+ */
 public class LuceneFulltextIndexService extends LuceneIndexService
 {
     protected static final String DOC_INDEX_SOURCE_KEY = "index_source";
     protected static final String FULLTEXT_DIR_NAME_POSTFIX = "-fulltext";
     
+    /**
+     * @param neo the {@link NeoService} to use.
+     */
     public LuceneFulltextIndexService( NeoService neo )
     {
         super( neo );

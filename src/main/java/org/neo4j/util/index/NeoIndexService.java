@@ -28,6 +28,10 @@ import org.neo4j.api.core.RelationshipType;
 import org.neo4j.api.core.Transaction;
 import org.neo4j.impl.util.ArrayMap;
 
+/**
+ * An {@link IndexService} implemented with {@link SingleValueIndex}, one for
+ * each key.
+ */
 public class NeoIndexService extends GenericIndexService
 {
     private final Node rootIndexService;
@@ -43,6 +47,9 @@ public class NeoIndexService extends GenericIndexService
         VALUE_INDEX,
     }
 
+    /**
+     * @param neo the {@link NeoService} to use.
+     */
     public NeoIndexService( NeoService neo )
     {
         super( neo );

@@ -32,6 +32,9 @@ import org.apache.lucene.store.FSDirectory;
 import org.neo4j.impl.cache.LruCache;
 import org.neo4j.impl.util.ArrayMap;
 
+/**
+ * The underlying XA data source for a {@link LuceneReadOnlyIndexService}
+ */
 public class LuceneReadOnlyDataSource // extends XaDataSource
 {
     private final ArrayMap<String,IndexSearcher> indexSearchers = 
@@ -43,6 +46,9 @@ public class LuceneReadOnlyDataSource // extends XaDataSource
         Collections.synchronizedMap( 
             new HashMap<String,LruCache<String,Collection<Long>>>() );
 
+    /**
+     * @param directory the root directory where the lucene indexes reside.
+     */
     public LuceneReadOnlyDataSource( String directory ) 
     {
         this.storeDir = directory;
@@ -54,6 +60,9 @@ public class LuceneReadOnlyDataSource // extends XaDataSource
         }
     }
     
+    /**
+     * Closes this index service and frees all resources.
+     */
     public void close()
     {
         for ( IndexSearcher searcher : indexSearchers.values() )
@@ -94,12 +103,12 @@ public class LuceneReadOnlyDataSource // extends XaDataSource
         return searcher;
     }
 
-    public LruCache<String,Collection<Long>> getFromCache( String key )
+    LruCache<String,Collection<Long>> getFromCache( String key )
     {
         return caching.get( key );
     }
 
-    public void enableCache( String key, int maxNumberOfCachedEntries )
+    void enableCache( String key, int maxNumberOfCachedEntries )
     {
         this.caching.put( key, new LruCache<String,Collection<Long>>( key,
             maxNumberOfCachedEntries, null ) );

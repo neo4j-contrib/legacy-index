@@ -27,8 +27,17 @@ import org.apache.lucene.document.Field.Index;
 import org.neo4j.impl.transaction.xaframework.XaLogicalLog;
 import org.neo4j.impl.transaction.xaframework.XaTransaction;
 
+/**
+ * A lucene XA data store for storing fulltext indexing.
+ */
 public class LuceneFulltextDataSource extends LuceneDataSource
 {
+    /**
+     * Constructs a {@link LuceneFulltextDataSource}.
+     * 
+     * @param params XA parameters
+     * @throws InstantiationException
+     */
     public LuceneFulltextDataSource( Map<Object, Object> params )
         throws InstantiationException
     {

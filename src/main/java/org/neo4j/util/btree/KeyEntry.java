@@ -23,7 +23,11 @@ import org.neo4j.api.core.Direction;
 import org.neo4j.api.core.Node;
 import org.neo4j.api.core.Relationship;
 import org.neo4j.util.btree.BTree.RelTypes;
+import org.neo4j.util.map.BTreeMap;
 
+/**
+ * Wraps the functionality of one entry in the tree.
+ */
 public class KeyEntry
 {
 	static final String KEY = "key";
@@ -102,6 +106,10 @@ public class KeyEntry
 		return null;
 	}
 	
+	/**
+	 * @return the key for this entry. This is the key added via
+	 * {@link BTree#addEntry(long, Object)}.
+	 */
 	public long getKey()
 	{
 		return (Long) entryRelationship.getProperty( KEY );
@@ -112,26 +120,50 @@ public class KeyEntry
 		entryRelationship.setProperty( KEY, key );
 	}
 	
+	/**
+	 * @return the value for this entry. This is the value added via
+	 * {@link BTree#addEntry(long, Object)}.
+	 */
 	public Object getValue()
 	{
 		return entryRelationship.getProperty( VALUE );
 	}
 	
+	/**
+	 * Sets or changes the value for this entry.
+	 * 
+	 * @param value the new value for this entry. The type of the value must
+	 * be one of types supported by neo4j.
+	 */
 	public void setValue( Object value )
 	{
 		entryRelationship.setProperty( VALUE, value );
 	}
 	
+	/**
+	 * This is optional and is used in some implementations, f.ex
+	 * {@link BTreeMap}.
+	 * 
+	 * @param keyValue represents the actual key which we can derive the
+     * {@link #getKey()} from, f.ex. a String.
+	 */
 	public void setKeyValue( Object keyValue )
 	{
 		entryRelationship.setProperty( KEY_VALUE, keyValue );
 	}
 	
+	/**
+	 * @return the actual key which we can derive the {@link #getKey()} from,
+	 * f.ex. a String.
+	 */
 	public Object getKeyValue()
 	{
 		return entryRelationship.getProperty( KEY_VALUE, null );
 	}
 	
+	/**
+	 * Removes this entry from the b-tree.
+	 */
 	public void remove()
 	{
 		treeNode.removeEntry( this.getKey() );

@@ -27,6 +27,9 @@ import org.neo4j.impl.transaction.xaframework.XaConnectionHelpImpl;
 import org.neo4j.impl.transaction.xaframework.XaResourceHelpImpl;
 import org.neo4j.impl.transaction.xaframework.XaResourceManager;
 
+/**
+ * An XA connection used with {@link LuceneDataSource}.
+ */
 public class LuceneXaConnection extends XaConnectionHelpImpl
 {
     private final LuceneXaResource xaResource;
@@ -85,12 +88,12 @@ public class LuceneXaConnection extends XaConnectionHelpImpl
         return luceneTx;
     }
     
-    public void index( Node node, String key, Object value )
+    void index( Node node, String key, Object value )
     {
         getLuceneTx().index( node, key, value );
     }
     
-    public void removeIndex( Node node, String key, Object value )
+    void removeIndex( Node node, String key, Object value )
     {
         getLuceneTx().removeIndex( node, key, value );
     }

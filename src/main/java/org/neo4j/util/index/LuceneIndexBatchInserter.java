@@ -19,14 +19,42 @@
  */
 package org.neo4j.util.index;
 
+import org.apache.lucene.index.IndexWriter;
+import org.neo4j.impl.batchinsert.BatchInserter;
+
+/**
+ * The "batch inserter" version of a {@link LuceneIndexService}.
+ */
 public interface LuceneIndexBatchInserter
 {
+    /**
+     * Adds an entry to the index.
+     * 
+     * @param node the node to associate with the {@code value} in the index
+     * with name {@code key}.
+     * @param key which index to put it in.
+     * @param value the value to associate {@code node} with.
+     */
     void index( long node, String key, Object value );
     
+    /**
+     * Shuts down this index.
+     */
     void shutdown();
 
+    /**
+     * Gets nodes from the lucene index.
+     * 
+     * @param key the index.
+     * @param value the value to query for.
+     * @return the hits for the query.
+     */
     IndexHits<Long> getNodes( String key, Object value );
     
+    /**
+     * Performs a Lucene optimize on the index files.
+     * @see IndexWriter#optimize()
+     */
     void optimize();
 
     /**
@@ -37,5 +65,10 @@ public interface LuceneIndexBatchInserter
      */
     long getSingleNode( String key, Object value );
     
+    /**
+     * @return this batch inserter index wrapped in a {@link IndexService}
+     * interface for convenience. Goes well with an instance from
+     * {@link BatchInserter#getNeoService()}.
+     */
     IndexService getIndexService();
 }

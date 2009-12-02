@@ -24,7 +24,7 @@ import org.neo4j.api.core.Node;
 import org.neo4j.api.core.Relationship;
 import org.neo4j.util.btree.BTree.RelTypes;
 
-public class NodeEntry
+class NodeEntry
 {
 	static final String NODE_ID = "node_id";
 	

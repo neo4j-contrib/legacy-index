@@ -35,11 +35,12 @@ import org.neo4j.util.btree.KeyEntry;
  * A map implementation using {@link org.neo4j.util.btree.BTree BTree}
  * <p>
  * Note: this implementation is not thread safe (yet).
+ * @param <K> The key type
+ * @param <V> The value type
  */
-// not thread safe yet
 public class BTreeMap<K,V> implements Map<K,V>
 {
-	public static enum RelTypes implements RelationshipType
+	static enum RelTypes implements RelationshipType
 	{
 		MAP_ENTRY,
 	}
@@ -63,7 +64,9 @@ public class BTreeMap<K,V> implements Map<K,V>
 	 * or a node that already represents a previously created map.
 	 *
 	 * @param name The unique name of the map or null if map already
-	 * created (using specified underlying node)
+	 * created (using specified underlying node). The name must match the name
+	 * of the underlyingNode, otherwise an {@link IllegalArgumentException}
+	 * will be thrown.
 	 * @param underlyingNode The underlying node representing the map
 	 * @param neo The embedded neo instance
 	 * @throws IllegalArgumentException if the underlying node is a map with
@@ -130,6 +133,9 @@ public class BTreeMap<K,V> implements Map<K,V>
 		}
 	}
 	
+	/**
+	 * @return the name of this map, given at construction time.
+	 */
 	public String getName()
 	{
 		return this.name;
@@ -321,23 +327,7 @@ public class BTreeMap<K,V> implements Map<K,V>
 	
 	public void clear()
 	{
-		for ( KeyEntry entry : bTree.entries() )
-		{
-			Object goOtherNode = entry.getKeyValue();
-			if ( goOtherNode.equals( GOTO_NODE ) )
-			{
-				Node bucketNode = neo.getNodeById( 
-					(Long) entry.getValue() );
-				for ( Relationship rel : bucketNode.getRelationships( 
-					RelTypes.MAP_ENTRY, Direction.OUTGOING ) )
-				{
-					Node entryNode = rel.getEndNode();
-					rel.delete();
-					entryNode.delete();
-				}
-				bucketNode.delete();
-			}
-		}
+		deleteBuckets();
 		bTree.delete();
 		Node bTreeNode = neo.createNode();
 		underlyingNode.createRelationshipTo( bTreeNode, 
@@ -345,32 +335,19 @@ public class BTreeMap<K,V> implements Map<K,V>
 		bTree = new BTree( neo, bTreeNode );
 	}
 	
+	/**
+	 * Deletes this map and all its entries, even the underlyingNode.
+	 */
 	public void delete()
 	{
-		for ( KeyEntry entry : bTree.entries() )
-		{
-			Object goOtherNode = entry.getKeyValue();
-			if ( goOtherNode.equals( GOTO_NODE ) )
-			{
-				Node bucketNode = neo.getNodeById( 
-					(Long) entry.getValue() );
-				for ( Relationship rel : bucketNode.getRelationships( 
-					RelTypes.MAP_ENTRY, Direction.OUTGOING ) )
-				{
-					Node entryNode = rel.getEndNode();
-					rel.delete();
-					entryNode.delete();
-				}
-				bucketNode.delete();
-			}
-		}
+		deleteBuckets();
 		bTree.delete();
 		underlyingNode.delete();
 	}
 
-	public void delete( int commitInterval )
-	{
-		for ( KeyEntry entry : bTree.entries() )
+    private void deleteBuckets()
+    {
+        for ( KeyEntry entry : bTree.entries() )
 		{
 			Object goOtherNode = entry.getKeyValue();
 			if ( goOtherNode.equals( GOTO_NODE ) )
@@ -387,6 +364,16 @@ public class BTreeMap<K,V> implements Map<K,V>
 				bucketNode.delete();
 			}
 		}
+    }
+
+	/**
+     * Deletes this map and all its entries, even the underlyingNode.
+     * 
+	 * @param commitInterval commits the transaction 
+	 */
+	public void delete( int commitInterval )
+	{
+		deleteBuckets();
 		bTree.delete( commitInterval );
 		underlyingNode.delete();
 	}

@@ -31,6 +31,9 @@ import org.neo4j.impl.batchinsert.BatchInserter;
 import org.neo4j.impl.util.ArrayMap;
 import org.neo4j.impl.util.FileUtils;
 
+/**
+ * A default implementation of {@link LuceneIndexBatchInserter}.
+ */
 public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
 {
     private final String storeDir;
@@ -52,6 +55,9 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
     
     private IndexService asIndexService;
     
+    /**
+     * @param neo the {@link BatchInserter} to use.
+     */
     public LuceneIndexBatchInserterImpl( BatchInserter neo )
     {
         this.neo = neo;

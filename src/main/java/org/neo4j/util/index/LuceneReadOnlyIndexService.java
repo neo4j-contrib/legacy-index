@@ -41,6 +41,9 @@ import org.neo4j.api.core.NotFoundException;
 import org.neo4j.commons.iterator.IterableWrapper;
 import org.neo4j.impl.cache.LruCache;
 
+/**
+ * A {@link LuceneIndexService} which is read-only
+ */
 public class LuceneReadOnlyIndexService extends GenericIndexService
 {
     protected static final String DOC_ID_KEY = "id";
@@ -49,6 +52,9 @@ public class LuceneReadOnlyIndexService extends GenericIndexService
     private final LuceneReadOnlyDataSource xaDs;
     private Sort sorting;
 
+    /**
+     * @param neo the {@link NeoService} to use.
+     */
     public LuceneReadOnlyIndexService( NeoService neo )
     {
         super( neo );
@@ -78,6 +84,17 @@ public class LuceneReadOnlyIndexService extends GenericIndexService
         return Field.Index.NOT_ANALYZED;
     }
     
+    /**
+     * Enables an LRU cache for a specific index (specified by {@code key})
+     * so that the {@code maxNumberOfCachedEntries} number of results found with
+     * {@link #getNodes(String, Object)} are cached for faster consecutive
+     * lookups. It's prefered to enable cache at construction time.
+     * 
+     * @param key the index to enable cache for.
+     * @param maxNumberOfCachedEntries the max size of the cache before old
+     * ones are flushed from the cache.
+     * @see LuceneIndexService#enableCache(String, int)
+     */
     public void enableCache( String key, int maxNumberOfCachedEntries )
     {
         xaDs.enableCache( key, maxNumberOfCachedEntries );
@@ -140,7 +157,14 @@ public class LuceneReadOnlyIndexService extends GenericIndexService
         };
     }
     
-    public void setSorting( Sort sortingOrNullForNone )
+    /**
+     * Sets how lucene should sort the results when performing queries.
+     * 
+     * @param sortingOrNullForNone which Lucene {@link Sort} to use when
+     * querying the lucene indexes. {@code null} means no sorting.
+     * @see LuceneIndexService#setSorting(Sort)
+     */
+     public void setSorting( Sort sortingOrNullForNone )
     {
         this.sorting = sortingOrNullForNone;
     }

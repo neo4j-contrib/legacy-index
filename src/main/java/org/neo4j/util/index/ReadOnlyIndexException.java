@@ -19,8 +19,14 @@
  */
 package org.neo4j.util.index;
 
+/**
+ * Thrown in a read-only index when the user tries to use the index* methods.
+ */
 public class ReadOnlyIndexException extends RuntimeException
 {
+    /**
+     * Constructs an exception with a default message.
+     */
     public ReadOnlyIndexException()
     {
         super( "This is a read-only index." );
