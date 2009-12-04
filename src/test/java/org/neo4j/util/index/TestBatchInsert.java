@@ -106,7 +106,7 @@ public class TestBatchInsert extends TestCase
             new LuceneFulltextIndexBatchInserter( neo );
         try
         {
-            for ( int i = 0; i < 1000; i++ )
+            for ( int i = 0; i < 10000; i++ )
             {
                 index.index( i, "mykey", i );
                 assertEquals( i, index.getSingleNode( "mykey", i ) );
