@@ -16,6 +16,7 @@ import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.WhitespaceTokenizer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
@@ -41,8 +42,6 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
 
     private final ArrayMap<String,IndexWriter> indexWriters = 
         new ArrayMap<String,IndexWriter>( 6, false, false );
-    private final ArrayMap<IndexWriter,IndexSearcher> indexSearchers = 
-        new ArrayMap<IndexWriter,IndexSearcher>( 6, false, false );
 
     private final Analyzer fieldAnalyzer = new Analyzer()
     {
@@ -146,11 +145,6 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
         {
             try
             {
-                IndexSearcher searcher = indexSearchers.get( writer );
-                if ( searcher != null )
-                {
-                    searcher.close();
-                }
                 writer.close();
             }
             catch ( IOException e )
@@ -173,12 +167,8 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
         try
         {
             Query query = formQuery( key, value );
-            IndexSearcher indexSearcher = indexSearchers.get( writer );
-            if ( indexSearcher == null )
-            {
-                indexSearcher = new IndexSearcher( writer.getReader() );
-                indexSearchers.put( writer, indexSearcher );
-            }
+            IndexReader indexReader = writer.getReader();
+            IndexSearcher indexSearcher = new IndexSearcher( indexReader );
             Hits hits = indexSearcher.search( query );
             for ( int i = 0; i < hits.length(); i++ )
             {
@@ -187,6 +177,8 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
                     LuceneIndexService.DOC_ID_KEY ).stringValue() );
                 nodeSet.add( id );
             }
+            indexSearcher.close();
+            indexReader.close();
         }
         catch ( IOException e )
         {
@@ -208,11 +200,7 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
             List<IndexWriter> writers = new ArrayList<IndexWriter>();
             for ( IndexWriter writer : indexWriters.values() )
             {
-                IndexSearcher searcher = indexSearchers.remove( writer );
-                if ( searcher != null )
-                {
-                    searcher.close();
-                }
+//                closeReader( writer );
                 writer.optimize( true );
                 writers.add( writer );
             }

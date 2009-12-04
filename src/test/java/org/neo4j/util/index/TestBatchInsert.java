@@ -98,4 +98,24 @@ public class TestBatchInsert extends TestCase
             neo.shutdown();
         }
     }
+    
+    public void testMoreFulltextBatchInsert()
+    {
+        BatchInserter neo = new BatchInserterImpl( "var/batch-insert" );
+        LuceneIndexBatchInserter index = 
+            new LuceneFulltextIndexBatchInserter( neo );
+        try
+        {
+            for ( int i = 0; i < 1000; i++ )
+            {
+                index.index( i, "mykey", i );
+                assertEquals( i, index.getSingleNode( "mykey", i ) );
+            }
+        }
+        finally
+        {
+            index.shutdown();
+            neo.shutdown();
+        }
+    }
 }
