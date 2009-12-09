@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +48,7 @@ import org.neo4j.api.core.NeoService;
 import org.neo4j.api.core.Node;
 import org.neo4j.api.core.NotFoundException;
 import org.neo4j.api.core.NotInTransactionException;
+import org.neo4j.commons.iterator.FilteringIterable;
 import org.neo4j.commons.iterator.IterableWrapper;
 import org.neo4j.impl.cache.LruCache;
 import org.neo4j.impl.transaction.LockManager;
@@ -193,6 +195,17 @@ public class LuceneIndexService extends GenericIndexService
     
     protected Iterable<Node> instantiateIdToNodeIterable( Iterable<Long> ids )
     {
+        ids = new FilteringIterable<Long>( ids )
+        {
+            private final Set<Long> passedIds = new HashSet<Long>();
+            
+            @Override
+            protected boolean passes( Long id )
+            {
+                return passedIds.add( id );
+            }
+        };
+        
         return new IterableWrapper<Node, Long>( ids )
         {
             @Override

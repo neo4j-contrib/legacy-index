@@ -19,7 +19,9 @@
  */
 package org.neo4j.util.index;
 
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 
 import org.neo4j.api.core.Node;
 import org.neo4j.util.NeoTestCase;
@@ -177,6 +179,21 @@ public class TestLuceneIndexingService extends NeoTestCase
         assertEquals( node2, indexService().getSingleNode( "a_property", 3 ) );
         restartTx();
         assertEquals( node2, indexService().getSingleNode( "a_property", 3 ) );
+    }
+    
+    public void testDoubleIndexing() throws Exception
+    {
+        Node node = neo().createNode();
+        indexService.index( node, "double", "value" );
+        restartTx();
+        indexService.index( node, "double", "value" );
+        restartTx();
+        Set<Node> hits = new HashSet<Node>();
+        for ( Node hit : indexService.getNodes( "double", "value" ) )
+        {
+            assertTrue( hits.add( hit ) );
+        }
+        node.delete();
     }
     
 //    public void testDifferentTypesWithSameValueIssue()
