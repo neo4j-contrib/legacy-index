@@ -36,7 +36,8 @@ public class LuceneFulltextDataSource extends LuceneDataSource
      * Constructs a {@link LuceneFulltextDataSource}.
      * 
      * @param params XA parameters
-     * @throws InstantiationException
+     * @throws InstantiationException if the data source couldn't be
+     * instantiated
      */
     public LuceneFulltextDataSource( Map<Object, Object> params )
         throws InstantiationException

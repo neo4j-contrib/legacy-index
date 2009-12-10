@@ -1,179 +1,85 @@
 Neo4j indexing utilities
 
-	Neo indexing utilities is a set of components that can provide simple 
-	indexing and simular data strucutres (such as persistent maps). Note that 
-	this component is under development and can be considered being in 'alpha' 
-	state. 
+	This is a collection of various utilities for indexing parts of a neo4j
+	graph. The most straight-forward way to use this component is via
+	the <<org.neo4j.util.index.IndexService>> interface. This <<IndexService>>
+	is basically a service where you can index neo4j nodes with key-value pairs.
+	See more below.
 
-	A BTree implementation ontop of Neo can be found in 
-	<<org.neo4j.util.btree package>>. This BTree is used by 
-	<<org.neo4j.util.index>>, <<org.neo4j.util.map>> and 
-	<<org.neo4j.util.timeline packages>>. All the different utilities have 
-	an <underlying node> that represents a particular instance. For example 
-	creating a new index you first create a new node then pass that node
-	into the constructor for the index. When the index has been created you 
-	can create instances of the Index by passing in the same node to the 
-	correct index constructor.  
+	There's also other useful utilities, such as <<Timeline>> and <<BTree>>,
+	utilities which uses the neo4j graph itself for storing index information.
 
 IndexService
 
-	In the <<org.neo4j.util.index>> package you will find an <<IndexService>> 
-	interface with one implementation using Lucene and another reference 
-	implementation ontop of Neo.
+	In the <<org.neo4j.util.index>> package you will find the <<IndexService>> 
+	interface which holds the most straight-forward way of indexing your neo4j
+	graph. Look at a quick example:
 
 ---
-    IndexService indexService = new LuceneIndexService( neo );
-    
-    // index a node 
-    indexService.index( personNode, "name", 
-    	personNode.getProperty( "name" ) );
-    
-    // getting a node using the index
-    Node node = index.getSingleNodeFor( "name", someName );
+NeoService neo = // An arbitrary NeoService instance
+IndexService index = new LuceneIndexService( neo );
+
+// Create a node with a "name" property and index it in the IndexService.
+Node personNode = neo.createNode();
+personNode.setProperty( "name", "Mattias Persson" );
+index.index( personNode, "name", personNode.getProperty( "name" ) );
+
+// Get the node with the name "Mattias Persson"
+Node node = index.getSingleNode( "name", "Mattias Persson" );
+// also see index.getNodes method.
+assert personNode.equals( node );
 ---
 
-LuceneIndexService
-
-	The <<org.neo4j.util.index.LuceneIndexService>> uses lucene as the back-end.
-	It also has one great feature, caching, which can enhance performance
-	greatly if used properly. You can enable caching per key and decide the
-	max size of the cache.
-
----
-	LuceneIndexService indexService = new LuceneIndexService( neo );
+	Read more at our {{{http://wiki.neo4j.org/content/Indexing_with_IndexService}wiki}}
 	
-	// This will enable caching for the "users" index. The 10000 most frequently
-	// used values will be kept in cache.
-	indexService.enableCache( "users", 10000 );
----
+LuceneIndexBatchInserter
 
-LuceneFulltextIndexService
+	See more information about the LuceneIndexBatchInserter on our
+	wiki
 
-	The <<org.neo4j.util.index.LuceneFulltextIndexService>> class can perform
-	more complex indexing and querying than the 1-to-1 <<LuceneIndexService>>.
-	By extending the <<LuceneFulltextIndexService>> (and optionally
-	<<LuceneFulltextDataSource>> as well) you can do the indexing and querying
-	that you need. Caching is disabled for this implementation.
+BTree, BTreeMap
+
+	In <<org.neo4j.util.btree>> package you'll find a
+	{{{http://en.wikipedia.org/wiki/B-tree}b-tree}} implementation on top of
+	neo4j. You supply a root node to the <<BTree>> instance and the b-tree will
+	be created in connection to it.
+
+	You can also expose a <<BTree>> as a <<java.util.Map>> using the
+	<<org.neo4j.util.map.BTreeMap>> class where the values (in the key-value
+	pairs) can be any of the supported property types in neo4j.
+
+Timeline
+
+	You can create a timeline and add nodes to it, each with a timestamp and you
+	can then ask it to return all nodes within a specific period of time
+	(with optional upper and lower bounds).
 	
----
-	public class MyDataSource extends LuceneFulltextDataSource
-	{
-		@Override
-		protected Index getIndexStrategy( String key, Object value )
-		{
-			// This will decide how lucene analyzes your values when indexing.
-		}
-	}
-
-	IndexService indexService = new LuceneFulltextIndexService( neo )
-	{
-		...
-		
-		@Override
-		protected Class<? extends LuceneDataSource> getDataSourceClass()
-		{
-			return MyDataSource.class;
-		}
-		
-		@Override
-		protected Query formQuery( String key, Object value )
-		{
-			// Implement you querying here.
-		}
-	};
----
-
-Performance tweaks
-
-	The <<LuceneIndexService>> has the
-	<<enableCache( String index, int maxCacheSize )>> method which will speed
-	things up significantly for reads for the given index. Just use it in
-	conjunction with instantiating the index.
-
-Index interface
-
-	In the <<org.neo4j.util.index>> package you will find an <<Index>> interface
-	and two different index implementations. The <<SingleValueIndex>> can only 
-	index one node per key while the <<MultiValueIndex>> handles many nodes per 
-	key. The keys used for indexing must be of primitive type or String type.
-	
----
-    // create a new index
-    Node indexNode = neo.createNode();
-    Index myIndex = new SingleValueIndex( "my_index", indexNode, neo );
-    // we have now created an index called "my_index" connected to the 
-    // underlying node 'indexNode'
-    
-    // index a node 
-    myIndex.index( personNode, personNode.getProperty( "person_id" ) );
-    
-    // getting a node using the index
-    Node node = index.getSingleNodeFor( somePersonId );
-    
-    // restore an already existing index
-    Node indexNode = //... get the underlying index node
-    // The name passed in needs to be the same as the one stored in the
-    // index, if not an exception is thrown to prevent you from working
-    // with another index than the one you were expecting.
-    Index myIndex = new SingleValueIndex( "my_index", indexNode, neo ); 
-    // the index is loaded from the indexNode again and ready for use
----
-
-Map package
-
-	In the <<org.neo4j.util.map>> package you will find a <<BTreeMap>> that has 
-	the standard put/get/remove methods. The keys and values can be any of the 
-	primitivie types or String. The <<Map>> interace is implemented but the 
-	only valid methods at the moment are <put,get,remove and clear>. The 
-	<<size()>> method will hopefully be implemented soon (as for some of 
-	the other optional methods).
-	
----
-   // create a new map
-   Node mapNode = neo.createNode();
-   Map<String,String> persistentMap = new BTreeMap<String,String>( "my_map", 
-       mapNode, neo ); 
-
-   // use the map
-   persistentMap.put( "key", "value" );
-   String value = persistentMap.get( "key" );
-   persistentMap.remove( "key" );
-   
-   // map can be cleared
-   persistentMap.clear();
-   // but delete has to be invoked to delete the underlying map node
-   ((BTreeMap) persistentMap).delete();
-   
-   // re-create an already existing map
-   Map<String,String> persistentMap = new BTreeMap<String,String( null,
-    myMapNode, neo );
----
-
-Timeline package
-
-	Timeline is a utility that can be used to order nodes then perform searches 
-	on that order.
+	Node that the name you give the timeline is more a convenience thing, much
+	like the naming of a Thread in Java. It is also a security check so that
+	you use the right timeline, since the name is checked upon instantiation
+	so that it is the same as the name as you pass in (except the first time).
 
 ---
-    // create a timeline, and make it indexed (for small timelines < 10k nodes
-    // index isn't needed)
-    Timeline timeline = new Timeline( "my_timeline", neo.createNode(), 
-        true, neo );
-    
-    // add some data
-    for ( long i = 0; i < 50000; i++ )
-    {
-        timeline.addNode( neo.createNode(), i );
-    }
-    
-    // perform some searches
-    Node firstNode = timeline.getFirstNode(); // first node in timeline
-    Node lastNode = timeline.getLastNode(); // last node
-    Iterable<Node> nodes = timeline.getAllNodes(); // all nodes
-    nodes = timeline.getAllNodesAfter( 25000 ); // all nodes after timestamp
-    nodes = timeline.getAllNodesBefore( 25001 ); // all nodes before timestamp
-    nodes = timeline.getAllNodesBetween( 15000, 35000 ); // ...
-    
-    // delete a timeline
-    timeline.delete();
+Node rootNode = // Some node which you dedicate as the timeline root.
+Timeline timeline = new Timeline( "my_timeline", rootNode, neo );
+
+// Add nodes to your timeline
+long startTime = System.currentTimeMillis();
+for ( int i = 0; i < 50000; i++ )
+{
+    timeline.addNode( neo.createNode(), System.currentTimeMillis() );
+    Thread.sleep( new Random().nextInt( 30 ) );
+}
+
+// Get all the nodes in the timeline
+Iterable<Node> nodes = timeline.getAllNodes();
+// All nodes after timestamp (3 seconds after the start time)
+nodes = timeline.getAllNodesAfter( startTime + 3000 );
+// All nodes before timestamp
+nodes = timeline.getAllNodesBefore( System.currentTimeMillis() );
+// All nodes between these timestamps
+nodes = timeline.getAllNodesBetween( startTime, System.currentTimeMillis() - 5000 );
 ---
+
+	Although values from System.currentTimeMillis() is used in this example
+	you can use any value system (of type long) for your timestamps.

@@ -24,6 +24,7 @@ import org.neo4j.impl.batchinsert.BatchInserter;
 
 /**
  * The "batch inserter" version of a {@link LuceneIndexService}.
+ * When you instantiate a {@link LuceneIndexBatchInserter} it assumes 
  */
 public interface LuceneIndexBatchInserter
 {
@@ -38,12 +39,17 @@ public interface LuceneIndexBatchInserter
     void index( long node, String key, Object value );
     
     /**
-     * Shuts down this index.
+     * Shuts down this index and closes its underlying lucene index files.
      */
     void shutdown();
 
     /**
-     * Gets nodes from the lucene index.
+     * Queries the lucene index for hits given the {@code key} and
+     * {@code value}. The usage of {@link #getNodes(String, Object)},
+     * {@link #getSingleNode(String, Object)} should be as separated as possible
+     * from the {@link #index(long, String, Object)}. so that the performance
+     * penalty gets as small as possible. Also see {@link #optimize()} for
+     * separation between writes and reads.
      * 
      * @param key the index.
      * @param value the value to query for.
@@ -52,16 +58,25 @@ public interface LuceneIndexBatchInserter
     IndexHits<Long> getNodes( String key, Object value );
     
     /**
-     * Performs a Lucene optimize on the index files.
+     * Performs a Lucene optimize on the index files. Do not use this too often
+     * because it's a severe performance penalty. It optimizes the lucene
+     * index files so that consecutive queries will be faster. So the optimal
+     * usage is to index all of your stuff that you would like to index
+     * (with minimal amount of reads during that time). When you're done
+     * indexing and goes into a phase where you'd want to use the index for
+     * lookups (maybe for creating relationships between nodes) you can call
+     * this method so that your queries will be faster than they would otherwise
+     * be.
+     * 
      * @see IndexWriter#optimize()
      */
     void optimize();
 
     /**
-     * 
-     * @param key 
-     * @param value
-     * @return the node id or -1 if no node found
+     * @param key the index key to query.
+     * @param value the value to query for.
+     * @return the node id or -1 if no node found. It will throw a
+     * RuntimeException if there's more than one node in the result.
      */
     long getSingleNode( String key, Object value );
     

@@ -3,12 +3,9 @@ package org.neo4j.util.index;
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 
 import org.apache.lucene.analysis.Analyzer;
@@ -30,7 +27,6 @@ import org.apache.lucene.store.FSDirectory;
 import org.neo4j.api.core.Node;
 import org.neo4j.commons.iterator.IterableWrapper;
 import org.neo4j.impl.batchinsert.BatchInserter;
-import org.neo4j.impl.cache.LruCache;
 import org.neo4j.impl.util.ArrayMap;
 import org.neo4j.impl.util.FileUtils;
 
@@ -53,8 +49,8 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
 
     private final ArrayMap<String,IndexWriter> indexWriters = 
         new ArrayMap<String,IndexWriter>( 6, false, false );
-    private final ArrayMap<String, LruCache<String, Collection<Long>>> cache =
-        new ArrayMap<String, LruCache<String, Collection<Long>>>();
+//    private final ArrayMap<String, LruCache<String, Collection<Long>>> cache =
+//        new ArrayMap<String, LruCache<String, Collection<Long>>>();
 
     private final Analyzer fieldAnalyzer = new Analyzer()
     {
@@ -130,7 +126,7 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
         try
         {
             writer.addDocument( document );
-            addToCache( node, key, value );
+//            addToCache( node, key, value );
         }
         catch ( IOException e )
         {
@@ -138,28 +134,28 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
         }
     }
     
-    private void addToCache( long node, String key, Object value )
-    {
-        if ( !useCache() )
-        {
-            return;
-        }
-        
-        LruCache<String, Collection<Long>> keyCache = this.cache.get( key );
-        if ( keyCache == null )
-        {
-            keyCache = new LruCache<String, Collection<Long>>(
-                key, getMaxCacheSizePerKey(), null );
-            cache.put( key, keyCache );
-        }
-        Collection<Long> ids = keyCache.get( value.toString() );
-        if ( ids == null )
-        {
-            ids = new ArrayList<Long>();
-            keyCache.put( value.toString(), ids );
-        }
-        ids.add( node );
-    }
+//    private void addToCache( long node, String key, Object value )
+//    {
+//        if ( !useCache() )
+//        {
+//            return;
+//        }
+//        
+//        LruCache<String, Collection<Long>> keyCache = this.cache.get( key );
+//        if ( keyCache == null )
+//        {
+//            keyCache = new LruCache<String, Collection<Long>>(
+//                key, getMaxCacheSizePerKey(), null );
+//            cache.put( key, keyCache );
+//        }
+//        Collection<Long> ids = keyCache.get( value.toString() );
+//        if ( ids == null )
+//        {
+//            ids = new ArrayList<Long>();
+//            keyCache.put( value.toString(), ids );
+//        }
+//        ids.add( node );
+//    }
 
     protected void fillDocument( Document document, long nodeId, String key,
         Object value )
@@ -191,30 +187,42 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
         }
     }
     
-    protected boolean useCache()
-    {
-        return true;
-    }
+//    /**
+//     * @return {@code true} if this index service should use caching,
+//     * otherwise {@code false}. Override this in your instance to change its
+//     * behaviour.
+//     */
+//    public boolean useCache()
+//    {
+//        return true;
+//    }
     
-    protected int getMaxCacheSizePerKey()
-    {
-        return 20000;
-    }
+//    /**
+//     * The cache used in this index service is a LRU cache, which mean that
+//     * only the N most recent entries are kept in it.
+//     * 
+//     * @return the size of the LRU cache per key. Override this in your
+//     * instance to change its behaviour.
+//     */
+//    public int getMaxCacheSizePerKey()
+//    {
+//        return 20000;
+//    }
 
     public IndexHits<Long> getNodes( String key, Object value )
     {
-        if ( useCache() )
-        {
-            LruCache<String, Collection<Long>> keyCache = cache.get( key );
-            if ( keyCache != null )
-            {
-                Collection<Long> ids = keyCache.get( value.toString() );
-                if ( ids != null )
-                {
-                    return new SimpleIndexHits<Long>( ids, ids.size() );
-                }
-            }
-        }
+//        if ( useCache() )
+//        {
+//            LruCache<String, Collection<Long>> keyCache = cache.get( key );
+//            if ( keyCache != null )
+//            {
+//                Collection<Long> ids = keyCache.get( value.toString() );
+//                if ( ids != null )
+//                {
+//                    return new SimpleIndexHits<Long>( ids, ids.size() );
+//                }
+//            }
+//        }
         
         Set<Long> nodeSet = new HashSet<Long>();
         IndexWriter writer = getWriter( key, false );
@@ -235,7 +243,7 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
                 Document document = hits.doc( i );
                 long id = Long.parseLong( document.getField(
                     LuceneIndexService.DOC_ID_KEY ).stringValue() );
-                addToCache( id, key, value );
+//                addToCache( id, key, value );
                 nodeSet.add( id );
             }
             indexSearcher.close();
@@ -258,18 +266,18 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
     {
         try
         {
-            List<IndexWriter> writers = new ArrayList<IndexWriter>();
+//            List<IndexWriter> writers = new ArrayList<IndexWriter>();
             for ( IndexWriter writer : indexWriters.values() )
             {
 //                closeReader( writer );
                 writer.optimize( true );
-                writers.add( writer );
+//                writers.add( writer );
             }
-            indexWriters.clear();
-            for ( IndexWriter writer : writers )
-            {
-                writer.close();
-            }
+//            indexWriters.clear();
+//            for ( IndexWriter writer : writers )
+//            {
+//                writer.close();
+//            }
         }
         catch ( IOException e )
         {

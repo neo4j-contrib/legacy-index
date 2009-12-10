@@ -22,40 +22,39 @@ package org.neo4j.util.timeline;
 import org.neo4j.api.core.Node;
 
 /**
- * An interface for representing a timeline.
+ * An utility for ordering nodes in a timeline. You add nodes to the timeline
+ * and then you can query for nodes given a time period, w/ or w/o lower/upper
+ * bounds, f.ex. "Give me all nodes before this given timestamp" or
+ * "Give me all nodes between these two timestamps".
  */
 public interface TimelineIndex
 {
     /**
-     * Return the last node in the timeline or <CODE>null</CODE> if timeline
+     * @return the last node in the timeline or {@code null} if timeline
      * is empty.
-     * 
-     * @return The last node in the timeline
      */
     Node getLastNode();
     
     /**
-     * Returns the first node in the timeline or <CODE>null</CODE> if timeline
+     * @return the first node in the timeline or {@code null} if timeline
      * is empty.
-     * 
-     * @return The first node in the timeline
      */
     Node getFirstNode();
     
     /**
      * Removes a node from the timeline. 
      * 
-     * @param nodeToRemove The node to remove from this timeline
-     * @throws IllegalArgumentException if <CODE>null</CODE> node or node not 
+     * @param nodeToRemove the node to remove from this timeline
+     * @throws IllegalArgumentException if {@code null} node or node not 
      * connected to this timeline.
      */
     void removeNode( Node nodeToRemove );
     
     /**
-     * Adds a node in the timeline using <CODE>timestamp</CODE>.
+     * Adds a node in the timeline with the given {@code timestamp}.
      * 
-     * @param nodeToAdd The node to add to the timeline
-     * @param timestamp The timestamp to use
+     * @param nodeToAdd the node to add to this timeline.
+     * @param timestamp the timestamp to use
      * @throws IllegalArgumentException If already added to this timeline or or 
      * <CODE>null</CODE> node
      */
@@ -63,66 +62,57 @@ public interface TimelineIndex
     
     /**
      * @param timestamp the timestamp to get nodes for.
-     * @return nodes for a given timestamp.
+     * @return nodes which were added with the given {@code timestamp}.
      */
     Iterable<Node> getNodes( long timestamp );
     
     /**
-     * Returns all nodes in the timeline ordered by increasing timestamp.
-     * 
-     * @return All nodes in the timeline
+     * @return all the nodes in the timeline ordered by increasing timestamp.
      */
     Iterable<Node> getAllNodes();
     
     /**
-     * Returns all nodes after (not including) the specified timestamp 
+     * @param timestamp the timestamp value, nodes with greater timestamp 
+     * value will be returned.
+     * @return all nodes after (exclusive) the specified timestamp 
      * ordered by increasing timestamp.
-     * 
-     * @param timestamp The timestamp value, nodes with greater timestamp 
-     * value will be returned
-     * @return All nodes in the timeline after specified timestamp
      */
     Iterable<Node> getAllNodesAfter( long timestamp );
 
     /**
-     * Returns all nodes before (not including) the specified timestamp 
+     * @param timestamp the timestamp value, nodes with lesser timestamp 
+     * value will be returned.
+     * @return all nodes before (exclusive) the specified timestamp 
      * ordered by increasing timestamp.
-     * 
-     * @param timestamp The timestamp value, nodes with lesser timestamp 
-     * value will be returned
-     * @return All nodes in the timeline after specified timestamp
      */
     Iterable<Node> getAllNodesBefore( long timestamp );
     
     /**
-     * Returns all nodes between (not including) the specified timestamps 
+     * @param startTimestamp the start timestamp, nodes with greater timestamp 
+     * value will be returned.
+     * @param endTimestamp the end timestamp, nodes with lesser timestamp 
+     * value will be returned.
+     * @return all nodes between (exclusive) the specified timestamps 
      * ordered by increasing timestamp.
-     * 
-     * @param startTime The start timestamp, nodes with greater timestamp 
-     * value will be returned
-     * @param endTime The end timestamp, nodes with lesser timestamp 
-     * value will be returned
-     * @return All nodes in the timeline between the specified timestamps
      */
-    Iterable<Node> getAllNodesBetween( long startTime, 
-        long endTime );
+    Iterable<Node> getAllNodesBetween( long startTimestamp, 
+        long endTimestamp );
     
     /**
-     * Convenience method which is rather flexible with how the range is
-     * selected based on what you pass in.
+     * Convenience method which you can use {@link #getAllNodes()},
+     * {@link #getAllNodesAfter(long)}, {@link #getAllNodesBefore(long)} and
+     * {@link #getAllNodesBetween(long, long)} in a single method.
      * 
-     * @param afterTimestampOrNull passed in as a range restriction so that
-     * only nodes after this given timestamp are returned. Can be combine with
-     * {@code beforeTimestampOrNull}.
-     * @param beforeTimestampOrNull passed in as a range restriction so that
-     * only nodes before this given timestamp are returned. Can be combined with
-     * {@code afterTimestampOrNull}}
-     * @return nodes in this timeline in order of timestamps. A range can be
-     * given with the {@code afterTimestampOrNull} and
-     * {@code beforeTimestampOrNull} (where {@code null} means no restriction).
+     * @param startTimestampOrNull the start timestamp, nodes with greater
+     * timestamp value will be returned. Will be ignored if {@code null}.
+     * @param endTimestampOrNull the end timestamp, nodes with lesser
+     * timestamp value will be returned. Will be ignored if {@code null}.
+     * @return all nodes in this timeline ordered by timestamp. A range can be
+     * given with the {@code startTimestampOrNull} and/or
+     * {@code endTimestampOrNull} (where {@code null} means no restriction).
      */
-    Iterable<Node> getAllNodes( Long afterTimestampOrNull,
-        Long beforeTimestampOrNull );
+    Iterable<Node> getAllNodes( Long startTimestampOrNull,
+        Long endTimestampOrNull );
         
     /**
      * Deletes this timeline. Nodes added to the timeline will not be deleted, 

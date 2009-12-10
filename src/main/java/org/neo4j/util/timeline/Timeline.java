@@ -37,13 +37,10 @@ import org.neo4j.api.core.Traverser.Order;
 import org.neo4j.util.btree.BTree;
 
 /**
- * A utility to order nodes after a timestamp. This implementation uses the 
- * {@link org.neo4j.util.btree.BTree BTree} to index (at certain intervals) 
- * nodes in the timeline to speed up range quering.
- * <p>
+ * An implementation of {@link TimelineIndex} on top of neo4j,
+ * using {@link BTree} for indexing.
  * Note: this implementation is not threadsafe (yet). 
  */
-// not thread safe yet
 public class Timeline implements TimelineIndex
 {
 	static enum RelTypes implements RelationshipType
@@ -59,15 +56,14 @@ public class Timeline implements TimelineIndex
 	private static final int INDEX_TRIGGER_COUNT = 1000;
 	
 	private final Node underlyingNode;
-	private boolean useIndexing = false;
-	private BTree bTree = null;
+	private final boolean indexed;
+	private BTree indexBTree;
+	private final String name;
 	private final NeoService neo;
 	
 	// lazy init cache holders for first and last
 	private Node firstNode;
 	private Node lastNode;
-
-	private String name; 
 	
 	/**
 	 * Creates/loads a timeline. The <CODE>underlyingNode</CODE> can either
@@ -89,50 +85,16 @@ public class Timeline implements TimelineIndex
 				"Null parameter underlyingNode=" + underlyingNode +
 				" neo=" + neo );
 		}
-		useIndexing = false;
 		this.underlyingNode = underlyingNode;
 		this.neo = neo;
 		Transaction tx = neo.beginTx();
 		try
 		{
-			if ( underlyingNode.hasProperty( TIMELINE_NAME ) )
-			{
-				String storedName = (String) underlyingNode.getProperty( 
-					TIMELINE_NAME );
-				if ( name != null && !storedName.equals( name ) )
-				{
-					throw new IllegalArgumentException( "Name of timeline " + 
-						"for node=" + underlyingNode.getId() + "," + 
-						storedName + " is not same as passed in name=" + 
-						name );
-				}
-				if ( name == null )
-				{
-					underlyingNode.setProperty( TIMELINE_NAME, name );
-				}
-				this.name = name;
-			}
-			else
-			{
-				underlyingNode.setProperty( TIMELINE_NAME, name );
-				this.name = name;
-			}
-			if ( underlyingNode.hasProperty( TIMELINE_IS_INDEXED ) )
-			{
-				if ( !underlyingNode.getProperty( TIMELINE_IS_INDEXED ).equals( 
-					indexed ) )
-				{
-					throw new IllegalArgumentException( "indexed=" + 
-						indexed + " do not match timeline" );
-				}
-				this.useIndexing = indexed;
-			}
-			else
-			{
-				underlyingNode.setProperty( TIMELINE_IS_INDEXED, indexed );
-				this.useIndexing = indexed;
-			}
-			if ( useIndexing )
+		    assertPropertyIsSame( TIMELINE_NAME, name );
+		    this.name = name;
+		    assertPropertyIsSame( TIMELINE_IS_INDEXED, indexed );
+		    this.indexed = indexed;
+			if ( indexed )
 			{
 				Relationship bTreeRel = underlyingNode.getSingleRelationship( 
 					BTree.RelTypes.TREE_ROOT, Direction.OUTGOING );
@@ -142,7 +104,7 @@ public class Timeline implements TimelineIndex
 					bTreeRel = underlyingNode.createRelationshipTo( bTreeNode, 
 						BTree.RelTypes.TREE_ROOT );
 				}
-				bTree = new BTree( neo, bTreeRel.getEndNode() );
+				indexBTree = new BTree( neo, bTreeRel.getEndNode() );
 			}
 			tx.success();
 		}
@@ -150,6 +112,24 @@ public class Timeline implements TimelineIndex
 		{
 			tx.finish();
 		}
+	}
+	
+	private void assertPropertyIsSame( String key, Object value )
+	{
+	    Object storedValue = underlyingNode.getProperty( key, null );
+        if ( storedValue != null )
+        {
+            if ( !storedValue.equals( value ) )
+            {
+                throw new IllegalArgumentException( "Timeline(" +
+                    underlyingNode + ") property '" + key + "' is " +
+                    storedValue + ", passed in " + value );
+            }
+        }
+        else
+        {
+            underlyingNode.setProperty( key, value );
+        }
 	}
 	
     /**
@@ -354,11 +334,7 @@ public class Timeline implements TimelineIndex
 		return node;
 	}
 	
-	/**
-	 * @param node the {@link Node} to get the timestamp for.
-	 * @return the timestamp for when {@code node} was added to this timeline.
-	 */
-	public long getTimestampForNode( Node node )
+	long getTimestampForNode( Node node )
 	{
 		Transaction tx = neo.beginTx();
 		try
@@ -397,11 +373,11 @@ public class Timeline implements TimelineIndex
 	
 	private synchronized void updateNodeAdded( final long timestamp )
 	{
-		if ( !useIndexing )
+		if ( !indexed )
 		{
 			return;
 		}
-		Long nodeId = (Long) bTree.getClosestHigherEntry( timestamp );
+		Long nodeId = (Long) indexBTree.getClosestHigherEntry( timestamp );
 		if ( nodeId == null )
 		{
 			// no indexing yet, check if time to add index
@@ -431,7 +407,7 @@ public class Timeline implements TimelineIndex
 	// creates the new indexing relationship
 	private int createIndex( Node startIndexNode, int currentCount )
 	{
-		assert useIndexing;
+		assert indexed;
 		int newCount = 0;
 		// use 0.33f beacuse most timelines are not random timestamp
 		// insertion, instead they just grow at the end, so 0.33 (instead of 
@@ -448,7 +424,7 @@ public class Timeline implements TimelineIndex
 			assert !newIndexedNode.hasProperty( INDEX_COUNT );
 		}
 		long timestamp = (Long) newIndexedNode.getProperty( TIMESTAMP );
-		bTree.addEntry( timestamp, newIndexedNode.getId() );
+		indexBTree.addEntry( timestamp, newIndexedNode.getId() );
 		newIndexedNode.setProperty( INDEX_COUNT, 
 			currentCount - timesToTraverse );
 		return newCount;
@@ -523,8 +499,8 @@ public class Timeline implements TimelineIndex
 			// TODO: this needs proper synchronization
 			if ( node.hasProperty( INDEX_COUNT ) )
 			{
-				long nodeId = (Long) bTree.removeEntry( (Long) node.getProperty( 
-					TIMESTAMP ) );
+				long nodeId = (Long) indexBTree.removeEntry( (Long)
+				    node.getProperty( TIMESTAMP ) );
 				assert nodeId == node.getId();
 				int count = (Integer) node.getProperty( INDEX_COUNT );
 				count--;
@@ -532,16 +508,16 @@ public class Timeline implements TimelineIndex
 					!previous.hasProperty( INDEX_COUNT ) )
 				{
 					previous.setProperty( INDEX_COUNT, count );
-					bTree.addEntry( (Long) previous.getProperty( TIMESTAMP ),
+					indexBTree.addEntry( (Long) previous.getProperty( TIMESTAMP ),
 						previous.getId() );
 				}
 			}
 			else
 			{
 				long timestamp = (Long) node.getProperty( TIMESTAMP );
-				if ( useIndexing )
+				if ( indexed )
 				{
-					Long nodeId = (Long) bTree.getClosestHigherEntry( 
+					Long nodeId = (Long) indexBTree.getClosestHigherEntry( 
 						timestamp );
 					if ( nodeId != null )
 					{
@@ -639,10 +615,10 @@ public class Timeline implements TimelineIndex
 	// from closest lower indexed start relationship
 	private Node getIndexedStartNode( long timestamp )
 	{
-		if ( useIndexing )
+		if ( indexed )
 		{
 			Node startNode = underlyingNode;
-			Long nodeId = (Long) bTree.getClosestLowerEntry( timestamp );
+			Long nodeId = (Long) indexBTree.getClosestLowerEntry( timestamp );
 			if ( nodeId != null )
 			{
 				startNode = neo.getNodeById( nodeId );
@@ -881,9 +857,9 @@ public class Timeline implements TimelineIndex
 	
 	public void delete()
 	{
-		if ( useIndexing )
+		if ( indexed )
 		{
-			bTree.delete();
+			indexBTree.delete();
 		}
 		Relationship rel = underlyingNode.getSingleRelationship( 
 			RelTypes.TIMELINE_NEXT_ENTRY, Direction.OUTGOING );

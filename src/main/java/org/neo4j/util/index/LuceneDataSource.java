@@ -82,7 +82,8 @@ public class LuceneDataSource extends XaDataSource
      * Constructs this data source.
      * 
      * @param params XA parameters.
-     * @throws InstantiationException
+     * @throws InstantiationException if the data source couldn't be
+     * instantiated
      */
     public LuceneDataSource( Map<Object,Object> params ) 
         throws InstantiationException
