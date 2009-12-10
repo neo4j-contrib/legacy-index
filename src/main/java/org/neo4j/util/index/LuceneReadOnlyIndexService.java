@@ -50,7 +50,6 @@ public class LuceneReadOnlyIndexService extends GenericIndexService
     protected static final String DOC_INDEX_KEY = "index";
 
     private final LuceneReadOnlyDataSource xaDs;
-    private Sort sorting;
 
     /**
      * @param neo the {@link NeoService} to use.
@@ -108,6 +107,22 @@ public class LuceneReadOnlyIndexService extends GenericIndexService
     
     public IndexHits<Node> getNodes( String key, Object value )
     {
+        return getNodes( key, value, null );
+    }
+    
+    /**
+     * Just like {@link #getNodes(String, Object)}, but with sorted result.
+     * 
+     * @param key the index to query.
+     * @param value the value to query for.
+     * @param sortingOrNull lucene sorting behaviour for the result. Ignored
+     * if {@code null}.
+     * @return nodes that has been indexed with key and value, optionally
+     * sorted with {@code sortingOrNull}.
+     */
+    public IndexHits<Node> getNodes( String key, Object value,
+        Sort sortingOrNull )
+    {
         List<Long> nodeIds = new ArrayList<Long>();
         IndexSearcher searcher = xaDs.getIndexSearcher( key );
         if ( searcher != null )
@@ -128,7 +143,8 @@ public class LuceneReadOnlyIndexService extends GenericIndexService
             }
             if ( !foundInCache )
             {
-                Iterable<Long> searchedNodeIds = searchForNodes( key, value );
+                Iterable<Long> searchedNodeIds = searchForNodes(
+                    key, value, sortingOrNull );
                 ArrayList<Long> readNodeIds = new ArrayList<Long>();
                 for ( Long readNodeId : searchedNodeIds )
                 {
@@ -157,32 +173,21 @@ public class LuceneReadOnlyIndexService extends GenericIndexService
         };
     }
     
-    /**
-     * Sets how lucene should sort the results when performing queries.
-     * 
-     * @param sortingOrNullForNone which Lucene {@link Sort} to use when
-     * querying the lucene indexes. {@code null} means no sorting.
-     * @see LuceneIndexService#setSorting(Sort)
-     */
-     public void setSorting( Sort sortingOrNullForNone )
-    {
-        this.sorting = sortingOrNullForNone;
-    }
-    
     protected Query formQuery( String key, Object value )
     {
         return new TermQuery( new Term( DOC_INDEX_KEY, value.toString() ) );
     }
 
-    private Iterable<Long> searchForNodes( String key, Object value )
+    private Iterable<Long> searchForNodes( String key, Object value,
+        Sort sortingOrNull )
     {
         Query query = formQuery( key, value );
         try
         {
             IndexSearcher searcher = xaDs.getIndexSearcher( key );
             ArrayList<Long> nodes = new ArrayList<Long>();
-            Hits hits = sorting != null ?
-                searcher.search( query, sorting ) :
+            Hits hits = sortingOrNull != null ?
+                searcher.search( query, sortingOrNull ) :
                 searcher.search( query );
             for ( int i = 0; i < hits.length(); i++ )
             {

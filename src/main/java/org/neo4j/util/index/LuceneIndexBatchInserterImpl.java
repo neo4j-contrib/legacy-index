@@ -32,15 +32,6 @@ import org.neo4j.impl.util.FileUtils;
 
 /**
  * A default implementation of {@link LuceneIndexBatchInserter}.
- * It has a cache per key which can be controlled by overriding the
- * {@link #useCache()} and {@link #getMaxCacheSizePerKey()} methods.
- * The cache assumes that there's nothing in the index when it's constructed,
- * this is because:
- * 1. It will almost always be true (you do a batch-insert only once with a
- *    big data set).
- * 2. It can start to cache immediately in the
- *    {@link #index(long, String, Object)} method without asking the index
- *    if there's something else to include in the cache.
  */
 public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
 {

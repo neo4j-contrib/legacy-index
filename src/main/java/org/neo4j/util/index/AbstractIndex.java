@@ -493,7 +493,7 @@ abstract class AbstractIndex implements Index
 	/**
 	 * Deletes this index using a commit interval including the underlying node.
 	 * 
-	 * @parram commitInterval number of index removes before a new transaction
+	 * @param commitInterval number of index removes before a new transaction
 	 * is started.
 	 */
 	public void drop( int commitInterval )

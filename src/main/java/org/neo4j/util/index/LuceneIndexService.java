@@ -139,6 +139,16 @@ public class LuceneIndexService extends GenericIndexService
         return getNodes( key, value, null );
     }
     
+    /**
+     * Just like {@link #getNodes(String, Object)}, but with sorted result.
+     * 
+     * @param key the index to query.
+     * @param value the value to query for.
+     * @param sortingOrNull lucene sorting behaviour for the result. Ignored
+     * if {@code null}.
+     * @return nodes that has been indexed with key and value, optionally
+     * sorted with {@code sortingOrNull}.
+     */
     public IndexHits<Node> getNodes( String key, Object value,
         Sort sortingOrNull )
     {
