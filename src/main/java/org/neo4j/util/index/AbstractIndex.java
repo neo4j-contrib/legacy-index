@@ -41,7 +41,6 @@ import org.neo4j.util.btree.KeyEntry;
  * <p>
  * Note: this implementation is not thread safe (yet).
  */
-// not thread safe yet
 abstract class AbstractIndex implements Index
 {
 	public static enum RelTypes implements RelationshipType

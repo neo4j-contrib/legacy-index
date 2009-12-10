@@ -39,7 +39,11 @@ import org.neo4j.util.btree.BTree;
 /**
  * An implementation of {@link TimelineIndex} on top of neo4j,
  * using {@link BTree} for indexing.
- * Note: this implementation is not threadsafe (yet). 
+ * Note: this implementation is not threadsafe (yet).
+ * 
+ * Nodes added to a timeline will get a {@link Relationship} created to it so
+ * if you delete such a node later on you'll have to remove it from the timeline
+ * first (or in the same transaction at least)
  */
 public class Timeline implements TimelineIndex
 {
