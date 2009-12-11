@@ -26,15 +26,14 @@ import org.neo4j.util.btree.KeyEntry;
 /**
  * A "multi" index implementation using {@link org.neo4j.util.btree.BTree BTree}
  * that can index multiple nodes per key. They key is checked for equality 
- * using both <CODE>hashCode</CODE> and <CODE>equal</CODE> methods. 
+ * using both {@link #hashCode()} and {@link #equals(Object)} methods. 
  * <p>
  * Note: this implementation is not thread safe (yet).
  */
-// not thread safe yet
 public class MultiValueIndex extends AbstractIndex
 {
 	/**
-	 * Creates/loads a index. The <CODE>underlyingNode</CODE> can either
+	 * Creates/loads a index. The {@code underlyingNode} can either
 	 * be a new (just created) node or a node that already represents a 
 	 * previously created index.
 	 *

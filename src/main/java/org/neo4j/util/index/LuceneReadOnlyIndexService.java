@@ -22,8 +22,10 @@ package org.neo4j.util.index;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -38,11 +40,14 @@ import org.neo4j.api.core.EmbeddedReadOnlyNeo;
 import org.neo4j.api.core.NeoService;
 import org.neo4j.api.core.Node;
 import org.neo4j.api.core.NotFoundException;
+import org.neo4j.commons.iterator.FilteringIterable;
 import org.neo4j.commons.iterator.IterableWrapper;
 import org.neo4j.impl.cache.LruCache;
 
 /**
- * A {@link LuceneIndexService} which is read-only
+ * A {@link LuceneIndexService} which is read-only, i.e. will throw
+ * {@link ReadOnlyIndexException} in {@link #index(Node, String, Object)}
+ * and {@link #removeIndex(Node, String, Object)}.
  */
 public class LuceneReadOnlyIndexService extends GenericIndexService
 {
@@ -163,6 +168,17 @@ public class LuceneReadOnlyIndexService extends GenericIndexService
     
     protected Iterable<Node> instantiateIdToNodeIterable( Iterable<Long> ids )
     {
+        ids = new FilteringIterable<Long>( ids )
+        {
+            private final Set<Long> passedIds = new HashSet<Long>();
+            
+            @Override
+            protected boolean passes( Long id )
+            {
+                return passedIds.add( id );
+            }
+        };
+        
         return new IterableWrapper<Node, Long>( ids )
         {
             @Override
@@ -214,16 +230,12 @@ public class LuceneReadOnlyIndexService extends GenericIndexService
 
     public Node getSingleNode( String key, Object value )
     {
-        // TODO Temporary code, this can be implemented better
         Iterator<Node> nodes = getNodes( key, value ).iterator();
         Node node = nodes.hasNext() ? nodes.next() : null;
-        while ( nodes.hasNext() )
+        if ( nodes.hasNext() )
         {
-            if ( !nodes.next().equals( node ) )
-            {
-                throw new RuntimeException( "More than one node for " + key + "="
-                    + value );
-            }
+            throw new RuntimeException( "More than one node for " + key + "="
+                + value );
         }
         return node;
     }

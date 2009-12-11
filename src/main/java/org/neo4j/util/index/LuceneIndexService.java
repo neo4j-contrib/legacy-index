@@ -56,7 +56,15 @@ import org.neo4j.impl.transaction.TxModule;
 import org.neo4j.impl.util.ArrayMap;
 
 /**
- * An {@link IndexService} with Lucene as backend.
+ * An implementation of {@link IndexService} which uses Lucene as backend.
+ * Additional features to {@link IndexService} is:
+ * <ul>
+ *   <li>{@link #enableCache(String, int)} will enable a LRU cache for the
+ *   specific key and will boost performance in performance-critical areas.</li>
+ *   <li>{@link #getNodes(String, Object, Sort)} where you can pass in a
+ *   {@link Sort} option to control in which order lucene returns the
+ *   results</li>
+ * </ul>
  */
 public class LuceneIndexService extends GenericIndexService
 {
@@ -280,16 +288,12 @@ public class LuceneIndexService extends GenericIndexService
 
     public Node getSingleNode( String key, Object value )
     {
-        // TODO Temporary code, this can be implemented better
         Iterator<Node> nodes = getNodes( key, value ).iterator();
         Node node = nodes.hasNext() ? nodes.next() : null;
-        while ( nodes.hasNext() )
+        if ( nodes.hasNext() )
         {
-            if ( !nodes.next().equals( node ) )
-            {
-                throw new RuntimeException( "More than one node for " + key + "="
-                    + value );
-            }
+            throw new RuntimeException( "More than one node for " + key + "="
+                + value );
         }
         return node;
     }

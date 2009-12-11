@@ -106,10 +106,68 @@ public class TestBatchInsert extends TestCase
             new LuceneFulltextIndexBatchInserter( neo );
         try
         {
-            for ( int i = 0; i < 10000; i++ )
+            // Should be quite slow, i.e. don't build your code like this :)
+            long time = System.currentTimeMillis();
+            for ( int i = 0; i < 1000; i++ )
             {
-                index.index( i, "mykey", i );
-                assertEquals( i, index.getSingleNode( "mykey", i ) );
+                index.index( i, "mykey1", i );
+                assertEquals( i, index.getSingleNode( "mykey1", i ) );
+            }
+            long slowTime = System.currentTimeMillis() - time;
+            
+            // Should be much faster
+            time = System.currentTimeMillis();
+            for ( int i = 0; i < 1000; i++ )
+            {
+                index.index( i, "mykey2", i );
+            }
+            index.optimize();
+            for ( int i = 0; i < 1000; i++ )
+            {
+                assertEquals( i, index.getSingleNode( "mykey2", i ) );
+            }
+            long fastTime = System.currentTimeMillis() - time;
+            assertTrue( fastTime < slowTime / 5 );
+        }
+        finally
+        {
+            index.shutdown();
+            neo.shutdown();
+        }
+    }
+    
+    public void testHmm() throws Exception
+    {
+        BatchInserter neo = new BatchInserterImpl( "var/batch-insert" );
+        LuceneIndexBatchInserter index = 
+            new LuceneIndexBatchInserterImpl( neo );
+        try
+        {
+            int titleIdStart = 0;
+            for ( int i = 0; i < 100; i++ )
+            {
+                index.index( titleIdStart + i, "ID_TITLE", i );
+                index.index( titleIdStart + i, "NLC", "something" );
+                index.index( titleIdStart + i, "TITLE", "title" );
+                index.index( titleIdStart + i, "TYPE", "type" );
+            }
+    
+            int imageIdStart = 1000;
+            for ( int i = 0; i < 100; i++ )
+            {
+                index.index( imageIdStart + i, "ID_IMAGE", i );
+                index.index( imageIdStart + i, "NLC", "something" );
+                index.index( imageIdStart + i, "FILENAME", "filename" + i );
+                index.index( imageIdStart + i, "TYPE", "type" );
+            }
+            index.optimize();
+            
+            for ( int i = 0; i < 100; i++ )
+            {
+                long tail = index.getSingleNode( "ID_TITLE", i );
+                long head = index.getSingleNode( "ID_IMAGE", i );
+                assertTrue( "tail -1", tail != -1 );
+                assertTrue( "head -1", head != -1 );
             }
         }
         finally

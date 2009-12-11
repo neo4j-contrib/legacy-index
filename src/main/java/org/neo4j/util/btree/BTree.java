@@ -68,13 +68,12 @@ public class BTree
 	private TreeNode treeRoot;
 	
 	/**
-	 * Creates a <CODE>BTree</CODE> using <CODE>rootNode</CODE> as root. The 
-	 * root node must have a incoming relationship of {@link RelTypes TREE_ROOT}
-	 * or a runtime exception will be thrown.
+	 * Creates a b-tree using {@code rootNode} as root. The root node must have
+	 * an incoming relationship of {@link RelTypes TREE_ROOT} else a runtime
+	 * exception will be thrown.
 	 * 
 	 * @param neo the embedded neo instance
-	 * @param rootNode root node with incoming <CODE>TREE_ROOT</CODE> 
-	 * relationship
+	 * @param rootNode root node with incoming {@code TREE_ROOT} relationship.
 	 */
 	public BTree( NeoService neo, Node rootNode )
 	{
@@ -270,7 +269,7 @@ public class BTree
 	
 	/**
 	 * Adds a entry to this b-tree. If key already exist a runtime exception
-	 * is thrown. The <CODE>value</CODE> has to be a valid Neo property.
+	 * is thrown. The {@code value} has to be a valid neo4j property.
 	 * 
 	 * @param key the key of the entry
 	 * @param value value of the entry
@@ -283,12 +282,12 @@ public class BTree
 	
 	/**
 	 * Adds the entry to this b-tree. If key already exist nothing is modified 
-	 * and <CODE>null</CODE> is returned. The <CODE>value</CODE> has to be a 
-	 * valid Neo property.
+	 * and {@code null} is returned. The {@code value} has to be a valid
+	 * neo4j property.
 	 * 
 	 * @param key the key of the entry
 	 * @param value value of the entry
-	 * @return the added entry or <CODE>null</CODE> if key already existed
+	 * @return the added entry or {@code null} if key already existed
 	 */
 	public KeyEntry addIfAbsent( long key, Object value )
 	{
@@ -296,7 +295,7 @@ public class BTree
 	}
 	
 	/**
-	 * Returns the value of an entry or null if no such entry exist.
+	 * Returns the value of an entry or {@code null} if no such entry exist.
 	 * 
 	 * @param key for the entry
 	 * @return value of the entry
@@ -312,8 +311,8 @@ public class BTree
 	}
 	
 	/**
-	 * Returns the closest entry value where <CODE>Entry.key &lt= key</CODE> or
-	 * null if no such entry exist. 
+	 * Returns the closest entry value where {@code Entry.key &lt= key<} or
+	 * {@code null} if no such entry exist. 
 	 * 
 	 * @param key the key
 	 * @return the value of the closest lower entry
@@ -329,8 +328,8 @@ public class BTree
 	}
 	
 	/**
-	 * Returns the closest entry value where <CODE>Entry.key &gt= key</CODE> or
-	 * null if no such entry exist.
+	 * Returns the closest entry value where {@code Entry.key &gt= key} or
+	 * {@code null} if no such entry exist.
 	 * 
 	 * @param key the key
 	 * @return the value of the closest lower entry
@@ -346,7 +345,7 @@ public class BTree
 	}
 	
 	/**
-	 * Returns the <CODE>KeyEntry</CODE> for a key or null if it doesn't exist.
+	 * Returns the {@code KeyEntry}} for a key or null if it doesn't exist.
 	 * 
 	 * @param key the key
 	 * @return the entry connected to the key
@@ -358,7 +357,7 @@ public class BTree
 	
 	/**
 	 * Removes a entry and returns the value of the entry. If entry doesn't 
-	 * exist null is returned.
+	 * exist {@code null} is returned.
 	 * 
 	 * @param key the key
 	 * @return value of removed entry
@@ -379,8 +378,10 @@ public class BTree
 	}
 	
 	/**
-	 * Returns the values of all entries in this b-tree
-	 * @return all values in this b-tree.
+	 * Returns the values of all entries in this b-tree. The iterable which is
+	 * returned back is wrapped {@link Traverser}.
+	 * 
+	 * @return the values of all entries values in this b-tree.
 	 */
 	public Iterable<Object> values()
 	{
@@ -437,6 +438,9 @@ public class BTree
 	}
 	
 	/**
+	 * Returns all the entries in this b-tree. The iterable returned back is
+	 * a wrapped {@link Traverser}.
+	 * 
 	 * @return an Iterable of all the entries in this b-tree
 	 */
 	public Iterable<KeyEntry> entries()

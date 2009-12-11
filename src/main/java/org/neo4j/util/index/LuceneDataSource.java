@@ -298,12 +298,6 @@ public class LuceneDataSource extends XaDataSource
         return FSDirectory.open( new File( storeDir, key ) );
     }
     
-    /**
-     * @param key the key for the index, i.e. which index to return a searcher
-     * for
-     * @return an {@link IndexSearcher} for the index for {@key}. If no such
-     * searcher has been opened before it is opened here.
-     */
     IndexSearcher getIndexSearcher( String key )
     {
         try

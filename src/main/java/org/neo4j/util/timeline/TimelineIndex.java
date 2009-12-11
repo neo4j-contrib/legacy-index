@@ -30,19 +30,26 @@ import org.neo4j.api.core.Node;
 public interface TimelineIndex
 {
     /**
+     * Returns the last node in the timeline, i.e. the node with the highest
+     * timestamp or {@code null} if there's no nodes in the timeline.
+     * 
      * @return the last node in the timeline or {@code null} if timeline
      * is empty.
      */
     Node getLastNode();
     
     /**
+     * Returns the first node in the timeline, i.e. the node with the lowest
+     * timestamp or {@code null} if there's no nodes in the timeline.
+     * 
      * @return the first node in the timeline or {@code null} if timeline
      * is empty.
      */
     Node getFirstNode();
     
     /**
-     * Removes a node from the timeline. 
+     * Removes a node from the timeline. It will throw an exception if
+     * {@code nodeToRemove} isn't added in this timeline.
      * 
      * @param nodeToRemove the node to remove from this timeline
      * @throws IllegalArgumentException if {@code null} node or node not 
@@ -51,43 +58,58 @@ public interface TimelineIndex
     void removeNode( Node nodeToRemove );
     
     /**
-     * Adds a node in the timeline with the given {@code timestamp}.
+     * Adds a node to this timeline with the given {@code timestamp}.
      * 
      * @param nodeToAdd the node to add to this timeline.
      * @param timestamp the timestamp to use
-     * @throws IllegalArgumentException If already added to this timeline or or 
-     * <CODE>null</CODE> node
+     * @throws IllegalArgumentException if already added to this timeline or 
+     * {@code null} node.
      */
     void addNode( Node nodeToAdd, long timestamp );
     
     /**
+     * Returns nodes which were added with the given {@code timestamp}.
+     * 
      * @param timestamp the timestamp to get nodes for.
      * @return nodes which were added with the given {@code timestamp}.
      */
     Iterable<Node> getNodes( long timestamp );
     
     /**
+     * Returns all added nodes in this timeline ordered by increasing
+     * timestamp.
+     * 
      * @return all the nodes in the timeline ordered by increasing timestamp.
      */
     Iterable<Node> getAllNodes();
     
     /**
+     * Returns all the nodes after (exclusive) {@code timestamp} ordered by
+     * increasing timestamp.
+     * 
      * @param timestamp the timestamp value, nodes with greater timestamp 
      * value will be returned.
-     * @return all nodes after (exclusive) the specified timestamp 
-     * ordered by increasing timestamp.
+     * @return all nodes after (exclusive) {@code timestamp} ordered by
+     * increasing timestamp.
      */
     Iterable<Node> getAllNodesAfter( long timestamp );
 
     /**
+     * Returns all the nodes before (exclusive) {@code timestamp} ordered by
+     * increasing timestamp.
+     * 
      * @param timestamp the timestamp value, nodes with lesser timestamp 
      * value will be returned.
-     * @return all nodes before (exclusive) the specified timestamp 
+     * @return all nodes before (exclusive) {@code timestamp}
      * ordered by increasing timestamp.
      */
     Iterable<Node> getAllNodesBefore( long timestamp );
     
     /**
+     * Returns all the nodes after (exclusive) {@code afterTimestamp} and
+     * before (exclusive) {@code beforeTimestamp} ordered by increasing
+     * timestamp.
+     * 
      * @param startTimestamp the start timestamp, nodes with greater timestamp 
      * value will be returned.
      * @param endTimestamp the end timestamp, nodes with lesser timestamp 

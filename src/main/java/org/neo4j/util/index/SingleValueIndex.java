@@ -29,11 +29,10 @@ import org.neo4j.util.btree.KeyEntry;
  * <p>
  * Note: this implementation is not thread safe (yet).
  */
-// not thread safe yet
 public class SingleValueIndex extends AbstractIndex
 {
 	/**
-	 * Creates/loads a single value index. The <CODE>underlyingNode</CODE> can 
+	 * Creates/loads a single value index. The {@code underlingNode} can 
 	 * either be a new (just created) node or a node that already represents a 
 	 * previously created index.
 	 *

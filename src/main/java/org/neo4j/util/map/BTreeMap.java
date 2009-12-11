@@ -60,7 +60,7 @@ public class BTreeMap<K,V> implements Map<K,V>
 	
 	/**
 	 * Creates/loads a persistent map based on a b-tree. 
-	 * The <CODE>underlyingNode</CODE> can either be a new (just created) node 
+	 * The {@code underlyingNode} can either be a new (just created) node 
 	 * or a node that already represents a previously created map.
 	 *
 	 * @param name The unique name of the map or null if map already
@@ -134,7 +134,9 @@ public class BTreeMap<K,V> implements Map<K,V>
 	}
 	
 	/**
-	 * @return the name of this map, given at construction time.
+	 * Returns the name of this map, given at construction time.
+	 * 
+	 * @return the name of this map.
 	 */
 	public String getName()
 	{
@@ -147,7 +149,7 @@ public class BTreeMap<K,V> implements Map<K,V>
 	}
 	
 	/**
-	 * If key or value is <CODE>null</CODE> {@link IllegalArgumentException} is 
+	 * If key or value is {@code null} {@link IllegalArgumentException} is 
 	 * thrown. Key and value must be valid neo properties.
 	 */
 	public V put( K key, V value )
@@ -273,11 +275,7 @@ public class BTreeMap<K,V> implements Map<K,V>
 		}
 	}
 	
-	/**
-	 * Public only for testing purposes. Validates the interal b-tree index and 
-	 * if any error is found a runtime exception is thrown.
-	 */
-	public void validate()
+	void validate()
 	{
 		bTree.validateTree();
 	}

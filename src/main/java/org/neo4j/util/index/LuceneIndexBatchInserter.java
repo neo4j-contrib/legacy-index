@@ -24,7 +24,6 @@ import org.neo4j.impl.batchinsert.BatchInserter;
 
 /**
  * The "batch inserter" version of a {@link LuceneIndexService}.
- * When you instantiate a {@link LuceneIndexBatchInserter} it assumes 
  */
 public interface LuceneIndexBatchInserter
 {

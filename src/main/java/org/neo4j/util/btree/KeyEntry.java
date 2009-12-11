@@ -26,7 +26,7 @@ import org.neo4j.util.btree.BTree.RelTypes;
 import org.neo4j.util.map.BTreeMap;
 
 /**
- * Wraps the functionality of one entry in the tree.
+ * Wraps the functionality of one entry in a {@link BTree}.
  */
 public class KeyEntry
 {
@@ -107,8 +107,10 @@ public class KeyEntry
 	}
 	
 	/**
-	 * @return the key for this entry. This is the key added via
+	 * Returns the key for this entry, the key added via
 	 * {@link BTree#addEntry(long, Object)}.
+	 * 
+	 * @return the key for this entry.
 	 */
 	public long getKey()
 	{
@@ -121,8 +123,10 @@ public class KeyEntry
 	}
 	
 	/**
-	 * @return the value for this entry. This is the value added via
-	 * {@link BTree#addEntry(long, Object)}.
+	 * Returns the value for this entry. This is the value added via
+     * {@link BTree#addEntry(long, Object)}.
+     * 
+	 * @return the value for this entry.
 	 */
 	public Object getValue()
 	{
@@ -130,10 +134,10 @@ public class KeyEntry
 	}
 	
 	/**
-	 * Sets or changes the value for this entry.
+	 * Sets or changes the value for this entry. The type of the value must
+     * be one of the property types supported by neo4j.
 	 * 
-	 * @param value the new value for this entry. The type of the value must
-	 * be one of types supported by neo4j.
+	 * @param value the new value for this entry.
 	 */
 	public void setValue( Object value )
 	{
@@ -141,11 +145,12 @@ public class KeyEntry
 	}
 	
 	/**
-	 * This is optional and is used in some implementations, f.ex
-	 * {@link BTreeMap}.
+	 * Set the key value, it represents the actual key which we can derive the
+     * {@link #getKey()} from, f.ex. a String. This is optional and is used in
+     * some implementations, f.ex {@link BTreeMap}.
 	 * 
-	 * @param keyValue represents the actual key which we can derive the
-     * {@link #getKey()} from, f.ex. a String.
+	 * @param keyValue the actual value which the key ({@link #getKey()}) is
+	 * derived from.
 	 */
 	public void setKeyValue( Object keyValue )
 	{
@@ -153,8 +158,10 @@ public class KeyEntry
 	}
 	
 	/**
-	 * @return the actual key which we can derive the {@link #getKey()} from,
-	 * f.ex. a String.
+	 * Returns the actual key value which the key ({@link #getKey()}) can be
+	 * derived from, f.ex. a String.
+     * 
+	 * @return the actual key value.
 	 */
 	public Object getKeyValue()
 	{
