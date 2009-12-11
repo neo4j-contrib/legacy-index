@@ -31,17 +31,20 @@ import org.neo4j.impl.util.ArrayMap;
 import org.neo4j.impl.util.FileUtils;
 
 /**
- * A default implementation of {@link LuceneIndexBatchInserter}.
+ * A default implementation of {@link LuceneIndexBatchInserter}. It's optimized
+ * for large chunks of either reads or writes. So try to avoid mixed reads
+ * and writes because there's a slight overhead to go from read mode to write
+ * mode (the "mode" is per key and will not affect other keys).
  */
 public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
 {
     private final String storeDir;
     private final BatchInserter neo;
 
-    private final ArrayMap<String,IndexWriter> indexWriters = 
-        new ArrayMap<String,IndexWriter>( 6, false, false );
-//    private final ArrayMap<String, LruCache<String, Collection<Long>>> cache =
-//        new ArrayMap<String, LruCache<String, Collection<Long>>>();
+    private final ArrayMap<String,IndexWriterContext> indexWriters = 
+        new ArrayMap<String,IndexWriterContext>( 6, false, false );
+    private final ArrayMap<String,IndexSearcher> indexSearchers = 
+        new ArrayMap<String,IndexSearcher>( 6, false, false );
 
     private final Analyzer fieldAnalyzer = new Analyzer()
     {
@@ -89,16 +92,17 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
         return FSDirectory.open( new File( storeDir + "/" + key ) );
     }
     
-    private IndexWriter getWriter( String key, boolean allowCreate )
+    private IndexWriterContext getWriter( String key, boolean allowCreate )
     {
-        IndexWriter writer = indexWriters.get( key );
+        IndexWriterContext writer = indexWriters.get( key );
         if ( writer == null && allowCreate )
         {
             try
             {
                 Directory dir = instantiateDirectory( key );
-                writer = new IndexWriter( dir, fieldAnalyzer,
-                    MaxFieldLength.UNLIMITED );
+                writer = new IndexWriterContext(
+                    new IndexWriter( dir, fieldAnalyzer,
+                        MaxFieldLength.UNLIMITED ) );
             }
             catch ( IOException e )
             {
@@ -109,15 +113,31 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
         return writer;
     }
     
-    public void index( long node, String key, Object value )
+    private IndexSearcher getSearcher( String key )
     {
-        IndexWriter writer = getWriter( key, true );
-        Document document = new Document();
-        fillDocument( document, node, key, value );
+        IndexWriterContext writer = getWriter( key, false );
+        if ( writer == null )
+        {
+            return null;
+        }
+        
         try
         {
-            writer.addDocument( document );
-//            addToCache( node, key, value );
+            IndexSearcher oldSearcher = indexSearchers.get( key );
+            IndexSearcher result = oldSearcher;
+            if ( oldSearcher == null || writer.modifiedFlag )
+            {
+                if ( oldSearcher != null )
+                {
+                    oldSearcher.getIndexReader().close();
+                    oldSearcher.close();
+                }
+                IndexReader newReader = writer.writer.getReader();
+                result = new IndexSearcher( newReader );
+                indexSearchers.put( key, result );
+                writer.modifiedFlag = false;
+            }
+            return result;
         }
         catch ( IOException e )
         {
@@ -125,29 +145,22 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
         }
     }
     
-//    private void addToCache( long node, String key, Object value )
-//    {
-//        if ( !useCache() )
-//        {
-//            return;
-//        }
-//        
-//        LruCache<String, Collection<Long>> keyCache = this.cache.get( key );
-//        if ( keyCache == null )
-//        {
-//            keyCache = new LruCache<String, Collection<Long>>(
-//                key, getMaxCacheSizePerKey(), null );
-//            cache.put( key, keyCache );
-//        }
-//        Collection<Long> ids = keyCache.get( value.toString() );
-//        if ( ids == null )
-//        {
-//            ids = new ArrayList<Long>();
-//            keyCache.put( value.toString(), ids );
-//        }
-//        ids.add( node );
-//    }
-
+    public void index( long node, String key, Object value )
+    {
+        IndexWriterContext writer = getWriter( key, true );
+        Document document = new Document();
+        fillDocument( document, node, key, value );
+        try
+        {
+            writer.writer.addDocument( document );
+            writer.modifiedFlag = true;
+        }
+        catch ( IOException e )
+        {
+            throw new RuntimeException( e );
+        }
+    }
+    
     protected void fillDocument( Document document, long nodeId, String key,
         Object value )
     {
@@ -165,80 +178,45 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
     
     public void shutdown()
     {
-        for ( IndexWriter writer : indexWriters.values() )
+        try
         {
-            try
+            for ( IndexSearcher searcher : indexSearchers.values() )
             {
-                writer.close();
+                searcher.close();
             }
-            catch ( IOException e )
+            indexSearchers.clear();
+            for ( IndexWriterContext writer : indexWriters.values() )
             {
-                throw new RuntimeException( e );
+                writer.writer.close();
             }
+            indexWriters.clear();
+        }
+        catch ( IOException e )
+        {
+            throw new RuntimeException( e );
         }
     }
-    
-//    /**
-//     * @return {@code true} if this index service should use caching,
-//     * otherwise {@code false}. Override this in your instance to change its
-//     * behaviour.
-//     */
-//    public boolean useCache()
-//    {
-//        return true;
-//    }
-    
-//    /**
-//     * The cache used in this index service is a LRU cache, which mean that
-//     * only the N most recent entries are kept in it.
-//     * 
-//     * @return the size of the LRU cache per key. Override this in your
-//     * instance to change its behaviour.
-//     */
-//    public int getMaxCacheSizePerKey()
-//    {
-//        return 20000;
-//    }
 
     public IndexHits<Long> getNodes( String key, Object value )
     {
-//        if ( useCache() )
-//        {
-//            LruCache<String, Collection<Long>> keyCache = cache.get( key );
-//            if ( keyCache != null )
-//            {
-//                Collection<Long> ids = keyCache.get( value.toString() );
-//                if ( ids != null )
-//                {
-//                    return new SimpleIndexHits<Long>( ids, ids.size() );
-//                }
-//            }
-//        }
-        
         Set<Long> nodeSet = new HashSet<Long>();
-        IndexWriter writer = getWriter( key, false );
-        if ( writer == null )
-        {
-            return new SimpleIndexHits<Long>(
-                Collections.<Long>emptyList(), 0 );
-        }
-        
         try
         {
             Query query = formQuery( key, value );
-            IndexReader indexReader = writer.getReader();
-            IndexSearcher indexSearcher = new IndexSearcher( indexReader );
-            Hits hits = indexSearcher.search( query );
+            IndexSearcher searcher = getSearcher( key );
+            if ( searcher == null )
+            {
+                return new SimpleIndexHits<Long>(
+                    Collections.<Long>emptyList(), 0 );
+            }
+            Hits hits = searcher.search( query );
             for ( int i = 0; i < hits.length(); i++ )
             {
                 Document document = hits.doc( i );
                 long id = Long.parseLong( document.getField(
                     LuceneIndexService.DOC_ID_KEY ).stringValue() );
-//                addToCache( id, key, value );
                 nodeSet.add( id );
             }
-            indexSearcher.close();
-            indexReader.close();
         }
         catch ( IOException e )
         {
@@ -257,18 +235,11 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
     {
         try
         {
-//            List<IndexWriter> writers = new ArrayList<IndexWriter>();
-            for ( IndexWriter writer : indexWriters.values() )
+            for ( IndexWriterContext writer : indexWriters.values() )
             {
-//                closeReader( writer );
-                writer.optimize( true );
-//                writers.add( writer );
+                writer.writer.optimize( true );
+                writer.modifiedFlag = true;
             }
-//            indexWriters.clear();
-//            for ( IndexWriter writer : writers )
-//            {
-//                writer.close();
-//            }
         }
         catch ( IOException e )
         {
@@ -280,13 +251,10 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
     {
         Iterator<Long> nodes = getNodes( key, value ).iterator();
         long node = nodes.hasNext() ? nodes.next() : -1;
-        while ( nodes.hasNext() )
+        if ( nodes.hasNext() )
         {
-            if ( !nodes.next().equals( node ) )
-            {
-                throw new RuntimeException( "More than one node for " + key + "="
-                    + value );
-            }
+            throw new RuntimeException( "More than one node for " +
+                key + "=" + value );
         }
         return node;
     }
@@ -338,6 +306,18 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
         public void shutdown()
         {
             LuceneIndexBatchInserterImpl.this.shutdown();
+        }
+    }
+    
+    private static class IndexWriterContext
+    {
+        private final IndexWriter writer;
+        private boolean modifiedFlag;
+        
+        IndexWriterContext( IndexWriter writer )
+        {
+            this.writer = writer;
+            this.modifiedFlag = true;
         }
     }
 }
