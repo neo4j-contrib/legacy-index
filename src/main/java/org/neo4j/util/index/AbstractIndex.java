@@ -40,6 +40,10 @@ import org.neo4j.util.btree.KeyEntry;
  * using both <CODE>hashCode</CODE> and <CODE>equal</CODE> methods. 
  * <p>
  * Note: this implementation is not thread safe (yet).
+ * 
+ * This class isn't ready for general usage yet and use of it is discouraged.
+ * 
+ * @deprecated
  */
 abstract class AbstractIndex implements Index
 {

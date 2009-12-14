@@ -29,6 +29,7 @@ import org.neo4j.impl.transaction.xaframework.XaTransaction;
 
 /**
  * A lucene XA data store for storing fulltext indexing.
+ * This class is public because the XA framework requires it.
  */
 public class LuceneFulltextDataSource extends LuceneDataSource
 {

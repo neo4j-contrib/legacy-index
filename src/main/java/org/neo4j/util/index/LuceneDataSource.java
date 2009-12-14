@@ -61,6 +61,7 @@ import org.neo4j.impl.util.ArrayMap;
 
 /**
  * An {@link XaDataSource} optimized for the {@link LuceneIndexService}.
+ * This class is public because the XA framework requires it.
  */
 public class LuceneDataSource extends XaDataSource
 {

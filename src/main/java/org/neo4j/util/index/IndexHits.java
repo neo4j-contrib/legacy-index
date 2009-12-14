@@ -11,9 +11,11 @@ package org.neo4j.util.index;
 public interface IndexHits<T> extends Iterable<T>
 {
     /**
-     * @return the size of this iterable. Ideally the size is given at
+     * Returns the size of this iterable. Ideally the size is given at
      * construction time so that the size is known before-hand. This method
      * should _not_ be implemented as looping through all the items.
+     * 
+     * @return the size if this iterable.
      */
     int size();
 }

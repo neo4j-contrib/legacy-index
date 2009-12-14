@@ -36,6 +36,10 @@ import org.neo4j.api.core.Traverser.Order;
  * and properties).
  * <p>
  * This implementation is not thread safe (yet).
+ * 
+ * This class isn't ready for general usage yet and use of it is discouraged.
+ * 
+ * @deprecated
  */
 public class BTree
 {

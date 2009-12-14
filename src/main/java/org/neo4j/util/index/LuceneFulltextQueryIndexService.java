@@ -12,6 +12,8 @@ import org.neo4j.api.core.NeoService;
  * A {@link LuceneFulltextIndexService} which treats the value in
  * {@link #getNodes(String, Object)} as a Lucene query, given in the
  * Lucene query syntax.
+ * 
+ * See more information at http://wiki.neo4j.org/content/Indexing_with_IndexService#A_great_subclass_to_LuceneFulltextIndexService
  */
 public class LuceneFulltextQueryIndexService extends LuceneFulltextIndexService
 {

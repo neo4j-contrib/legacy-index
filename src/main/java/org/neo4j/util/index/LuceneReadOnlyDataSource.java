@@ -34,6 +34,7 @@ import org.neo4j.impl.util.ArrayMap;
 
 /**
  * The underlying XA data source for a {@link LuceneReadOnlyIndexService}
+ * This class is public since the XA framework requires it.
  */
 public class LuceneReadOnlyDataSource // extends XaDataSource
 {

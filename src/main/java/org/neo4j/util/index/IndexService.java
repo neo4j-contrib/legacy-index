@@ -22,27 +22,34 @@ package org.neo4j.util.index;
 import org.neo4j.api.core.Node;
 
 /**
- * An index service can be used to index nodes with a key and a value. 
+ * An index service can be used to index nodes with a key and a value.
+ * Neo4j has no indexing features built-in. Instead you'll have to manage that
+ * manually. IndexService is a means of providing those indexing capabilities
+ * for a neo4j graph and integrate it as tightly as possible.
+ * 
+ * See more at http://wiki.neo4j.org/content/Indexing_with_IndexService
  */
 public interface IndexService
 {
     /**
      * Index <code>node</code> with <code>key</code> and <code>value</code>.
+     * A node can be associated with any number of key-value pairs.
      * 
      * @param node node to index
-     * @param key key for the index
-     * @param value value to index the node with
+     * @param key the key in the key-value pair to associate with {@code node}.
+     * @param value the value in the key-value pair to associate with
+     * {@code node}.
      */
     void index( Node node, String key, Object value );
 
     /**
-     * Returns a single node indexed with <code>key</code> and 
-     * <code>value</code>. If no such index exist <code>null</code> is 
+     * Returns a single node indexed with associated with <code>key</code> and 
+     * <code>value</code>. If no such node exist <code>null</code> is 
      * returned. If more then one node is found a runtime exception is 
      * thrown.
      * 
-     * @param key key for index
-     * @param value value for index
+     * @param key the key for index
+     * @param value the value for index
      * @return node that has been indexed with key and value or 
      * <code>null</code>
      */
@@ -52,26 +59,27 @@ public interface IndexService
      * Returns all nodes indexed with <code>key</code> and 
      * <code>value</code>.
      * 
-     * @param key key for index
-     * @param value value for index
-     * @return nodes that has been indexed with key and value
+     * @param key the key for index
+     * @param value the value for index
+     * @return nodes that have been indexed with key and value
      */
     IndexHits<Node> getNodes( String key, Object value );
 
     /**
-     * Removes a index for a node. If no such indexing exist this method 
-     * silently returns.
+     * Disassociates a key-value pair from {@code node}. If no such association
+     * exist this method silently returns.
      * 
-     * @param node node to remove indexing from
-     * @param key key of index
-     * @param value value of index
+     * @param node the node to disassociate from the key-value pair.
+     * @param key the key in the key-value pair.
+     * @param value the value in the key-value pair.
      */
     void removeIndex( Node node, String key, Object value );
     
     /**
      * Changes isolation level for the running transaction. This method must
-     * be invoked before any index (add/remove) has been performed in the 
-     * current transaction. Default isolation level is 
+     * be invoked before any index ({@link #index(Node, String, Object)},
+     * {@link #removeIndex(Node, String, Object)}) has been performed in the 
+     * current transaction. Default isolation level is
      * {@link Isolation#SAME_TX}.
      * 
      * @param level new isolation level
@@ -80,8 +88,8 @@ public interface IndexService
 
     /**
      * Stops this indexing service comitting any asynchronous requests that 
-     * are currently queued. After this method has been invoked any following
-     * method invoke on this instance is invalid.
+     * are currently queued ({@link Isolation}). After this method has been
+     * invoked any following method invoke on this instance is invalid.
      */
     void shutdown();
 }

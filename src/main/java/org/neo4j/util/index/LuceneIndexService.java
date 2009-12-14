@@ -65,6 +65,8 @@ import org.neo4j.impl.util.ArrayMap;
  *   {@link Sort} option to control in which order lucene returns the
  *   results</li>
  * </ul>
+ * 
+ * See more information at http://wiki.neo4j.org/content/Indexing_with_IndexService
  */
 public class LuceneIndexService extends GenericIndexService
 {

@@ -28,6 +28,10 @@ import org.neo4j.util.btree.KeyEntry;
  * This index can only hold a single value for each unique key.
  * <p>
  * Note: this implementation is not thread safe (yet).
+ * 
+ * This class isn't ready for general usage yet and use of it is discouraged.
+ * 
+ * @deprecated
  */
 public class SingleValueIndex extends AbstractIndex
 {

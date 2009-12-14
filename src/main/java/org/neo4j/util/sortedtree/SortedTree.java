@@ -30,7 +30,11 @@ import org.neo4j.api.core.Relationship;
 import org.neo4j.api.core.RelationshipType;
 
 /**
- * A sorted list of nodes (structured as a tree in neo4j)
+ * A sorted list of nodes (structured as a tree in neo4j).
+ * 
+ * This class isn't ready for general usage yet and use of it is discouraged.
+ * 
+ * @deprecated
  */
 public class SortedTree
 {

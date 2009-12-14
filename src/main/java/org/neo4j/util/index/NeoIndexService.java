@@ -31,6 +31,10 @@ import org.neo4j.impl.util.ArrayMap;
 /**
  * An {@link IndexService} implemented with {@link SingleValueIndex}, one for
  * each key.
+ * 
+ * This class isn't ready for general usage yet and use of it is discouraged.
+ * 
+ * @deprecated
  */
 public class NeoIndexService extends GenericIndexService
 {

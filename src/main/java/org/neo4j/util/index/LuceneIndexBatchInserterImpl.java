@@ -31,10 +31,7 @@ import org.neo4j.impl.util.ArrayMap;
 import org.neo4j.impl.util.FileUtils;
 
 /**
- * A default implementation of {@link LuceneIndexBatchInserter}. It's optimized
- * for large chunks of either reads or writes. So try to avoid mixed reads
- * and writes because there's a slight overhead to go from read mode to write
- * mode (the "mode" is per key and will not affect other keys).
+ * The implementation of {@link LuceneIndexBatchInserter}.
  */
 public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
 {

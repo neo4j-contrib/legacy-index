@@ -26,14 +26,16 @@ import org.neo4j.api.core.NeoService;
 
 /**
  * A {@link LuceneIndexService} which indexes the values with fulltext indexing.
+ * Fulltext means that the indexing process takes the values you throw in and
+ * tokenizes those into words so that you can query for those individual words
+ * in {@link #getNodes(String, Object)}. Also queries are case-insensitive.
+ * 
  * It stores more data per lucene entry to make it possible. This makes it
  * incompatible with {@link LuceneIndexService} so it has got its own XA
  * resource ID. This means that can have one {@link LuceneIndexService} and
  * one {@link LuceneFulltextIndexService} for a {@link NeoService}.
  * 
- * The indexing process takes the values you throw in and tokenizes those into
- * words so that you can query for individual words in
- * {@link #getNodes(String, Object)}. Also it is case-insensitive.
+ * See more information at http://wiki.neo4j.org/content/Indexing_with_IndexService#Fulltext_indexing
  */
 public class LuceneFulltextIndexService extends LuceneIndexService
 {

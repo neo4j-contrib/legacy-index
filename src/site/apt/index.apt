@@ -30,23 +30,22 @@ Node node = index.getSingleNode( "name", "Mattias Persson" );
 assert personNode.equals( node );
 ---
 
+	Our main implementation uses {{{http://lucene.apache.org/java/}Lucene}} as
+	backend, see {{{http://components.neo4j.org/index-util/apidocs/org/neo4j/util/index/LuceneIndexService.html}LuceneIndexService}}.
 	Read more at our {{{http://wiki.neo4j.org/content/Indexing_with_IndexService}wiki}}
+	
+Fulltext indexing
+
+	Since we use Lucene as backend it's easy to use its fulltext indexing, see
+	{{{http://components.neo4j.org/index-util/apidocs/org/neo4j/util/index/LuceneFulltextIndexService.html}LuceneFulltextIndexService}}
+	as well as {{{http://wiki.neo4j.org/content/Indexing_with_IndexService#Fulltext_indexing}wiki}}.
 	
 LuceneIndexBatchInserter
 
-	See more information about the LuceneIndexBatchInserter on our
-	wiki
-
-BTree, BTreeMap
-
-	In <<org.neo4j.util.btree>> package you'll find a
-	{{{http://en.wikipedia.org/wiki/B-tree}b-tree}} implementation on top of
-	neo4j. You supply a root node to the <<BTree>> instance and the b-tree will
-	be created in connection to it.
-
-	You can also expose a <<BTree>> as a <<java.util.Map>> using the
-	<<org.neo4j.util.map.BTreeMap>> class where the values (in the key-value
-	pairs) can be any of the supported property types in neo4j.
+	The "batch inserter" version of {{{http://components.neo4j.org/index-util/apidocs/org/neo4j/util/index/LuceneIndexService.html}LuceneIndexService}}.
+	It should be used with a BatchInserter and stores the indexes in the same
+	format as the LuceneIndexService. There's also a fulltext version of this.
+	See more at our {{{http://wiki.neo4j.org/content/Indexing_with_BatchInserter}wiki}}.
 
 Timeline
 

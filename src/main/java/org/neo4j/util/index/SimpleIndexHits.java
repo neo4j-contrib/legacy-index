@@ -8,7 +8,7 @@ import java.util.Iterator;
  *
  * @param <T> the type of items.
  */
-public class SimpleIndexHits<T> implements IndexHits<T>
+class SimpleIndexHits<T> implements IndexHits<T>
 {
     private final Iterable<T> hits;
     private final int size;

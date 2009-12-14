@@ -10,6 +10,14 @@ import org.neo4j.impl.batchinsert.BatchInserter;
 
 /**
  * The "batch inserter" version of {@link LuceneFulltextIndexService}.
+ * It should be used with a BatchInserter and stores the indexes in the same
+ * format as {@link LuceneFulltextIndexService}.
+ * 
+ * It's optimized for large chunks of either reads or writes. So try to avoid
+ * mixed reads and writes because there's a slight overhead to go from read mode
+ * to write mode (the "mode" is per key and will not affect other keys)
+ * 
+ * See more information at http://wiki.neo4j.org/content/Indexing_with_BatchInserter
  */
 public class LuceneFulltextIndexBatchInserter
     extends LuceneIndexBatchInserterImpl

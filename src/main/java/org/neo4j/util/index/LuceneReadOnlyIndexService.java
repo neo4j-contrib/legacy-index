@@ -48,6 +48,7 @@ import org.neo4j.impl.cache.LruCache;
  * A {@link LuceneIndexService} which is read-only, i.e. will throw
  * {@link ReadOnlyIndexException} in {@link #index(Node, String, Object)}
  * and {@link #removeIndex(Node, String, Object)}.
+ * See {@link EmbeddedReadOnlyNeo}.
  */
 public class LuceneReadOnlyIndexService extends GenericIndexService
 {

@@ -23,7 +23,15 @@ import org.apache.lucene.index.IndexWriter;
 import org.neo4j.impl.batchinsert.BatchInserter;
 
 /**
- * The "batch inserter" version of a {@link LuceneIndexService}.
+ * The "batch inserter" version of {@link LuceneIndexService}.
+ * It should be used with a BatchInserter and stores the indexes in the same
+ * format as {@link LuceneIndexService}.
+ * 
+ * It's optimized for large chunks of either reads or writes. So try to avoid
+ * mixed reads and writes because there's a slight overhead to go from read mode
+ * to write mode (the "mode" is per key and will not affect other keys)
+ * 
+ * See more information at http://wiki.neo4j.org/content/Indexing_with_BatchInserter
  */
 public interface LuceneIndexBatchInserter
 {
@@ -39,6 +47,8 @@ public interface LuceneIndexBatchInserter
     
     /**
      * Shuts down this index and closes its underlying lucene index files.
+     * If this isn't called before the JVM dies then there's no guarantee
+     * that the indices are stored correctly on disk.
      */
     void shutdown();
 

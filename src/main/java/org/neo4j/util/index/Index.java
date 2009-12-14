@@ -22,7 +22,11 @@ package org.neo4j.util.index;
 import org.neo4j.api.core.Node;
 
 /**
- * A index that indexes nodes with a key. 
+ * A index that indexes nodes with a key.
+ * 
+ * This class isn't ready for general usage yet and use of it is discouraged.
+ * 
+ * @deprecated
  */
 public interface Index
 {
