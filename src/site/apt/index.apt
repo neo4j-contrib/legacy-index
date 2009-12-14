@@ -36,8 +36,12 @@ assert personNode.equals( node );
 	
 Fulltext indexing
 
-	Since we use Lucene as backend it's easy to use its fulltext indexing, see
-	{{{http://components.neo4j.org/index-util/apidocs/org/neo4j/util/index/LuceneFulltextIndexService.html}LuceneFulltextIndexService}}
+	Since we use Lucene as backend it's easy to use its fulltext indexing features.
+	LuceneFulltextIndexService differs from LuceneIndexService in that it analyzes
+	the values in the key-value pairs for each entry and stores those individual
+	words in addition to the untouched value. This makes it possible to do queries
+	for individual words. The querying is also case-insensitive.
+	See {{{http://components.neo4j.org/index-util/apidocs/org/neo4j/util/index/LuceneFulltextIndexService.html}LuceneFulltextIndexService}}
 	as well as {{{http://wiki.neo4j.org/content/Indexing_with_IndexService#Fulltext_indexing}wiki}}.
 	
 LuceneIndexBatchInserter
