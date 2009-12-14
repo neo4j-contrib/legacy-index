@@ -6,8 +6,7 @@ Neo4j indexing utilities
 	is basically a service where you can index neo4j nodes with key-value pairs.
 	See more below.
 
-	There's also other useful utilities, such as <<Timeline>> and <<BTree>>,
-	utilities which uses the neo4j graph itself for storing index information.
+	There's also other useful utilities, such as a <<Timeline>>.
 
 IndexService
 
