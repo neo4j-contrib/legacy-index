@@ -71,7 +71,8 @@ public class TestLuceneReadOnlyIndexingService extends NeoTestCase
         assertEquals( 1, hits.size() );
         restartTx();
         
-        NeoService readOnlyNeo = new EmbeddedReadOnlyNeo( "var/test/neo" );
+        NeoService readOnlyNeo = new EmbeddedReadOnlyNeo(
+            getNeoPath().getAbsolutePath() );
         IndexService readOnlyIndex = new LuceneReadOnlyIndexService( readOnlyNeo );
         Transaction tx = readOnlyNeo.beginTx();
         itr = readOnlyIndex.getNodes( "a_property", 1 ).iterator();

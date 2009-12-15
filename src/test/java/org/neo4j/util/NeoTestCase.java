@@ -36,7 +36,7 @@ import org.neo4j.api.core.Transaction;
  */
 public abstract class NeoTestCase extends TestCase
 {
-	private File basePath = new File( "var/test" );
+	private File basePath = new File( "target/var" );
     private File neoPath = new File( basePath, "neo" );
     private NeoService neo;
     private Transaction tx;
@@ -67,6 +67,11 @@ public abstract class NeoTestCase extends TestCase
     protected File getBasePath()
     {
         return basePath;
+    }
+    
+    protected File getNeoPath()
+    {
+        return neoPath;
     }
     
     protected void deleteFileOrDirectory( File file )
