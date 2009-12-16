@@ -1,3 +1,22 @@
+0.9 (2009-12-18)
+----------------
+
+o Better and more javadoc.
+o Updated lucene version to 2.9.1 and LuceneIndexService (and derivatives)
+  as well as LuceneIndexBatchInserter (and derivatives) takes advantage of
+  some new features.
+o Slight performance improvement in LuceneIndexService.getNodes where the
+  neo.getNodeById lookups are done lazily in the iterator instead of in
+  the getNodes method itself.
+o A LuceneIndexBatchInserter can now be exposed as a LuceneIndexService
+  via a wrapping class. This is made possible since a BatchInserter can be
+  exposed as a NeoService.
+o Fixed some bugs and performance issues in LuceneIndexBatchInserterImpl.
+  It's now optimized for (as big as possible) blocks of either only reads
+  or only writes.
+o Fixed so that a LuceneIndexService won't return duplicate entries.
+  Duplicate entries can be committed sometimes.
+
 0.8 (2009-11-02)
 ----------------
 
@@ -7,7 +26,7 @@ o Added batch inserte for lucene fulltext indexer.
 o Improved lucene index performance by use of IndexReader#reopen
 
 0.6 (2009-05-03)
--------------------
+----------------
 o Upgraded to lucene 2.4.0 making use of the
   IndexWriter.deleteDocument( Query ) method.
 o Fixed caching invalidation bug for Lucene index service.
