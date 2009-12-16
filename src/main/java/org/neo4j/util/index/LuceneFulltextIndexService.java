@@ -23,6 +23,7 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.neo4j.api.core.NeoService;
+import org.neo4j.api.core.Node;
 
 /**
  * A {@link LuceneIndexService} which indexes the values with fulltext indexing.
@@ -66,6 +67,19 @@ public class LuceneFulltextIndexService extends LuceneIndexService
     protected byte[] getXaResourceId()
     {
         return "262374".getBytes();
+    }
+    
+    /**
+     * Since this is a "fulltext" index it changes the contract of this method
+     * slightly. In addition to matching {@code value} by exact lookup it also
+     * treats it more like a query in that it can give hits for matches
+     * which isn't exakt. F.ex. if only a word in the indexed value matches
+     * it's considered a match. See the class description for more information.
+     */
+    @Override
+    public IndexHits<Node> getNodes( String key, Object value )
+    {
+        return super.getNodes( key, value );
     }
 
     @Override
