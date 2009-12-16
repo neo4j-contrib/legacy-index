@@ -338,7 +338,7 @@ public class Timeline implements TimelineIndex
 		return node;
 	}
 	
-	long getTimestampForNode( Node node )
+	public long getTimestampForNode( Node node )
 	{
 		Transaction tx = neo.beginTx();
 		try

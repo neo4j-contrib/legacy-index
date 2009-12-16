@@ -135,6 +135,15 @@ public interface TimelineIndex
      */
     Iterable<Node> getAllNodes( Long startTimestampOrNull,
         Long endTimestampOrNull );
+    
+    /**
+     * Will return the timestamp for {@code node} if it has been added to this
+     * timeline. If {@code node} hasn't been added to this timeline a
+     * runtime exception will be thrown.
+     * 
+     * @return the timestamp for {@code node}.
+     */
+    long getTimestampForNode( Node node );
         
     /**
      * Deletes this timeline. Nodes added to the timeline will not be deleted, 
