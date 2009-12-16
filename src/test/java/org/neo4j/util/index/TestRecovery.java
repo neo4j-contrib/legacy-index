@@ -61,11 +61,21 @@ public class TestRecovery extends TestCase
         }
     }
     
+    private String getNeoPath()
+    {
+        return "target/recovery";
+    }
+    
+    private NeoService newNeoService()
+    {
+        String path = getNeoPath();
+        deleteFileOrDirectory( new File( path ) );
+        return new EmbeddedNeo( path );
+    }
+    
     public void testRecovery() throws Exception
     {
-        String path = "var/recovery";
-        deleteFileOrDirectory( new File( path ) );
-        final NeoService neo = new EmbeddedNeo( path );
+        final NeoService neo = newNeoService();
         final IndexService index = new LuceneIndexService( neo );
         
         neo.beginTx();
@@ -95,7 +105,7 @@ public class TestRecovery extends TestCase
         }
         
         sleepNice( 1000 );
-        final NeoService newNeo = new EmbeddedNeo( path );
+        final NeoService newNeo = new EmbeddedNeo( getNeoPath() );
         final IndexService newIndexService = new LuceneIndexService( newNeo );
         sleepNice( 1000 );
         newIndexService.shutdown();
@@ -116,9 +126,7 @@ public class TestRecovery extends TestCase
     
     public void testReCommit()
     {
-        String path = "var/recovery";
-        deleteFileOrDirectory( new File( path ) );
-        NeoService neo = new EmbeddedNeo( path );
+        NeoService neo = newNeoService();
         IndexService idx = new LuceneIndexService( neo );
         Transaction tx = neo.beginTx();
         assertEquals( null, idx.getSingleNode( "test", "1" ) );
@@ -126,7 +134,8 @@ public class TestRecovery extends TestCase
         tx.finish();
         idx.shutdown();
         Map<Object,Object> params = new HashMap<Object,Object>();
-        params.put( "dir", path + "/lucene" );
+        String luceneDir = getNeoPath() + "/lucene";
+        params.put( "dir", luceneDir );
         try
         {
             LuceneDataSource xaDs = new LuceneDataSource( params );
@@ -138,10 +147,10 @@ public class TestRecovery extends TestCase
             xaR.end( xid, XAResource.TMSUCCESS );
             xaR.prepare( xid );
             xaR.commit( xid, false );
-            copyLogicalLog( "var/recovery/lucene/lucene.log.active", 
-                "var/recovery/lucene/lucene.log.active.bak" );
-            copyLogicalLog( "var/recovery/lucene/lucene.log.1", 
-                "var/recovery/lucene/lucene.log.1.bak" );
+            copyLogicalLog( luceneDir + "/lucene.log.active", 
+                luceneDir + "/lucene.log.active.bak" );
+            copyLogicalLog( luceneDir + "/lucene.log.1", 
+                luceneDir + "/lucene.log.1.bak" );
             // test recovery re-commit
             idx = new LuceneIndexService( neo );
             tx = neo.beginTx();
@@ -149,12 +158,12 @@ public class TestRecovery extends TestCase
             tx.finish();
             idx.shutdown();
             assertTrue( 
-                new File( "var/recovery/lucene/lucene.log.active" ).delete() );
+                new File( luceneDir + "/lucene.log.active" ).delete() );
             // test recovery again on same log and only still only get 1 node
-            copyLogicalLog( "var/recovery/lucene/lucene.log.active.bak", 
-                "var/recovery/lucene/lucene.log.active" );
-            copyLogicalLog( "var/recovery/lucene/lucene.log.1.bak", 
-                "var/recovery/lucene/lucene.log.1" );
+            copyLogicalLog( luceneDir + "/lucene.log.active.bak", 
+                luceneDir + "/lucene.log.active" );
+            copyLogicalLog( luceneDir + "/lucene.log.1.bak", 
+                luceneDir + "/lucene.log.1" );
             idx = new LuceneIndexService( neo );
             tx = neo.beginTx();
             assertEquals( refNode, idx.getSingleNode( "test", "1" ) );

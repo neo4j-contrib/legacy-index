@@ -29,10 +29,15 @@ import org.neo4j.impl.batchinsert.BatchInserterImpl;
 
 public class TestBatchInsert extends TestCase
 {
+    private String getNeoPath()
+    {
+        return "target/var/batch-insert";
+    }
+    
     @Override
     public void tearDown() throws Exception
     {
-        deleteRecursivley( new File( "var/batch-insert") );
+        deleteRecursivley( new File( getNeoPath() ) );
     }
     
     private void deleteRecursivley( File file )
@@ -49,7 +54,7 @@ public class TestBatchInsert extends TestCase
     
     public void testSimpleBatchInsert()
     {
-        BatchInserter neo = new BatchInserterImpl( "var/batch-insert" );
+        BatchInserter neo = new BatchInserterImpl( getNeoPath() );
         LuceneIndexBatchInserter index = 
             new LuceneIndexBatchInserterImpl( neo );
         try
@@ -70,7 +75,7 @@ public class TestBatchInsert extends TestCase
 
     public void testSimpleFulltextBatchInsert()
     {
-        BatchInserter neo = new BatchInserterImpl( "var/batch-insert" );
+        BatchInserter neo = new BatchInserterImpl( getNeoPath() );
         LuceneIndexBatchInserter index = 
             new LuceneFulltextIndexBatchInserter( neo );
         try
@@ -101,7 +106,7 @@ public class TestBatchInsert extends TestCase
     
     public void testMoreFulltextBatchInsert()
     {
-        BatchInserter neo = new BatchInserterImpl( "var/batch-insert" );
+        BatchInserter neo = new BatchInserterImpl( getNeoPath() );
         LuceneIndexBatchInserter index = 
             new LuceneFulltextIndexBatchInserter( neo );
         try
@@ -138,7 +143,7 @@ public class TestBatchInsert extends TestCase
     
     public void testHmm() throws Exception
     {
-        BatchInserter neo = new BatchInserterImpl( "var/batch-insert" );
+        BatchInserter neo = new BatchInserterImpl( getNeoPath() );
         LuceneIndexBatchInserter index = 
             new LuceneIndexBatchInserterImpl( neo );
         try
