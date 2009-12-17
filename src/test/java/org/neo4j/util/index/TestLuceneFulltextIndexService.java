@@ -109,4 +109,30 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
         node1.delete();
         node2.delete();
     }
+    
+    public void testSpecific() throws Exception
+    {
+        Node andy = neo().createNode();
+        Node larry = neo().createNode();
+        String key = "atest";
+        indexService().index( andy, key, "Andy Wachowski" );
+        indexService().index( larry, key, "Larry Wachowski" );
+        
+        assertCollection( asCollection(
+            indexService().getNodes( key, "andy wachowski" ) ), andy );
+        assertCollection( asCollection(
+            indexService().getNodes( key, "Andy Wachowski" ) ), andy );
+        assertCollection( asCollection(
+            indexService().getNodes( key, "andy" ) ), andy );
+        assertCollection( asCollection(
+            indexService().getNodes( key, "Andy" ) ), andy );
+        assertCollection( asCollection(
+            indexService().getNodes( key, "larry" ) ), larry );
+        assertCollection( asCollection(
+            indexService().getNodes( key, "andy larry" ) ) );
+        assertCollection( asCollection(
+            indexService().getNodes( key, "wachow*" ) ) );
+        andy.delete();
+        larry.delete();
+    }
 }

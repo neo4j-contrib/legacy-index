@@ -123,4 +123,9 @@ public class LuceneReadOnlyDataSource // extends XaDataSource
             cache.remove( value.toString() );
         }
     }
+    
+    void invalidateCache()
+    {
+        caching.clear();
+    }
 }

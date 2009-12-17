@@ -71,10 +71,18 @@ public class LuceneFulltextIndexService extends LuceneIndexService
     
     /**
      * Since this is a "fulltext" index it changes the contract of this method
-     * slightly. In addition to matching {@code value} by exact lookup it also
-     * treats it more like a query in that it can give hits for matches
-     * which isn't exakt. F.ex. if only a word in the indexed value matches
-     * it's considered a match. See the class description for more information.
+     * slightly. In addition to matching {@code value} by exact lookup you can
+     * also get hits if you search for one word in the value. The matching
+     * is also case-insensitive.
+     * 
+     * So if you've indexed node (1) with value "Andy Wachowski" and node (2)
+     * with "Larry Wachowski" you can expect this behaviour if you query for:
+     * 
+     * o "andy"            --> (1)
+     * o "Andy"            --> (1)
+     * o "wachowski"       --> (1), (2)
+     * o "andy larry"      --> 
+     * o "larry Wachowski" --> (2)
      */
     @Override
     public IndexHits<Node> getNodes( String key, Object value )

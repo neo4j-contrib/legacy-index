@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +35,6 @@ import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
 import javax.transaction.xa.XAResource;
 
-import org.apache.lucene.document.Document;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.Hits;
 import org.apache.lucene.search.IndexSearcher;
@@ -46,10 +44,9 @@ import org.apache.lucene.search.TermQuery;
 import org.neo4j.api.core.EmbeddedNeo;
 import org.neo4j.api.core.NeoService;
 import org.neo4j.api.core.Node;
-import org.neo4j.api.core.NotFoundException;
 import org.neo4j.api.core.NotInTransactionException;
-import org.neo4j.commons.iterator.FilteringIterable;
-import org.neo4j.commons.iterator.IterableWrapper;
+import org.neo4j.commons.iterator.CombiningIterator;
+import org.neo4j.commons.iterator.IteratorAsIterable;
 import org.neo4j.impl.cache.LruCache;
 import org.neo4j.impl.transaction.LockManager;
 import org.neo4j.impl.transaction.TxModule;
@@ -77,6 +74,8 @@ public class LuceneIndexService extends GenericIndexService
     private final TransactionManager txManager;
     private final ConnectionBroker broker;
     private final LuceneDataSource xaDs;
+    
+    private int lazynessThreshold = 100;
 
     /**
      * @param neo the {@link NeoService} to use.
@@ -137,6 +136,17 @@ public class LuceneIndexService extends GenericIndexService
     {
         xaDs.enableCache( key, maxNumberOfCachedEntries );
     }
+    
+    public void setLazynessThreshold( int numberOfHitsBeforeLazyLoading )
+    {
+        this.lazynessThreshold = numberOfHitsBeforeLazyLoading;
+        xaDs.invalidateCache();
+    }
+    
+    public int getLazynessThreshold()
+    {
+        return this.lazynessThreshold;
+    }
 
     @Override
     protected void indexThisTx( Node node, String key, Object value )
@@ -173,6 +183,8 @@ public class LuceneIndexService extends GenericIndexService
             deletedNodes = luceneTx.getDeletedNodesFor( key, value );
         }
         xaDs.getReadLock();
+        Iterator<Long> nodeIdIterator = null;
+        Integer nodeIdIteratorSize = null;
         try
         {
             IndexSearcher searcher = xaDs.getIndexSearcher( key );
@@ -194,17 +206,39 @@ public class LuceneIndexService extends GenericIndexService
                 }
                 if ( !foundInCache )
                 {
-                    Iterable<Long> searchedNodeIds = searchForNodes( key, value,
-                        sortingOrNull, deletedNodes );
-                    ArrayList<Long> readNodeIds = new ArrayList<Long>();
-                    for ( Long readNodeId : searchedNodeIds )
+                    DocToIdIterator searchedNodeIds = searchForNodes( key,
+                        value, sortingOrNull, deletedNodes );
+                    if ( searchedNodeIds.size() >= this.lazynessThreshold )
                     {
-                        nodeIds.add( readNodeId );
-                        readNodeIds.add( readNodeId );
+                        if ( cachedNodesMap != null )
+                        {
+                            cachedNodesMap.remove( valueAsString );
+                        }
+                        
+                        Collection<Iterator<Long>> iterators =
+                            new ArrayList<Iterator<Long>>();
+                        iterators.add( nodeIds.iterator() );
+                        iterators.add( searchedNodeIds );
+//                        nodeIdIterator = IteratorUtil.asOneIterator(
+//                            nodeIds.iterator(), searchedNodeIds );
+                        nodeIdIterator =
+                            new CombiningIterator<Long>( iterators );
+                        nodeIdIteratorSize = nodeIds.size() +
+                            searchedNodeIds.size();
                     }
-                    if ( cachedNodesMap != null )
+                    else
                     {
-                        cachedNodesMap.put( valueAsString, readNodeIds );
+                        ArrayList<Long> readNodeIds = new ArrayList<Long>();
+                        while ( searchedNodeIds.hasNext() )
+                        {
+                            Long readNodeId = searchedNodeIds.next();
+                            nodeIds.add( readNodeId );
+                            readNodeIds.add( readNodeId );
+                        }
+                        if ( cachedNodesMap != null )
+                        {
+                            cachedNodesMap.put( valueAsString, readNodeIds );
+                        }
                     }
                 }
             }
@@ -214,31 +248,20 @@ public class LuceneIndexService extends GenericIndexService
             xaDs.releaseReadLock();
         }
         
-        return new SimpleIndexHits<Node>(
-            instantiateIdToNodeIterable( nodeIds ), nodeIds.size() );
+        if ( nodeIdIterator == null )
+        {
+            nodeIdIterator = nodeIds.iterator();
+            nodeIdIteratorSize = nodeIds.size();
+        }
+        return new SimpleIndexHits<Node>( new IteratorAsIterable<Node>(
+            instantiateIdToNodeIterator( nodeIdIterator ) ),
+            nodeIdIteratorSize );
     }
     
-    protected Iterable<Node> instantiateIdToNodeIterable( Iterable<Long> ids )
+    protected Iterator<Node> instantiateIdToNodeIterator(
+        final Iterator<Long> ids )
     {
-        ids = new FilteringIterable<Long>( ids )
-        {
-            private final Set<Long> passedIds = new HashSet<Long>();
-            
-            @Override
-            protected boolean passes( Long id )
-            {
-                return passedIds.add( id );
-            }
-        };
-        
-        return new IterableWrapper<Node, Long>( ids )
-        {
-            @Override
-            protected Node underlyingObjectToObject( Long id )
-            {
-                return getNeo().getNodeById( id );
-            }
-        };
+        return new IdToNodeIterator( ids, getNeo() );
     }
     
     protected Query formQuery( String key, Object value )
@@ -246,7 +269,10 @@ public class LuceneIndexService extends GenericIndexService
         return new TermQuery( new Term( DOC_INDEX_KEY, value.toString() ) );
     }
 
-    private Iterable<Long> searchForNodes( String key, Object value,
+    /**
+     * Returns a lazy iterator with the node ids.
+     */
+    private DocToIdIterator searchForNodes( String key, Object value,
         Sort sortingOrNull, Set<Long> deletedNodes )
     {
         Query query = formQuery( key, value );
@@ -254,28 +280,11 @@ public class LuceneIndexService extends GenericIndexService
         try
         {
             IndexSearcher searcher = xaDs.getIndexSearcher( key );
-            ArrayList<Long> nodes = new ArrayList<Long>();
             Hits hits = sortingOrNull != null ?
                 searcher.search( query, sortingOrNull ) :
                 searcher.search( query );
-            for ( int i = 0; i < hits.length(); i++ )
-            {
-                Document document = hits.doc( i );
-                try
-                {
-                    long id = Long.parseLong( document.getField( DOC_ID_KEY )
-                        .stringValue() );
-                    if ( !deletedNodes.contains( id ) )
-                    {
-                        nodes.add( id );
-                    }
-                }
-                catch ( NotFoundException e )
-                {
-                    // deleted in this tx
-                }
-            }
-            return nodes;
+            return new DocToIdIterator( new HitsIterator( hits ),
+                deletedNodes );
         }
         catch ( IOException e )
         {
@@ -324,7 +333,7 @@ public class LuceneIndexService extends GenericIndexService
     {
         return broker.acquireResourceConnection();
     }
-
+        
     private static class ConnectionBroker
     {
         private final ArrayMap<Transaction,LuceneXaConnection> txConnectionMap =

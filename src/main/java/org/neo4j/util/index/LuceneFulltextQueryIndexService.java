@@ -23,9 +23,11 @@ import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.WhitespaceAnalyzer;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.queryParser.QueryParser;
+import org.apache.lucene.queryParser.QueryParser.Operator;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.util.Version;
 import org.neo4j.api.core.NeoService;
+import org.neo4j.api.core.Node;
 
 /**
  * A {@link LuceneFulltextIndexService} which treats the value in
@@ -52,12 +54,44 @@ public class LuceneFulltextQueryIndexService extends LuceneFulltextIndexService
     {
         try
         {
-           return new QueryParser( Version.LUCENE_CURRENT, DOC_INDEX_KEY,
-              WHITESPACE_ANALYZER ).parse( value.toString() );
+            QueryParser parser = new QueryParser( Version.LUCENE_CURRENT,
+                DOC_INDEX_KEY,
+                    LuceneDataSource.LOWER_CASE_WHITESPACE_ANALYZER );
+            Operator operator = getDefaultQueryOperator();
+            if ( operator != null )
+            {
+                parser.setDefaultOperator( operator );
+            }
+            return parser.parse( value.toString() );
         }
         catch ( ParseException e )
         {
            throw new RuntimeException( e );
         }
+    }
+
+    protected Operator getDefaultQueryOperator()
+    {
+        return null;
+    }
+
+    /**
+     * Here the {@code value} is treated as a lucene query,
+     * http://lucene.apache.org/java/2_9_1/queryparsersyntax.html
+     * 
+     * So if you've indexed node (1) with value "Andy Wachowski" and node (2)
+     * with "Larry Wachowski" you can expect this behaviour if you query for:
+     * 
+     * o "andy"            --> (1)
+     * o "Andy"            --> (1)
+     * o "wachowski"       --> (1), (2)
+     * o "andy AND larry"  --> 
+     * o "andy OR larry"   --> (1), (2)
+     * o "larry Wachowski" --> (2)
+     */
+    @Override
+    public IndexHits<Node> getNodes( String key, Object value )
+    {
+        return super.getNodes( key, value );
     }
 }

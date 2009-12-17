@@ -65,6 +65,17 @@ import org.neo4j.impl.util.ArrayMap;
  */
 public class LuceneDataSource extends XaDataSource
 {
+    public static final Analyzer LOWER_CASE_WHITESPACE_ANALYZER =
+        new Analyzer()
+    {
+        @Override
+        public TokenStream tokenStream( String fieldName, Reader reader )
+        {
+            return new LowerCaseFilter( new WhitespaceTokenizer( reader ) );
+        }
+    };
+
+    
     private final ArrayMap<String,IndexSearcher> indexSearchers = 
         new ArrayMap<String,IndexSearcher>( 6, true, true );
 
@@ -139,14 +150,7 @@ public class LuceneDataSource extends XaDataSource
 
     private Analyzer instantiateAnalyzer()
     {
-        return new Analyzer()
-        {
-            @Override
-            public TokenStream tokenStream( String fieldName, Reader reader )
-            {
-                return new LowerCaseFilter( new WhitespaceTokenizer( reader ) );
-            }
-        };
+        return LOWER_CASE_WHITESPACE_ANALYZER;
     }
 
     private void autoCreatePath( String dirs ) throws IOException
@@ -423,6 +427,16 @@ public class LuceneDataSource extends XaDataSource
         {
             cache.remove( value.toString() );
         }
+    }
+    
+    void invalidateCache( String key )
+    {
+        caching.remove( key );
+    }
+    
+    void invalidateCache()
+    {
+        caching.clear();
     }
 
     protected void fillDocument( Document document, long nodeId, String key,
