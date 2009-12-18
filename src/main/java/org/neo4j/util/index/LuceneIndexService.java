@@ -45,7 +45,6 @@ import org.neo4j.api.core.EmbeddedNeo;
 import org.neo4j.api.core.NeoService;
 import org.neo4j.api.core.Node;
 import org.neo4j.api.core.NotInTransactionException;
-import org.neo4j.commons.iterator.CombiningIterator;
 import org.neo4j.commons.iterator.IteratorAsIterable;
 import org.neo4j.impl.cache.LruCache;
 import org.neo4j.impl.transaction.LockManager;
@@ -208,26 +207,24 @@ public class LuceneIndexService extends GenericIndexService
                 {
                     DocToIdIterator searchedNodeIds = searchForNodes( key,
                         value, sortingOrNull, deletedNodes );
-                    if ( searchedNodeIds.size() >= this.lazynessThreshold )
-                    {
-                        if ( cachedNodesMap != null )
-                        {
-                            cachedNodesMap.remove( valueAsString );
-                        }
-                        
-                        Collection<Iterator<Long>> iterators =
-                            new ArrayList<Iterator<Long>>();
-                        iterators.add( nodeIds.iterator() );
-                        iterators.add( searchedNodeIds );
-//                        nodeIdIterator = IteratorUtil.asOneIterator(
-//                            nodeIds.iterator(), searchedNodeIds );
-                        nodeIdIterator =
-                            new CombiningIterator<Long>( iterators );
-                        nodeIdIteratorSize = nodeIds.size() +
-                            searchedNodeIds.size();
-                    }
-                    else
-                    {
+//                    if ( searchedNodeIds.size() >= this.lazynessThreshold )
+//                    {
+//                        if ( cachedNodesMap != null )
+//                        {
+//                            cachedNodesMap.remove( valueAsString );
+//                        }
+//                        
+//                        Collection<Iterator<Long>> iterators =
+//                            new ArrayList<Iterator<Long>>();
+//                        iterators.add( nodeIds.iterator() );
+//                        iterators.add( searchedNodeIds );
+//                        nodeIdIterator =
+//                            new CombiningIterator<Long>( iterators );
+//                        nodeIdIteratorSize = nodeIds.size() +
+//                            searchedNodeIds.size();
+//                    }
+//                    else
+//                    {
                         ArrayList<Long> readNodeIds = new ArrayList<Long>();
                         while ( searchedNodeIds.hasNext() )
                         {
@@ -239,7 +236,7 @@ public class LuceneIndexService extends GenericIndexService
                         {
                             cachedNodesMap.put( valueAsString, readNodeIds );
                         }
-                    }
+//                    }
                 }
             }
         }

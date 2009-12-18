@@ -6,7 +6,7 @@ import java.util.Collection;
 import org.neo4j.api.core.Node;
 import org.neo4j.util.NeoTestCase;
 
-public class TestLuceneIndexLazyness extends NeoTestCase
+public abstract class TestLuceneIndexLazyness extends NeoTestCase
 {
     private IndexService indexService;
     
