@@ -65,31 +65,29 @@ public class TestCustomLuceneFulltextIndexService
             indexService().getNodes( key2, "[2010 TO >]" ) ), node1 );
     }
 
-//    public void testSpecific() throws Exception
-//    {
-//        Node andy = neo().createNode();
-//        Node larry = neo().createNode();
-//        String key = "atest";
-//        indexService().index( andy, key, "Andy Wachowski" );
-//        indexService().index( larry, key, "Larry Wachowski" );
-//        
-//        assertCollection( asCollection(
-//            indexService().getNodes( key, "andy wachowski" ) ), andy );
-//        assertCollection( asCollection(
-//            indexService().getNodes( key, "Andy Wachowski" ) ), andy );
-//        assertCollection( asCollection(
-//            indexService().getNodes( key, "andy" ) ), andy );
-//        assertCollection( asCollection(
-//            indexService().getNodes( key, "Andy" ) ), andy );
-//        assertCollection( asCollection(
-//            indexService().getNodes( key, "larry" ) ), larry );
-//        assertCollection( asCollection(
-//            indexService().getNodes( key, "andy larry" ) ), andy, larry );
-//        assertCollection( asCollection(
-//            indexService().getNodes( key, "andy AND larry" ) ) );
-//        assertCollection( asCollection(
-//            indexService().getNodes( key, "andy OR Larry" ) ) );
-//        assertCollection( asCollection(
-//            indexService().getNodes( key, "wachow*" ) ), andy, larry );
-//    }
+    public void testSpecific() throws Exception
+    {
+        Node andy = neo().createNode();
+        Node larry = neo().createNode();
+        String key = "atest";
+        indexService().index( andy, key, "Andy Wachowski" );
+        indexService().index( larry, key, "Larry Wachowski" );
+        
+        assertCollection( asCollection(
+            indexService().getNodes( key, "+andy +wachowski" ) ), andy );
+        assertCollection( asCollection(
+            indexService().getNodes( key, "+Andy +Wachowski" ) ), andy );
+        assertCollection( asCollection(
+            indexService().getNodes( key, "andy" ) ), andy );
+        assertCollection( asCollection(
+            indexService().getNodes( key, "Andy" ) ), andy );
+        assertCollection( asCollection(
+            indexService().getNodes( key, "larry" ) ), larry );
+        assertCollection( asCollection(
+            indexService().getNodes( key, "andy larry" ) ), andy, larry );
+        assertCollection( asCollection(
+            indexService().getNodes( key, "+andy +larry" ) ) );
+        assertCollection( asCollection(
+            indexService().getNodes( key, "wachow*" ) ), andy, larry );
+    }
 }

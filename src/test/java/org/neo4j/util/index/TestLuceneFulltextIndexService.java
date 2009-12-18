@@ -119,9 +119,9 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
         indexService().index( larry, key, "Larry Wachowski" );
         
         assertCollection( asCollection(
-            indexService().getNodes( key, "andy wachowski" ) ) );
+            indexService().getNodes( key, "andy wachowski" ) ), andy );
         assertCollection( asCollection(
-            indexService().getNodes( key, "Andy Wachowski" ) ) );
+            indexService().getNodes( key, "Andy   Wachowski\t  " ) ), andy );
         assertCollection( asCollection(
             indexService().getNodes( key, "andy" ) ), andy );
         assertCollection( asCollection(
@@ -130,6 +130,8 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
             indexService().getNodes( key, "larry" ) ), larry );
         assertCollection( asCollection(
             indexService().getNodes( key, "andy larry" ) ) );
+        assertCollection( asCollection(
+            indexService().getNodes( key, "wachowski" ) ), andy, larry );
         assertCollection( asCollection(
             indexService().getNodes( key, "wachow*" ) ) );
         andy.delete();

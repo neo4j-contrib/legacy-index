@@ -19,9 +19,16 @@
  */
 package org.neo4j.util.index;
 
+import java.io.IOException;
+import java.io.StringReader;
+
+import org.apache.lucene.analysis.Token;
+import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.search.BooleanClause.Occur;
 import org.neo4j.api.core.NeoService;
 import org.neo4j.api.core.Node;
 
@@ -71,9 +78,8 @@ public class LuceneFulltextIndexService extends LuceneIndexService
     
     /**
      * Since this is a "fulltext" index it changes the contract of this method
-     * slightly. In addition to matching {@code value} by exact lookup you can
-     * also get hits if you search for one word in the value. The matching
-     * is also case-insensitive.
+     * slightly. It treats the {@code value} more like a query in than you can
+     * query for individual words in your indexed values.
      * 
      * So if you've indexed node (1) with value "Andy Wachowski" and node (2)
      * with "Larry Wachowski" you can expect this behaviour if you query for:
@@ -82,7 +88,7 @@ public class LuceneFulltextIndexService extends LuceneIndexService
      * o "Andy"            --> (1)
      * o "wachowski"       --> (1), (2)
      * o "andy larry"      --> 
-     * o "larry Wachowski" --> 
+     * o "larry Wachowski" --> (2)
      */
     @Override
     public IndexHits<Node> getNodes( String key, Object value )
@@ -93,8 +99,25 @@ public class LuceneFulltextIndexService extends LuceneIndexService
     @Override
     protected Query formQuery( String key, Object value )
     {
-        return new TermQuery( new Term( DOC_INDEX_KEY,
-            value.toString().toLowerCase() ) );
+        TokenStream stream = LuceneFulltextDataSource
+            .LOWER_CASE_WHITESPACE_ANALYZER.tokenStream( DOC_INDEX_KEY,
+                new StringReader( value.toString().toLowerCase() ) );
+        Token token = new Token();
+        BooleanQuery booleanQuery = new BooleanQuery();
+        try
+        {
+            while ( ( token = stream.next( token ) ) != null )
+            {
+                String term = token.term();
+                booleanQuery.add( new TermQuery( new Term( DOC_INDEX_KEY, term ) ),
+                    Occur.MUST );
+            }
+        }
+        catch ( IOException e )
+        {
+            throw new RuntimeException( e );
+        }
+        return booleanQuery;
     }
 
     @Override

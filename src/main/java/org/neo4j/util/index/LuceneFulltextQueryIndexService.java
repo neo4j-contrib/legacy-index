@@ -57,7 +57,7 @@ public class LuceneFulltextQueryIndexService extends LuceneFulltextIndexService
             QueryParser parser = new QueryParser( Version.LUCENE_CURRENT,
                 DOC_INDEX_KEY,
                     LuceneDataSource.LOWER_CASE_WHITESPACE_ANALYZER );
-            Operator operator = getDefaultQueryOperator();
+            Operator operator = getDefaultQueryOperator( key, value );
             if ( operator != null )
             {
                 parser.setDefaultOperator( operator );
@@ -70,7 +70,7 @@ public class LuceneFulltextQueryIndexService extends LuceneFulltextIndexService
         }
     }
 
-    protected Operator getDefaultQueryOperator()
+    public Operator getDefaultQueryOperator( String key, Object value )
     {
         return null;
     }
@@ -87,7 +87,10 @@ public class LuceneFulltextQueryIndexService extends LuceneFulltextIndexService
      * o "wachowski"       --> (1), (2)
      * o "andy AND larry"  --> 
      * o "andy OR larry"   --> (1), (2)
-     * o "larry Wachowski" --> (2)
+     * o "larry Wachowski" --> (1), (2) // lucene's default operator is OR
+     * 
+     * The default AND/OR behaviour can be changed by overriding
+     * {@link #getDefaultQueryOperator(String, Object)}.
      */
     @Override
     public IndexHits<Node> getNodes( String key, Object value )
