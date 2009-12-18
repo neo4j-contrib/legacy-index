@@ -84,12 +84,14 @@ public class LuceneFulltextIndexService extends LuceneIndexService
      * So if you've indexed node (1) with value "Andy Wachowski" and node (2)
      * with "Larry Wachowski" you can expect this behaviour if you query for:
      * 
-     * o "andy"            --> (1)
-     * o "Andy"            --> (1)
-     * o "wachowski"       --> (1), (2)
-     * o "andy larry"      --> 
-     * o "larry Wachowski" --> (2)
-     * o "wachowski Andy"  --> (1)
+     * <ul>
+     * <li>"addy" --> (1)</li>
+     * <li>"Andy" --> (1)</li>
+     * <li>"wachowski" --> (1), (2)</li>
+     * <li>"andy larry" --></li>
+     * <li>"larry Wachowski" --> (2)</li>
+     * <li>"wachowski Andy" --> (1)</li>
+     * </ul>
      */
     @Override
     public IndexHits<Node> getNodes( String key, Object value )

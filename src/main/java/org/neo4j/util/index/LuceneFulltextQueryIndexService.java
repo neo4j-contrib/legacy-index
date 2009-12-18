@@ -82,12 +82,15 @@ public class LuceneFulltextQueryIndexService extends LuceneFulltextIndexService
      * So if you've indexed node (1) with value "Andy Wachowski" and node (2)
      * with "Larry Wachowski" you can expect this behaviour if you query for:
      * 
-     * o "andy"            --> (1)
-     * o "Andy"            --> (1)
-     * o "wachowski"       --> (1), (2)
-     * o "andy AND larry"  --> 
-     * o "andy OR larry"   --> (1), (2)
-     * o "larry Wachowski" --> (1), (2) // lucene's default operator is OR
+     * <ul>
+     * <li>"andy" --> (1)</li>
+     * <li>"Andy" --> (1)</li>
+     * <li>"wachowski" --> (1), (2)</li>
+     * <li>"+wachow* +larry" --> (2)</li>
+     * <li>"andy AND larry" --></li> 
+     * <li>"andy OR larry" --> (1), (2)</li>
+     * <li>"larry Wachowski" --> (1), (2)</li>
+     * </ul>
      * 
      * The default AND/OR behaviour can be changed by overriding
      * {@link #getDefaultQueryOperator(String, Object)}.
