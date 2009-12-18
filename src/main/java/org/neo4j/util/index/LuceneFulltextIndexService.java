@@ -89,6 +89,7 @@ public class LuceneFulltextIndexService extends LuceneIndexService
      * o "wachowski"       --> (1), (2)
      * o "andy larry"      --> 
      * o "larry Wachowski" --> (2)
+     * o "wachowski Andy"  --> (1)
      */
     @Override
     public IndexHits<Node> getNodes( String key, Object value )

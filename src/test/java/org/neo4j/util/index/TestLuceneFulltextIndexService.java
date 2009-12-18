@@ -123,6 +123,8 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
         assertCollection( asCollection(
             indexService().getNodes( key, "Andy   Wachowski\t  " ) ), andy );
         assertCollection( asCollection(
+            indexService().getNodes( key, "wachowski larry" ) ), larry );
+        assertCollection( asCollection(
             indexService().getNodes( key, "andy" ) ), andy );
         assertCollection( asCollection(
             indexService().getNodes( key, "Andy" ) ), andy );
