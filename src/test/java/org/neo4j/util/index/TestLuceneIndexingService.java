@@ -196,6 +196,34 @@ public class TestLuceneIndexingService extends NeoTestCase
         node.delete();
     }
     
+    public void testChangeValueBug() throws Exception
+    {
+        Node andy = neo().createNode();
+        Node larry = neo().createNode();
+
+        andy.setProperty( "name", "Andy Wachowski" );
+        andy.setProperty( "title", "Director" );
+        // Deliberately set Larry's name wrong
+        larry.setProperty( "name", "Andy Wachowski" );
+        larry.setProperty( "title", "Director" );
+        indexService().index( andy, "name", andy.getProperty( "name" ) );
+        indexService().index( andy, "title", andy.getProperty( "title" ) );
+        indexService().index( larry, "name", larry.getProperty( "name" ) );
+        indexService().index( larry, "title", larry.getProperty( "title" ) );
+    
+        // Correct Larry's name
+        indexService().removeIndex( larry, "name",
+            larry.getProperty( "name" ) );
+        larry.setProperty( "name", "Larry Wachowski" );
+        indexService().index( larry, "name",
+            larry.getProperty( "name" ) );
+    
+        assertCollection( asCollection( indexService().getNodes(
+            "name", "Andy Wachowski" ) ), andy );
+        assertCollection( asCollection( indexService().getNodes(
+            "name", "Larry Wachowski" ) ), larry );
+    }    
+    
 //    public void testDifferentTypesWithSameValueIssue()
 //    {
 //        String key = "prop";

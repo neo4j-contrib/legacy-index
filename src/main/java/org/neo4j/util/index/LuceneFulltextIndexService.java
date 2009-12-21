@@ -112,8 +112,8 @@ public class LuceneFulltextIndexService extends LuceneIndexService
             while ( ( token = stream.next( token ) ) != null )
             {
                 String term = token.term();
-                booleanQuery.add( new TermQuery( new Term( DOC_INDEX_KEY, term ) ),
-                    Occur.MUST );
+                booleanQuery.add( new TermQuery(
+                    new Term( DOC_INDEX_KEY, term ) ), Occur.MUST );
             }
         }
         catch ( IOException e )

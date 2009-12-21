@@ -29,8 +29,11 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
+import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Hits;
 import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.RAMDirectory;
 import org.neo4j.api.core.Node;
@@ -86,17 +89,20 @@ class LuceneFulltextTransaction extends LuceneTransaction
     {
         try
         {
+            BooleanQuery deletionQuery = new BooleanQuery();
+            deletionQuery.add( new TermQuery( new Term( getDataSource().
+                getDeleteDocumentsKey(), value.toString() ) ), Occur.MUST );
+            deletionQuery.add( new TermQuery( new Term(
+                LuceneIndexService.DOC_ID_KEY, "" + node.getId() ) ),
+                Occur.MUST );
+            removeFrom.writer.deleteDocuments( deletionQuery );
+            removeFrom.invalidateSearcher();
+            
             Document document = new Document();
             this.getDataSource().fillDocument( document, node.getId(), key,
                 value );
-            IndexWriter writer = insertTo.writer;
-            writer.addDocument( document );
+            insertTo.writer.addDocument( document );
             insertTo.invalidateSearcher();
-            
-            writer = removeFrom.writer;
-            writer.deleteDocuments( new Term( getDataSource().
-                getDeleteDocumentsKey(), value.toString() ) );
-            removeFrom.invalidateSearcher();
         }
         catch ( IOException e )
         {
@@ -123,15 +129,13 @@ class LuceneFulltextTransaction extends LuceneTransaction
     @Override
     Set<Long> getDeletedNodesFor( String key, Object value )
     {
-        return getNodes( getDirectory( fulltextRemoved, key ), key,
-            value );
+        return getNodes( getDirectory( fulltextRemoved, key ), key, value );
     }
 
     @Override
     Set<Long> getNodesFor( String key, Object value )
     {
-        return getNodes( getDirectory( fulltextIndexed, key ), key,
-            value );
+        return getNodes( getDirectory( fulltextIndexed, key ), key, value );
     }
     
     private Set<Long> getNodes( DirectoryAndWorkers directory, String key,

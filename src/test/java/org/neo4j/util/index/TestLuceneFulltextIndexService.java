@@ -139,4 +139,28 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
         andy.delete();
         larry.delete();
     }
+    
+    public void testAnotherChangeValueBug() throws Exception
+    {
+        Node andy = neo().createNode();
+        Node larry = neo().createNode();
+
+        andy.setProperty( "name", "Andy Wachowski" );
+        // Deliberately set Larry's name wrong
+        larry.setProperty( "name", "Andy Wachowski" );
+        indexService().index( andy, "name", andy.getProperty( "name" ) );
+        indexService().index( larry, "name", larry.getProperty( "name" ) );
+        assertCollection( asCollection( indexService().getNodes(
+            "name", "wachowski" ) ), andy, larry );
+    
+        // Correct Larry's name
+        indexService().removeIndex( larry, "name",
+            larry.getProperty( "name" ) );
+        larry.setProperty( "name", "Larry Wachowski" );
+        indexService().index( larry, "name",
+            larry.getProperty( "name" ) );
+    
+        assertCollection( asCollection( indexService().getNodes(
+            "name", "wachowski" ) ), andy, larry );
+    }    
 }
