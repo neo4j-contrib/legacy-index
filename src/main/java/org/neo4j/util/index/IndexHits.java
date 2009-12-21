@@ -19,8 +19,13 @@
  */
 package org.neo4j.util.index;
 
+import java.util.Iterator;
+
 /**
- * It's just an Iterable<T> which has a {@link #size()} method on it.
+ * It's just an {@link Iterator} with additional {@link #size()} and
+ * {@link #close()} methods on it. It is first and foremost an {@link Iterator},
+ * but also an {@link Iterable} JUST so that it can be used in a for-each loop.
+ * 
  * The size is calculated before-hand so that calling it's always fast.
  * 
  * When you're done with your result and haven't reached the end of the
@@ -29,7 +34,7 @@ package org.neo4j.util.index;
  * 
  * @param <T> the type of items in the Iterable.
  */
-public interface IndexHits<T> extends Iterable<T>
+public interface IndexHits<T> extends Iterator<T>, Iterable<T>
 {
     /**
      * Returns the size of this iterable. The size is given at

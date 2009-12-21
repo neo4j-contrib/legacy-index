@@ -31,4 +31,19 @@ class LazyIndexHits<T> implements IndexHits<T>
     {
         return this.hits.iterator();
     }
+
+    public boolean hasNext()
+    {
+        return this.hits.hasNext();
+    }
+
+    public T next()
+    {
+        return this.hits.next();
+    }
+
+    public void remove()
+    {
+        this.hits.remove();
+    }
 }

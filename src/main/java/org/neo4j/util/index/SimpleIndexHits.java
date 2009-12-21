@@ -29,7 +29,7 @@ import java.util.Iterator;
  */
 class SimpleIndexHits<T> implements IndexHits<T>
 {
-    private final Iterable<T> hits;
+    private final Iterator<T> hits;
     private final int size;
     
     /**
@@ -40,13 +40,24 @@ class SimpleIndexHits<T> implements IndexHits<T>
      */
     public SimpleIndexHits( Iterable<T> hits, int size )
     {
+        this( hits.iterator(), size );
+    }
+    
+    /**
+     * Wraps an Iterator<T> with a known size.
+     * 
+     * @param hits the hits to iterate through.
+     * @param size the size of the iteration.
+     */
+    public SimpleIndexHits( Iterator<T> hits, int size )
+    {
         this.hits = hits;
         this.size = size;
     }
     
     public Iterator<T> iterator()
     {
-        return this.hits.iterator();
+        return this.hits;
     }
 
     public int size()
@@ -57,5 +68,20 @@ class SimpleIndexHits<T> implements IndexHits<T>
     public void close()
     {
         // Do nothing
+    }
+
+    public boolean hasNext()
+    {
+        return this.hits.hasNext();
+    }
+
+    public T next()
+    {
+        return this.next();
+    }
+
+    public void remove()
+    {
+        this.remove();
     }
 }
