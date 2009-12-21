@@ -53,4 +53,9 @@ class SimpleIndexHits<T> implements IndexHits<T>
     {
         return this.size;
     }
+
+    public void close()
+    {
+        // Do nothing
+    }
 }

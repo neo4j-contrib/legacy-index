@@ -174,8 +174,6 @@ public class LuceneReadOnlyIndexService extends GenericIndexService
                         new ArrayList<Iterator<Long>>();
                     iterators.add( nodeIds.iterator() );
                     iterators.add( searchedNodeIds );
-//                    nodeIdIterator = IteratorUtil.asOneIterator(
-//                        nodeIds.iterator(), searchedNodeIds );
                     nodeIdIterator =
                         new CombiningIterator<Long>( iterators );
                     nodeIdIteratorSize = nodeIds.size() +
@@ -230,7 +228,7 @@ public class LuceneReadOnlyIndexService extends GenericIndexService
                 searcher.search( query, sortingOrNull ) :
                 searcher.search( query );
             return new DocToIdIterator( new HitsIterator( hits ),
-                Collections.<Long>emptyList() );
+                Collections.<Long>emptyList(), null );
         }
         catch ( IOException e )
         {

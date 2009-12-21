@@ -6,7 +6,7 @@ import java.util.Collection;
 import org.neo4j.api.core.Node;
 import org.neo4j.util.NeoTestCase;
 
-public abstract class TestLuceneIndexLazyness extends NeoTestCase
+public class TestLuceneIndexLazyness extends NeoTestCase
 {
     private IndexService indexService;
     
@@ -38,7 +38,7 @@ public abstract class TestLuceneIndexLazyness extends NeoTestCase
         String key = "mykey";
         String value = "myvalue";
         Collection<Node> nodes = new ArrayList<Node>();
-        for ( int i = 0; i < 5000; i++ )
+        for ( int i = 0; i < 20000; i++ )
         {
             Node node = neo().createNode();
             indexService.index( node, key, value );
@@ -50,7 +50,7 @@ public abstract class TestLuceneIndexLazyness extends NeoTestCase
                     nodes.toArray( new Node[ 0 ] ) );
             }
             
-            if ( i % 1000 == 0 )
+            if ( i % 10000 == 0 )
             {
                 restartTx();
             }
@@ -64,7 +64,7 @@ public abstract class TestLuceneIndexLazyness extends NeoTestCase
         for ( int i = 0; i < 10; i++ )
         {
             // So that it'll get the nodes in the synchronous way
-            ( ( LuceneIndexService ) indexService ).setLazynessThreshold(
+            ( ( LuceneIndexService ) indexService ).setLazySearchResultThreshold(
                 nodes.size() + 10 );
             long time = System.currentTimeMillis();
             Iterable<Node> itr = indexService.getNodes( key, value );
@@ -73,15 +73,15 @@ public abstract class TestLuceneIndexLazyness extends NeoTestCase
             long syncTotalTime = System.currentTimeMillis() - time;
             
             // So that it'll get the nodes in the lazy way
-            ( ( LuceneIndexService ) indexService ).setLazynessThreshold(
+            ( ( LuceneIndexService ) indexService ).setLazySearchResultThreshold(
                 nodes.size() - 10 );
             time = System.currentTimeMillis();
             itr = indexService.getNodes( key, value );
             long lazyTime = System.currentTimeMillis() - time;
             assertCollection( asCollection( itr ), nodeArray );
             long lazyTotalTime = System.currentTimeMillis() - time;
-            System.out.println( "lazy:" + lazyTime + " (" + lazyTotalTime +
-                "), sync:" + syncTime + " (" + syncTotalTime + ")" );
+//            System.out.println( "lazy:" + lazyTime + " (" + lazyTotalTime +
+//                "), sync:" + syncTime + " (" + syncTotalTime + ")" );
             
             if ( i > 0 )
             {
@@ -89,11 +89,13 @@ public abstract class TestLuceneIndexLazyness extends NeoTestCase
                 totalTotal += syncTotalTime;
                 counter++;
             }
-            assertTrue( lazyTime < syncTime / 2 );
+            
+            // At the very least
+            assertTrue( lazyTime < syncTime / 3 );
         }
         
-        System.out.println( "avg:" + ( total / counter ) + ", " +
-            ( totalTotal / counter ) );
+//        System.out.println( "avg:" + ( total / counter ) + ", " +
+//            ( totalTotal / counter ) );
         
         for ( Node node : nodes )
         {

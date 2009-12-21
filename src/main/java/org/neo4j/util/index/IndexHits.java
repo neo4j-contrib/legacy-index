@@ -21,20 +21,35 @@ package org.neo4j.util.index;
 
 /**
  * It's just an Iterable<T> which has a {@link #size()} method on it.
- * Ideally the size is calculated in some other (more optimized) way than
- * looping through all the items in the iterator so it's ok using any way you
- * like.
+ * The size is calculated before-hand so that calling it's always fast.
+ * 
+ * When you're done with your result and haven't reached the end of the
+ * iteration you must call {@link #close()}. Results which are looped through
+ * entirely closes automatically.
  * 
  * @param <T> the type of items in the Iterable.
  */
 public interface IndexHits<T> extends Iterable<T>
 {
     /**
-     * Returns the size of this iterable. Ideally the size is given at
-     * construction time so that the size is known before-hand. This method
-     * should _not_ be implemented as looping through all the items.
+     * Returns the size of this iterable. The size is given at
+     * construction time so that the size is known before-hand so that it's
+     * basically just a simple return statement of an integer variable.
      * 
      * @return the size if this iterable.
      */
     int size();
+    
+    /**
+     * Closes the underlying search result. This method should be called
+     * whenever you've got what you wanted from the result and won't use it
+     * anymore. It's necessary to call it so that underlying indexes can
+     * dispose of allocated resources for this search result.
+     * 
+     * You can however skip to call this method if you loop through the whole
+     * result, then close() will be called automatically. Even if you loop
+     * through the entire result and then call this method it will silently
+     * ignore any consequtive call (for convenience).
+     */
+    void close();
 }

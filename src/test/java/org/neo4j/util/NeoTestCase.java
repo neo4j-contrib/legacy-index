@@ -118,11 +118,13 @@ public abstract class NeoTestCase extends TestCase
         return neo;
     }
     
-    protected <T> void assertCollection( Collection<T> collection, T... items )
+    protected <T> void assertCollection( Collection<T> collection,
+        T... expectedItems )
     {
         String collectionString = join( ", ", collection.toArray() );
-        assertEquals( collectionString, items.length, collection.size() );
-        for ( T item : items )
+        assertEquals( collectionString, expectedItems.length,
+            collection.size() );
+        for ( T item : expectedItems )
         {
             assertTrue( collection.contains( item ) );
         }

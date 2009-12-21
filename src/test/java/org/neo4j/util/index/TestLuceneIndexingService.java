@@ -222,7 +222,7 @@ public class TestLuceneIndexingService extends NeoTestCase
             "name", "Andy Wachowski" ) ), andy );
         assertCollection( asCollection( indexService().getNodes(
             "name", "Larry Wachowski" ) ), larry );
-    }    
+    }
     
 //    public void testDifferentTypesWithSameValueIssue()
 //    {

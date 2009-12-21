@@ -76,8 +76,8 @@ public class LuceneDataSource extends XaDataSource
     };
 
     
-    private final ArrayMap<String,IndexSearcher> indexSearchers = 
-        new ArrayMap<String,IndexSearcher>( 6, true, true );
+    private final ArrayMap<String,IndexSearcherRef> indexSearchers = 
+        new ArrayMap<String,IndexSearcherRef>( 6, true, true );
 
     private final XaContainer xaContainer;
     private final String storeDir;
@@ -169,11 +169,11 @@ public class LuceneDataSource extends XaDataSource
     @Override
     public void close()
     {
-        for ( IndexSearcher searcher : indexSearchers.values() )
+        for ( IndexSearcherRef searcher : indexSearchers.values() )
         {
             try
             {
-                searcher.close();
+                searcher.getSearcher().close();
             }
             catch ( IOException e )
             {
@@ -278,17 +278,17 @@ public class LuceneDataSource extends XaDataSource
      * {@code null}.
      * @throws IOException if there's a problem with the index.
      */
-    private IndexSearcher refreshSearcher( IndexSearcher searcher )
+    private IndexSearcherRef refreshSearcher( IndexSearcherRef searcher )
     {
         try
         {
-            IndexReader reader = searcher.getIndexReader();
+            IndexReader reader = searcher.getSearcher().getIndexReader();
             IndexReader reopened = reader.reopen();
             if ( reopened != reader )
             {
                 IndexSearcher newSearcher = new IndexSearcher( reopened );
-                reader.close();
-                return newSearcher;
+                searcher.detachOrClose();
+                return new IndexSearcherRef( searcher.getKey(), newSearcher );
             }
             return null;
         }
@@ -303,11 +303,11 @@ public class LuceneDataSource extends XaDataSource
         return FSDirectory.open( new File( storeDir, key ) );
     }
     
-    IndexSearcher getIndexSearcher( String key )
+    IndexSearcherRef getIndexSearcher( String key )
     {
         try
         {
-            IndexSearcher searcher = indexSearchers.get( key );
+            IndexSearcherRef searcher = indexSearchers.get( key );
             if ( searcher == null )
             {
                 Directory dir = getDirectory( key );
@@ -323,7 +323,9 @@ public class LuceneDataSource extends XaDataSource
                 {
                     return null;
                 }
-                searcher = new IndexSearcher( dir, false );
+                IndexReader indexReader = IndexReader.open( dir, false );
+                IndexSearcher indexSearcher = new IndexSearcher( indexReader );
+                searcher = new IndexSearcherRef( key, indexSearcher );
                 indexSearchers.put( key, searcher );
             }
             return searcher;
@@ -342,10 +344,10 @@ public class LuceneDataSource extends XaDataSource
 
     void invalidateIndexSearcher( String key )
     {
-        IndexSearcher searcher = indexSearchers.get( key );
+        IndexSearcherRef searcher = indexSearchers.get( key );
         if ( searcher != null )
         {
-            IndexSearcher refreshedSearcher = refreshSearcher( searcher );
+            IndexSearcherRef refreshedSearcher = refreshSearcher( searcher );
             if ( refreshedSearcher != null )
             {
                 indexSearchers.put( key, refreshedSearcher );

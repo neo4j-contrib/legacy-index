@@ -37,7 +37,6 @@ import javax.transaction.xa.XAResource;
 
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.Hits;
-import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.TermQuery;
@@ -45,6 +44,7 @@ import org.neo4j.api.core.EmbeddedNeo;
 import org.neo4j.api.core.NeoService;
 import org.neo4j.api.core.Node;
 import org.neo4j.api.core.NotInTransactionException;
+import org.neo4j.commons.iterator.CombiningIterator;
 import org.neo4j.commons.iterator.IteratorAsIterable;
 import org.neo4j.impl.cache.LruCache;
 import org.neo4j.impl.transaction.LockManager;
@@ -60,12 +60,21 @@ import org.neo4j.impl.util.ArrayMap;
  *   <li>{@link #getNodes(String, Object, Sort)} where you can pass in a
  *   {@link Sort} option to control in which order lucene returns the
  *   results</li>
+ *   <li>{@link #setLazySearchResultThreshold(int)} will control the threshold
+ *   for then a search result is considered big enough to be returned as a
+ *   lazy iteration, making {@link #getNodes(String, Object)} return very fast,
+ *   but skips caching</li>
  * </ul>
  * 
  * See more information at http://wiki.neo4j.org/content/Indexing_with_IndexService
  */
 public class LuceneIndexService extends GenericIndexService
 {
+    /**
+     * The default value for {@link #getLazySearchResultThreshold()}
+     */
+    public static final int DEFAULT_LAZY_SEARCH_RESULT_THRESHOLD = 100;
+    
     protected static final String DOC_ID_KEY = "id";
     protected static final String DOC_INDEX_KEY = "index";
     protected static final String DIR_NAME = "lucene";
@@ -74,7 +83,7 @@ public class LuceneIndexService extends GenericIndexService
     private final ConnectionBroker broker;
     private final LuceneDataSource xaDs;
     
-    private int lazynessThreshold = 100;
+    private int lazynessThreshold = DEFAULT_LAZY_SEARCH_RESULT_THRESHOLD;
 
     /**
      * @param neo the {@link NeoService} to use.
@@ -136,13 +145,33 @@ public class LuceneIndexService extends GenericIndexService
         xaDs.enableCache( key, maxNumberOfCachedEntries );
     }
     
-    public void setLazynessThreshold( int numberOfHitsBeforeLazyLoading )
+    /**
+     * Sets the threshold for when a result is considered big enough to
+     * skip cache and be returned as a totally lazy iterator so that
+     * {@link #getNodes(String, Object)} will return very fast and all the
+     * reading and fetching of nodes is done lazily before each step in the
+     * iteration of the returned result. The default value is
+     * {@link #DEFAULT_LAZY_SEARCH_RESULT_THRESHOLD}.
+     */
+    public void setLazySearchResultThreshold(
+        int numberOfHitsBeforeLazyLoading )
     {
         this.lazynessThreshold = numberOfHitsBeforeLazyLoading;
         xaDs.invalidateCache();
     }
     
-    public int getLazynessThreshold()
+    /**
+     * Returns the threshold for when a result is considered big enough to
+     * skip cache and be returned as a totally lazy iterator so that
+     * {@link #getNodes(String, Object)} will return very fast and all the
+     * reading and fetching of nodes is done lazily before each step in the
+     * iteration of the returned result. The default value is
+     * {@link #DEFAULT_LAZY_SEARCH_RESULT_THRESHOLD}.
+     * 
+     * @return the threshold for when a result is considered big enough
+     * to be returned as a lazy iteration.
+     */
+    public int getLazySearchResultThreshold()
     {
         return this.lazynessThreshold;
     }
@@ -182,66 +211,59 @@ public class LuceneIndexService extends GenericIndexService
             deletedNodes = luceneTx.getDeletedNodesFor( key, value );
         }
         xaDs.getReadLock();
+        IndexHits<Node> result = null;
         Iterator<Long> nodeIdIterator = null;
         Integer nodeIdIteratorSize = null;
+        IndexSearcherRef searcher = null;
+        boolean isLazy = false;
         try
         {
-            IndexSearcher searcher = xaDs.getIndexSearcher( key );
+            searcher = xaDs.getIndexSearcher( key );
             if ( searcher != null )
             {
+                searcher.incRef();
                 LruCache<String,Collection<Long>> cachedNodesMap = 
                     xaDs.getFromCache( key );
-                boolean foundInCache = false;
                 String valueAsString = value.toString();
-                if ( cachedNodesMap != null )
-                {
-                    Collection<Long> cachedNodes =
-                        cachedNodesMap.get( valueAsString );
-                    if ( cachedNodes != null )
-                    {
-                        foundInCache = true;
-                        nodeIds.addAll( cachedNodes );
-                    }
-                }
+                boolean foundInCache = fillFromCache( cachedNodesMap, nodeIds,
+                    key, valueAsString );
                 if ( !foundInCache )
                 {
-                    DocToIdIterator searchedNodeIds = searchForNodes( key,
-                        value, sortingOrNull, deletedNodes );
-//                    if ( searchedNodeIds.size() >= this.lazynessThreshold )
-//                    {
-//                        if ( cachedNodesMap != null )
-//                        {
-//                            cachedNodesMap.remove( valueAsString );
-//                        }
-//                        
-//                        Collection<Iterator<Long>> iterators =
-//                            new ArrayList<Iterator<Long>>();
-//                        iterators.add( nodeIds.iterator() );
-//                        iterators.add( searchedNodeIds );
-//                        nodeIdIterator =
-//                            new CombiningIterator<Long>( iterators );
-//                        nodeIdIteratorSize = nodeIds.size() +
-//                            searchedNodeIds.size();
-//                    }
-//                    else
-//                    {
-                        ArrayList<Long> readNodeIds = new ArrayList<Long>();
-                        while ( searchedNodeIds.hasNext() )
-                        {
-                            Long readNodeId = searchedNodeIds.next();
-                            nodeIds.add( readNodeId );
-                            readNodeIds.add( readNodeId );
-                        }
+                    DocToIdIterator searchedNodeIds = searchForNodes( searcher,
+                        key, value, sortingOrNull, deletedNodes );
+                    if ( searchedNodeIds.size() >= this.lazynessThreshold )
+                    {
+                        // Instantiate a lazy iterator
+                        isLazy = true;
                         if ( cachedNodesMap != null )
                         {
-                            cachedNodesMap.put( valueAsString, readNodeIds );
+                            cachedNodesMap.remove( valueAsString );
                         }
-//                    }
+                        
+                        Collection<Iterator<Long>> iterators =
+                            new ArrayList<Iterator<Long>>();
+                        iterators.add( nodeIds.iterator() );
+                        iterators.add( searchedNodeIds );
+                        nodeIdIterator =
+                            new CombiningIterator<Long>( iterators );
+                        nodeIdIteratorSize = nodeIds.size() +
+                            searchedNodeIds.size();
+                    }
+                    else
+                    {
+                        // Loop through result here (and cache it if possible)
+                        readNodesFromHits( searchedNodeIds, nodeIds,
+                            cachedNodesMap, valueAsString );
+                    }
                 }
             }
         }
         finally
         {
+            if ( !isLazy && searcher != null )
+            {
+                searcher.closeStrict();
+            }
             xaDs.releaseReadLock();
         }
         
@@ -250,11 +272,54 @@ public class LuceneIndexService extends GenericIndexService
             nodeIdIterator = nodeIds.iterator();
             nodeIdIteratorSize = nodeIds.size();
         }
-        return new SimpleIndexHits<Node>( new IteratorAsIterable<Node>(
-            instantiateIdToNodeIterator( nodeIdIterator ) ),
-            nodeIdIteratorSize );
+        
+        IndexHits<Node> hits = new SimpleIndexHits<Node>(
+            new IteratorAsIterable<Node>(
+                instantiateIdToNodeIterator( nodeIdIterator ) ),
+                    nodeIdIteratorSize );
+        if ( isLazy )
+        {
+            hits = new LazyIndexHits<Node>( hits, searcher );
+        }
+        return hits;
     }
     
+    private void readNodesFromHits( DocToIdIterator searchedNodeIds,
+        Collection<Long> nodeIds,
+        LruCache<String, Collection<Long>> cachedNodesMap,
+        String valueAsString )
+    {
+        ArrayList<Long> readNodeIds = new ArrayList<Long>();
+        while ( searchedNodeIds.hasNext() )
+        {
+            Long readNodeId = searchedNodeIds.next();
+            nodeIds.add( readNodeId );
+            readNodeIds.add( readNodeId );
+        }
+        if ( cachedNodesMap != null )
+        {
+            cachedNodesMap.put( valueAsString, readNodeIds );
+        }
+    }
+
+    private boolean fillFromCache(
+        LruCache<String, Collection<Long>> cachedNodesMap, List<Long> nodeIds,
+        String key, String valueAsString )
+    {
+        boolean found = false;
+        if ( cachedNodesMap != null )
+        {
+            Collection<Long> cachedNodes =
+                cachedNodesMap.get( valueAsString );
+            if ( cachedNodes != null )
+            {
+                found = true;
+                nodeIds.addAll( cachedNodes );
+            }
+        }
+        return found;
+    }
+
     protected Iterator<Node> instantiateIdToNodeIterator(
         final Iterator<Long> ids )
     {
@@ -269,41 +334,47 @@ public class LuceneIndexService extends GenericIndexService
     /**
      * Returns a lazy iterator with the node ids.
      */
-    private DocToIdIterator searchForNodes( String key, Object value,
-        Sort sortingOrNull, Set<Long> deletedNodes )
+    private DocToIdIterator searchForNodes( IndexSearcherRef searcher,
+        String key, Object value, Sort sortingOrNull, Set<Long> deletedNodes )
     {
         Query query = formQuery( key, value );
-        xaDs.getReadLock();
         try
         {
-            IndexSearcher searcher = xaDs.getIndexSearcher( key );
             Hits hits = sortingOrNull != null ?
-                searcher.search( query, sortingOrNull ) :
-                searcher.search( query );
+                searcher.getSearcher().search( query, sortingOrNull ) :
+                searcher.getSearcher().search( query );
             return new DocToIdIterator( new HitsIterator( hits ),
-                deletedNodes );
+                deletedNodes, searcher );
         }
         catch ( IOException e )
         {
             throw new RuntimeException( "Unable to search for " + key + ","
                 + value, e );
         }
-        finally
-        {
-            xaDs.releaseReadLock();
-        }
     }
 
     public Node getSingleNode( String key, Object value )
     {
-        Iterator<Node> nodes = getNodes( key, value ).iterator();
-        Node node = nodes.hasNext() ? nodes.next() : null;
-        if ( nodes.hasNext() )
+        IndexHits<Node> hits = null;
+        try
         {
-            throw new RuntimeException( "More than one node for " + key + "="
-                + value );
+            hits = getNodes( key, value );
+            Iterator<Node> nodes = hits.iterator();
+            Node node = nodes.hasNext() ? nodes.next() : null;
+            if ( nodes.hasNext() )
+            {
+                throw new RuntimeException( "More than one node for " + key + "="
+                    + value );
+            }
+            return node;
         }
-        return node;
+        finally
+        {
+            if ( hits != null )
+            {
+                hits.close();
+            }
+        }
     }
 
     @Override

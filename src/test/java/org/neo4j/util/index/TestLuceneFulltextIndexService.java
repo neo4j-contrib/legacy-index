@@ -19,12 +19,11 @@
  */
 package org.neo4j.util.index;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 import org.neo4j.api.core.Node;
-import org.neo4j.util.index.IndexService;
-import org.neo4j.util.index.Isolation;
-import org.neo4j.util.index.LuceneFulltextIndexService;
 
 public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
 {
@@ -163,4 +162,54 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
         assertCollection( asCollection( indexService().getNodes(
             "name", "wachowski" ) ), andy, larry );
     }    
+    
+    public void testBreakLazyIteratorAfterRemove() throws Exception
+    {
+        int oldLazyThreshold = ( ( LuceneIndexService )
+            indexService() ).getLazySearchResultThreshold();
+        int lazyThreshold = 5;
+        ( ( LuceneIndexService ) indexService() ).setLazySearchResultThreshold(
+            lazyThreshold );
+        List<Node> nodes = new ArrayList<Node>();
+        String key = "lazykey";
+        String value = "value";
+        for ( int i = 0; i < lazyThreshold + 1; i++ )
+        {
+            Node node = neo().createNode();
+            nodes.add( node );
+            indexService().index( node, key, value );
+        }
+        restartTx();
+        
+        // Assert they're all there
+        IndexHits<Node> hits = indexService().getNodes( key, value );
+        assertCollection( asCollection( hits ),
+            nodes.toArray( new Node[ 0 ] ) );
+        assertEquals( nodes.size(), hits.size() );
+        
+        // Search again, but don't iterate the result. then remove one node
+        // and see how it goes (w/o committing).
+        hits = indexService().getNodes( key, value );
+        Node anyNode = nodes.get( nodes.size() - 1 );
+        indexService().removeIndex( anyNode, key, value );
+        assertCollection( asCollection( hits ),
+            nodes.toArray( new Node[ 0 ] ) );
+        assertEquals( nodes.size(), hits.size() );
+        restartTx( false );
+
+        // do it again, but this time commit the removal
+        hits = indexService().getNodes( key, value );
+        indexService().removeIndex( anyNode, key, value );
+        Node anyOtherNode = nodes.get( nodes.size() - 2 );
+        anyOtherNode.delete();
+        restartTx();
+        // We don't know exactly how lucene does here... if the removedIndex
+        // will cause any trouble (if it has been cached in lucene).
+        // So just see if we get any exceptions.
+        for ( Node hit : hits )
+        {
+        }
+        ( ( LuceneIndexService ) indexService() ).setLazySearchResultThreshold(
+            oldLazyThreshold );
+    }
 }
