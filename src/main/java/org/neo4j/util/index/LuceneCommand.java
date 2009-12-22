@@ -177,30 +177,30 @@ abstract class LuceneCommand extends XaCommand
         ByteBuffer buffer, char[] charArray ) throws IOException
     {
         buffer.clear();
-        int bytesLeft = charArray.length * 2;
-        int maxSize = buffer.capacity();
+        int charsLeft = charArray.length;
+        int maxSize = buffer.capacity() / 2;
         int offset = 0; // offset in chars
-        while ( bytesLeft > 0 )
+        while ( charsLeft > 0 )
         {
-            if ( bytesLeft > maxSize )
+            if ( charsLeft > maxSize )
             {
-                buffer.limit( maxSize );
-                bytesLeft -= maxSize;
+                buffer.limit( maxSize * 2 );
+                charsLeft -= maxSize;
             }
             else
             {
-                buffer.limit( bytesLeft );
-                bytesLeft = 0;
+                buffer.limit( charsLeft * 2 );
+                charsLeft = 0;
             }
             if ( channel.read( buffer ) != buffer.limit() )
             {
                 return null;
             }
             buffer.flip();
-            assert buffer.limit() % 2 == 0;
             int length = buffer.limit() / 2;
             buffer.asCharBuffer().get( charArray, offset, length ); 
             offset += length;
+            buffer.clear();
         }
         return charArray;
     }
