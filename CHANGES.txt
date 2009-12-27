@@ -1,4 +1,4 @@
-0.9 (2009-12-18)
+0.9 (2009-12-27)
 ----------------
 
 o Better and more javadoc.
@@ -16,6 +16,9 @@ o Fixed some bugs and performance issues in LuceneIndexBatchInserterImpl.
   or only writes.
 o Fixed so that a LuceneIndexService won't return duplicate entries.
   Duplicate entries can be committed sometimes.
+o Depricated old index implementation.
+o Fixed bug that during recovery could read wrong string value from logical 
+  log.
 
 0.8 (2009-11-02)
 ----------------
