@@ -24,7 +24,7 @@ o Fixed bug that during recovery could read wrong string value from logical
 
 o Added read only lucene index service.
 o Improved LuceneFulltextIndexService query syntax.
-o Added batch inserte for lucene fulltext indexer.
+o Added batch inserter for lucene fulltext indexer.
 o Improved lucene index performance by use of IndexReader#reopen
 
 0.6 (2009-05-03)
@@ -35,5 +35,5 @@ o Fixed caching invalidation bug for Lucene index service.
 o Fixed deadlock problem when hammering requests on lucene index with
   different transactions.
 o Fixed some recovery issues with Lucene index service.
-o Pathed Lucene index service to have new log rotation features (on line backup).
+o Patched Lucene index service to have new log rotation features (on line backup).
 o Fixed so IndexService.shutdown can handle multiple calls.
