@@ -35,6 +35,12 @@ public class TestCustomLuceneFulltextIndexService
     {
     }
     
+    @Override
+    public void testGetNodesBug()
+    {
+        // Do nothing
+    }
+
     public void testCustomFulltext() throws Exception
     {
         Node node1 = neo().createNode();

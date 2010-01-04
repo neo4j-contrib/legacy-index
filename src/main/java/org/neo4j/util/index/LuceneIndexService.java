@@ -211,7 +211,6 @@ public class LuceneIndexService extends GenericIndexService
             deletedNodes = luceneTx.getDeletedNodesFor( key, value );
         }
         xaDs.getReadLock();
-        IndexHits<Node> result = null;
         Iterator<Long> nodeIdIterator = null;
         Integer nodeIdIteratorSize = null;
         IndexSearcherRef searcher = null;
@@ -226,7 +225,7 @@ public class LuceneIndexService extends GenericIndexService
                     xaDs.getFromCache( key );
                 String valueAsString = value.toString();
                 boolean foundInCache = fillFromCache( cachedNodesMap, nodeIds,
-                    key, valueAsString );
+                    key, valueAsString, deletedNodes );
                 if ( !foundInCache )
                 {
                     DocToIdIterator searchedNodeIds = searchForNodes( searcher,
@@ -304,7 +303,7 @@ public class LuceneIndexService extends GenericIndexService
 
     private boolean fillFromCache(
         LruCache<String, Collection<Long>> cachedNodesMap, List<Long> nodeIds,
-        String key, String valueAsString )
+        String key, String valueAsString, Set<Long> deletedNodes )
     {
         boolean found = false;
         if ( cachedNodesMap != null )
@@ -314,7 +313,13 @@ public class LuceneIndexService extends GenericIndexService
             if ( cachedNodes != null )
             {
                 found = true;
-                nodeIds.addAll( cachedNodes );
+                for ( Long cachedNodeId : cachedNodes )
+                {
+                    if ( !deletedNodes.contains( cachedNodeId ) )
+                    {
+                        nodeIds.add( cachedNodeId );
+                    }
+                }
             }
         }
         return found;
@@ -380,6 +385,10 @@ public class LuceneIndexService extends GenericIndexService
     @Override
     protected void removeIndexThisTx( Node node, String key, Object value )
     {
+        if ( value == null )
+        {
+            throw new IllegalArgumentException( "Value is null" );
+        }
         getConnection().removeIndex( node, key, value );
     }
 

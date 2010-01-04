@@ -39,6 +39,12 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
         // Do nothing
     }
 
+    @Override
+    public void testGetNodesBug()
+    {
+        // Do nothing
+    }
+
     public void testSimpleFulltext()
     {
         Node node1 = neo().createNode();

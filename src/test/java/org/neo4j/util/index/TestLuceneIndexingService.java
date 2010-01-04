@@ -224,6 +224,27 @@ public class TestLuceneIndexingService extends NeoTestCase
             "name", "Larry Wachowski" ) ), larry );
     }
     
+    public void testGetNodesBug() throws Exception
+    {
+        Node node1 = neo().createNode();
+        Node node2 = neo().createNode();
+        String key = "getnodesbug";
+        ( ( LuceneIndexService ) indexService() ).enableCache( key, 100 );
+        indexService().index( node1, key, "value" );
+        indexService().index( node2, key, "value" );
+        restartTx();
+        
+        assertCollection( asCollection(
+            indexService().getNodes( key, "value" ) ), node1, node2 );
+        // Now that value is cached
+        indexService().removeIndex( node1, key, "value" );
+        assertCollection( asCollection(
+            indexService().getNodes( key, "value" ) ), node2 );
+        indexService().removeIndex( node2, key, "value" );
+        node1.delete();
+        node2.delete();
+    }
+    
 //    public void testDifferentTypesWithSameValueIssue()
 //    {
 //        String key = "prop";
