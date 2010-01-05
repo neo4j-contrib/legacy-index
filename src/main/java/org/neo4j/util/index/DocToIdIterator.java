@@ -12,15 +12,15 @@ class DocToIdIterator extends PrefetchingIterator<Long>
 {
     private final Iterator<Document> docs;
     private final Collection<Long> exclude;
-    private final IndexSearcherRef searcherIfLazyOrNull;
+    private final IndexSearcherRef searcherOrNull;
     private final Set<Long> alreadyReturnedIds = new HashSet<Long>();
     
     DocToIdIterator( Iterator<Document> docs, Collection<Long> exclude,
-        IndexSearcherRef searcherIfLazyOrNull )
+        IndexSearcherRef searcherOrNull )
     {
         this.docs = docs;
         this.exclude = exclude;
-        this.searcherIfLazyOrNull = searcherIfLazyOrNull;
+        this.searcherOrNull = searcherOrNull;
     }
 
     @Override
@@ -50,9 +50,9 @@ class DocToIdIterator extends PrefetchingIterator<Long>
     
     private void endReached()
     {
-        if ( this.searcherIfLazyOrNull != null )
+        if ( this.searcherOrNull != null )
         {
-            this.searcherIfLazyOrNull.closeStrict();
+            this.searcherOrNull.closeStrict();
         }
     }
 

@@ -259,10 +259,8 @@ public class LuceneIndexService extends GenericIndexService
         }
         finally
         {
-            if ( !isLazy && searcher != null )
-            {
-                searcher.closeStrict();
-            }
+            // The DocToIdIterator closes the IndexSearchRef instance anyways,
+            // or the LazyIterator if it's a lazy one. So no need here.
             xaDs.releaseReadLock();
         }
         

@@ -116,9 +116,14 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
             try
             {
                 Directory dir = instantiateDirectory( key );
-                writer = new IndexWriterContext(
-                    new IndexWriter( dir, fieldAnalyzer,
-                        MaxFieldLength.UNLIMITED ) );
+                IndexWriter indexWriter = new IndexWriter( dir, fieldAnalyzer,
+                    MaxFieldLength.UNLIMITED );
+                
+                // TODO We should tamper with this value and see how it affects
+                // the general performance. Lucene docs says rather >10 for
+                // batch inserts
+//                indexWriter.setMergeFactor( 15 );
+                writer = new IndexWriterContext( indexWriter );
             }
             catch ( IOException e )
             {

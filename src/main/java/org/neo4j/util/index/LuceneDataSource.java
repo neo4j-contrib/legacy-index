@@ -37,7 +37,6 @@ import org.apache.lucene.analysis.WhitespaceTokenizer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Index;
-import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
@@ -360,8 +359,15 @@ public class LuceneDataSource extends XaDataSource
         try
         {
             Directory dir = getDirectory( key );
-            return new IndexWriter( dir, getAnalyzer(),
+            IndexWriter writer = new IndexWriter( dir, getAnalyzer(),
                 MaxFieldLength.UNLIMITED );
+            
+            // TODO We should tamper with this value and see how it affects the
+            // general performance. Lucene docs says rather <10 for mixed
+            // reads/writes 
+//            writer.setMergeFactor( 8 );
+            
+            return writer;
         }
         catch ( IOException e )
         {
@@ -398,11 +404,6 @@ public class LuceneDataSource extends XaDataSource
         try
         {
             writer.close();
-        }
-        catch ( CorruptIndexException e )
-        {
-            throw new RuntimeException( "Unable to close lucene writer "
-                + writer, e );
         }
         catch ( IOException e )
         {

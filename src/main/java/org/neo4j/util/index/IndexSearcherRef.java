@@ -9,8 +9,15 @@ class IndexSearcherRef
 {
     private final String key;
     private final IndexSearcher searcher;
-    private final AtomicInteger refCount = new AtomicInteger( 1 );
+    private final AtomicInteger refCount = new AtomicInteger( 0 );
     private boolean isClosed;
+    
+    /**
+     * We need this because we only want to close the reader/searcher if
+     * it has been detached... i.e. the {@link LuceneDataSource} no longer
+     * has any reference to it, only an iterator out in the client has a ref.
+     * And when that client calls close() it should be closed.
+     */
     private boolean detached;
     
     public IndexSearcherRef( String key, IndexSearcher searcher )
@@ -34,11 +41,18 @@ class IndexSearcherRef
         this.refCount.incrementAndGet();
     }
     
+    private void dispose() throws IOException
+    {
+        this.searcher.close();
+        this.searcher.getIndexReader().close();
+        this.isClosed = true;
+    }
+    
     void detachOrClose() throws IOException
     {
         if ( this.refCount.get() == 0 )
         {
-            close();
+            dispose();
         }
         else
         {
@@ -48,20 +62,16 @@ class IndexSearcherRef
     
     boolean close() throws IOException
     {
-        if ( this.isClosed )
+        if ( this.isClosed || this.refCount.get() == 0 )
         {
             return true;
         }
         
         boolean reallyClosed = false;
-        if ( this.refCount.decrementAndGet() == 0 && this.detached )
+        if ( this.refCount.decrementAndGet() <= 0 && this.detached )
         {
-            this.searcher.close();
-            this.searcher.getIndexReader().close();
+            dispose();
             reallyClosed = true;
-            this.isClosed = true;
-            new Exception( "closed searcher '" +
-                this.key + "'" ).printStackTrace();
         }
         return reallyClosed;
     }
