@@ -9,7 +9,7 @@ import org.neo4j.api.core.Relationship;
 import org.neo4j.api.core.RelationshipType;
 import org.neo4j.util.NeoTestCase;
 
-public class TestLuceneTooManyOpenFiles extends NeoTestCase
+public abstract class TestLuceneTooManyOpenFiles extends NeoTestCase
 {
     private IndexService indexService;
     
