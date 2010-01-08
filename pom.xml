@@ -9,16 +9,16 @@
 
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.neo4j</groupId>
-  <artifactId>index-util</artifactId>
+  <artifactId>index</artifactId>
   <version>0.9-SNAPSHOT</version>
-  <name>Neo4j - Index util</name>
+  <name>Neo4j - Index</name>
   <description>
-    Utility classes to add property indexing in Neo.
+    Utility classes to add various indexing functionality in Neo4j.
     </description>
   <url>http://components.neo4j.org/${project.artifactId}/</url>
 
   <properties>
-    <bundle.namespace>org.neo4j.util</bundle.namespace>
+    <bundle.namespace>org.neo4j.index</bundle.namespace>
   </properties>
 
   <packaging>bundle</packaging>
