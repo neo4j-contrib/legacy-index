@@ -23,11 +23,11 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-import org.neo4j.api.core.Direction;
-import org.neo4j.api.core.NeoService;
-import org.neo4j.api.core.Node;
-import org.neo4j.api.core.Relationship;
-import org.neo4j.api.core.RelationshipType;
+import org.neo4j.graphdb.Direction;
+import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.Relationship;
+import org.neo4j.graphdb.RelationshipType;
 
 /**
  * A sorted list of nodes (structured as a tree in neo4j).
@@ -46,7 +46,7 @@ public class SortedTree
 		KEY_ENTRY 
 	};
 	
-	private final NeoService neo;
+	private final GraphDatabaseService neo;
     private final Comparator<Node> nodeComparator;
 	private TreeNode treeRoot;
 	
@@ -57,7 +57,7 @@ public class SortedTree
 	 * It's important to use the same {@link Comparator} for a given root node
 	 * to get the expected results.
 	 */
-	public SortedTree( NeoService neo, Node rootNode, 
+	public SortedTree( GraphDatabaseService neo, Node rootNode, 
         Comparator<Node> nodeComparator )
 	{
 		this.neo = neo;
@@ -138,7 +138,7 @@ public class SortedTree
 		return 9;
 	}
 	
-	NeoService getNeo()
+	GraphDatabaseService getNeo()
 	{
 		return neo;
 	}

@@ -29,8 +29,8 @@ import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.BooleanClause.Occur;
-import org.neo4j.api.core.NeoService;
-import org.neo4j.api.core.Node;
+import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.Node;
 import org.neo4j.index.IndexHits;
 
 /**
@@ -54,7 +54,7 @@ public class LuceneFulltextIndexService extends LuceneIndexService
     /**
      * @param neo the {@link NeoService} to use.
      */
-    public LuceneFulltextIndexService( NeoService neo )
+    public LuceneFulltextIndexService( GraphDatabaseService neo )
     {
         super( neo );
     }

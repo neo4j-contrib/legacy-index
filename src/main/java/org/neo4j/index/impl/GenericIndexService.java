@@ -19,15 +19,15 @@
  */
 package org.neo4j.index.impl;
 
-import org.neo4j.api.core.NeoService;
-import org.neo4j.api.core.Node;
-import org.neo4j.api.core.Transaction;
+import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.Transaction;
 import org.neo4j.index.IndexService;
 import org.neo4j.index.Isolation;
 
 public abstract class GenericIndexService implements IndexService
 {
-    private final NeoService neo;
+    private final GraphDatabaseService neo;
     private final IndexServiceQueue queue;
     
     private ThreadLocal<Isolation> threadIsolation =
@@ -45,7 +45,7 @@ public abstract class GenericIndexService implements IndexService
 
     protected abstract void indexThisTx( Node node, String key, Object value );
 
-    public GenericIndexService( NeoService service )
+    public GenericIndexService( GraphDatabaseService service )
     {
         if ( service == null )
         {
@@ -82,7 +82,7 @@ public abstract class GenericIndexService implements IndexService
         }
     }
     
-    protected NeoService getNeo()
+    protected GraphDatabaseService getNeo()
     {
         return neo;
     }

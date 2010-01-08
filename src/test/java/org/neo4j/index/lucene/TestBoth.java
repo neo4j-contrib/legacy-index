@@ -19,7 +19,7 @@
  */
 package org.neo4j.index.lucene;
 
-import org.neo4j.api.core.Node;
+import org.neo4j.graphdb.Node;
 import org.neo4j.index.IndexService;
 import org.neo4j.index.NeoTestCase;
 

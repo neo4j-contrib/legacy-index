@@ -23,17 +23,17 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import org.neo4j.api.core.Direction;
-import org.neo4j.api.core.NeoService;
-import org.neo4j.api.core.Node;
-import org.neo4j.api.core.Relationship;
-import org.neo4j.api.core.RelationshipType;
-import org.neo4j.api.core.ReturnableEvaluator;
-import org.neo4j.api.core.StopEvaluator;
-import org.neo4j.api.core.Transaction;
-import org.neo4j.api.core.TraversalPosition;
-import org.neo4j.api.core.Traverser;
-import org.neo4j.api.core.Traverser.Order;
+import org.neo4j.graphdb.Direction;
+import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.Relationship;
+import org.neo4j.graphdb.RelationshipType;
+import org.neo4j.graphdb.ReturnableEvaluator;
+import org.neo4j.graphdb.StopEvaluator;
+import org.neo4j.graphdb.Transaction;
+import org.neo4j.graphdb.TraversalPosition;
+import org.neo4j.graphdb.Traverser;
+import org.neo4j.graphdb.Traverser.Order;
 import org.neo4j.index.impl.btree.BTree;
 
 /**
@@ -63,7 +63,7 @@ public class Timeline implements TimelineIndex
 	private final boolean indexed;
 	private BTree indexBTree;
 	private final String name;
-	private final NeoService neo;
+	private final GraphDatabaseService neo;
 	
 	// lazy init cache holders for first and last
 	private Node firstNode;
@@ -81,7 +81,7 @@ public class Timeline implements TimelineIndex
 	 * @param neo The embedded neo instance
 	 */
 	public Timeline( String name, Node underlyingNode, boolean indexed, 
-		NeoService neo )
+	    GraphDatabaseService neo )
 	{
 		if ( underlyingNode == null || neo == null )
 		{
@@ -146,7 +146,8 @@ public class Timeline implements TimelineIndex
      * @param underlyingNode The underlying node representing the timeline
      * @param neo The embedded neo instance
      */
-    public Timeline( String name, Node underlyingNode, NeoService neo )
+    public Timeline( String name, Node underlyingNode,
+        GraphDatabaseService neo )
     {
         this( name, underlyingNode, true, neo );
     }

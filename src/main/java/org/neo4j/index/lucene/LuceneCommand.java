@@ -23,8 +23,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 
-import org.neo4j.impl.transaction.xaframework.LogBuffer;
-import org.neo4j.impl.transaction.xaframework.XaCommand;
+import org.neo4j.kernel.impl.transaction.xaframework.LogBuffer;
+import org.neo4j.kernel.impl.transaction.xaframework.XaCommand;
 
 abstract class LuceneCommand extends XaCommand
 {

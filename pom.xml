@@ -70,7 +70,7 @@
     <dependency>
       <groupId>org.neo4j</groupId>
       <artifactId>kernel</artifactId>
-      <version>1.0-SNAPSHOT</version>
+      <version>1.0-rc-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.neo4j</groupId>

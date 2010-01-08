@@ -47,16 +47,16 @@ import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
-import org.neo4j.impl.cache.LruCache;
-import org.neo4j.impl.transaction.xaframework.XaCommand;
-import org.neo4j.impl.transaction.xaframework.XaCommandFactory;
-import org.neo4j.impl.transaction.xaframework.XaConnection;
-import org.neo4j.impl.transaction.xaframework.XaContainer;
-import org.neo4j.impl.transaction.xaframework.XaDataSource;
-import org.neo4j.impl.transaction.xaframework.XaLogicalLog;
-import org.neo4j.impl.transaction.xaframework.XaTransaction;
-import org.neo4j.impl.transaction.xaframework.XaTransactionFactory;
-import org.neo4j.impl.util.ArrayMap;
+import org.neo4j.kernel.impl.cache.LruCache;
+import org.neo4j.kernel.impl.transaction.xaframework.XaCommand;
+import org.neo4j.kernel.impl.transaction.xaframework.XaCommandFactory;
+import org.neo4j.kernel.impl.transaction.xaframework.XaConnection;
+import org.neo4j.kernel.impl.transaction.xaframework.XaContainer;
+import org.neo4j.kernel.impl.transaction.xaframework.XaDataSource;
+import org.neo4j.kernel.impl.transaction.xaframework.XaLogicalLog;
+import org.neo4j.kernel.impl.transaction.xaframework.XaTransaction;
+import org.neo4j.kernel.impl.transaction.xaframework.XaTransactionFactory;
+import org.neo4j.kernel.impl.util.ArrayMap;
 
 /**
  * An {@link XaDataSource} optimized for the {@link LuceneIndexService}.

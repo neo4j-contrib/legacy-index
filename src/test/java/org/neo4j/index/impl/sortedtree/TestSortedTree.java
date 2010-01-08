@@ -21,7 +21,7 @@ package org.neo4j.index.impl.sortedtree;
 
 import java.util.Comparator;
 
-import org.neo4j.api.core.Node;
+import org.neo4j.graphdb.Node;
 import org.neo4j.index.NeoTestCase;
 import org.neo4j.index.impl.btree.BTree.RelTypes;
 

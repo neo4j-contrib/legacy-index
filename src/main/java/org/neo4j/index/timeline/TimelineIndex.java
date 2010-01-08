@@ -19,7 +19,7 @@
  */
 package org.neo4j.index.timeline;
 
-import org.neo4j.api.core.Node;
+import org.neo4j.graphdb.Node;
 
 /**
  * An utility for ordering nodes in a timeline. You add nodes to the timeline

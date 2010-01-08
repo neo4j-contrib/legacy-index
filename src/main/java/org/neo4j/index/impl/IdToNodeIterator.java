@@ -2,17 +2,17 @@ package org.neo4j.index.impl;
 
 import java.util.Iterator;
 
-import org.neo4j.api.core.NeoService;
-import org.neo4j.api.core.Node;
-import org.neo4j.api.core.NotFoundException;
 import org.neo4j.commons.iterator.PrefetchingIterator;
+import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.NotFoundException;
 
 public class IdToNodeIterator extends PrefetchingIterator<Node>
 {
     private final Iterator<Long> ids;
-    private final NeoService neo;
+    private final GraphDatabaseService neo;
     
-    public IdToNodeIterator( Iterator<Long> ids, NeoService neo )
+    public IdToNodeIterator( Iterator<Long> ids, GraphDatabaseService neo )
     {
         this.ids = ids;
         this.neo = neo;

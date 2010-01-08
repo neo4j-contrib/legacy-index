@@ -29,8 +29,8 @@ import java.util.Map;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
-import org.neo4j.impl.cache.LruCache;
-import org.neo4j.impl.util.ArrayMap;
+import org.neo4j.kernel.impl.cache.LruCache;
+import org.neo4j.kernel.impl.util.ArrayMap;
 
 /**
  * The underlying XA data source for a {@link LuceneReadOnlyIndexService}

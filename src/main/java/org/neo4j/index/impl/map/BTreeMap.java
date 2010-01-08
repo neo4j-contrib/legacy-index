@@ -22,12 +22,13 @@ package org.neo4j.index.impl.map;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
-import org.neo4j.api.core.Direction;
-import org.neo4j.api.core.NeoService;
-import org.neo4j.api.core.Node;
-import org.neo4j.api.core.Relationship;
-import org.neo4j.api.core.RelationshipType;
-import org.neo4j.api.core.Transaction;
+
+import org.neo4j.graphdb.Direction;
+import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.Relationship;
+import org.neo4j.graphdb.RelationshipType;
+import org.neo4j.graphdb.Transaction;
 import org.neo4j.index.impl.btree.BTree;
 import org.neo4j.index.impl.btree.KeyEntry;
 
@@ -59,7 +60,7 @@ public class BTreeMap<K,V> implements Map<K,V>
 	private final Node underlyingNode;
 	private BTree bTree;
 	private String name;
-	private NeoService neo;
+	private GraphDatabaseService neo;
 	
 	
 	/**
@@ -76,7 +77,8 @@ public class BTreeMap<K,V> implements Map<K,V>
 	 * @throws IllegalArgumentException if the underlying node is a map with
 	 * a different name set.
 	 */
-	public BTreeMap( String name, Node underlyingNode, NeoService neo )
+	public BTreeMap( String name, Node underlyingNode,
+	    GraphDatabaseService neo )
 	{
 		if ( underlyingNode == null || neo == null )
 		{

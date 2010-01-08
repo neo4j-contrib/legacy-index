@@ -21,8 +21,9 @@ package org.neo4j.index.impl;
 
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import org.neo4j.api.core.Node;
-import org.neo4j.api.core.Transaction;
+
+import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.Transaction;
 import org.neo4j.index.Isolation;
 
 public class IndexServiceQueue extends Thread

@@ -22,7 +22,7 @@ package org.neo4j.index.timeline;
 import java.util.Iterator;
 import java.util.LinkedList;
 
-import org.neo4j.api.core.Node;
+import org.neo4j.graphdb.Node;
 import org.neo4j.index.NeoTestCase;
 
 public class TestTimeline extends NeoTestCase

@@ -33,12 +33,12 @@ import javax.transaction.xa.Xid;
 
 import junit.framework.TestCase;
 
-import org.neo4j.api.core.EmbeddedNeo;
-import org.neo4j.api.core.NeoService;
-import org.neo4j.api.core.Node;
-import org.neo4j.api.core.Transaction;
-import org.neo4j.impl.transaction.XidImpl;
+import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.Transaction;
 import org.neo4j.index.IndexService;
+import org.neo4j.kernel.EmbeddedGraphDatabase;
+import org.neo4j.kernel.impl.transaction.XidImpl;
 
 public class TestRecovery extends TestCase
 {
@@ -67,16 +67,16 @@ public class TestRecovery extends TestCase
         return "target/recovery";
     }
     
-    private NeoService newNeoService()
+    private GraphDatabaseService newNeoService()
     {
         String path = getNeoPath();
         deleteFileOrDirectory( new File( path ) );
-        return new EmbeddedNeo( path );
+        return new EmbeddedGraphDatabase( path );
     }
     
     public void testRecovery() throws Exception
     {
-        final NeoService neo = newNeoService();
+        final GraphDatabaseService neo = newNeoService();
         final IndexService index = new LuceneIndexService( neo );
         
         neo.beginTx();
@@ -106,7 +106,8 @@ public class TestRecovery extends TestCase
         }
         
         sleepNice( 1000 );
-        final NeoService newNeo = new EmbeddedNeo( getNeoPath() );
+        final GraphDatabaseService newNeo =
+            new EmbeddedGraphDatabase( getNeoPath() );
         final IndexService newIndexService = new LuceneIndexService( newNeo );
         sleepNice( 1000 );
         newIndexService.shutdown();
@@ -127,7 +128,7 @@ public class TestRecovery extends TestCase
     
     public void testReCommit()
     {
-        NeoService neo = newNeoService();
+        GraphDatabaseService neo = newNeoService();
         IndexService idx = new LuceneIndexService( neo );
         Transaction tx = neo.beginTx();
         assertEquals( null, idx.getSingleNode( "test", "1" ) );

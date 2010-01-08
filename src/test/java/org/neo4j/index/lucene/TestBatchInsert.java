@@ -24,8 +24,8 @@ import java.util.regex.Pattern;
 
 import junit.framework.TestCase;
 
-import org.neo4j.impl.batchinsert.BatchInserter;
-import org.neo4j.impl.batchinsert.BatchInserterImpl;
+import org.neo4j.kernel.impl.batchinsert.BatchInserter;
+import org.neo4j.kernel.impl.batchinsert.BatchInserterImpl;
 
 public class TestBatchInsert extends TestCase
 {

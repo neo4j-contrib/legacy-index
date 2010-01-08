@@ -20,11 +20,12 @@
 package org.neo4j.index.impl.btree;
 
 import javax.transaction.Transaction;
-import org.neo4j.api.core.Direction;
-import org.neo4j.api.core.EmbeddedNeo;
-import org.neo4j.api.core.Node;
-import org.neo4j.api.core.Relationship;
+
+import org.neo4j.graphdb.Direction;
+import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.Relationship;
 import org.neo4j.index.impl.btree.BTree.RelTypes;
+import org.neo4j.kernel.EmbeddedGraphDatabase;
 
 class TreeNode
 {
@@ -156,7 +157,7 @@ class TreeNode
 		}
 		if ( count >= commitInterval )
 		{
-            EmbeddedNeo neo = (EmbeddedNeo) bTree.getNeo();
+            EmbeddedGraphDatabase neo = (EmbeddedGraphDatabase) bTree.getNeo();
             try
             {
                 Transaction tx = neo.getConfig().getTxModule().getTxManager().

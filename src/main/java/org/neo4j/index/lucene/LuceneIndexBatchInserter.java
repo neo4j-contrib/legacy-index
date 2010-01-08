@@ -20,9 +20,9 @@
 package org.neo4j.index.lucene;
 
 import org.apache.lucene.index.IndexWriter;
-import org.neo4j.impl.batchinsert.BatchInserter;
 import org.neo4j.index.IndexHits;
 import org.neo4j.index.IndexService;
+import org.neo4j.kernel.impl.batchinsert.BatchInserter;
 
 /**
  * The "batch inserter" version of {@link LuceneIndexService}.

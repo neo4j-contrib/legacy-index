@@ -36,8 +36,8 @@ import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.RAMDirectory;
-import org.neo4j.api.core.Node;
-import org.neo4j.impl.transaction.xaframework.XaLogicalLog;
+import org.neo4j.graphdb.Node;
+import org.neo4j.kernel.impl.transaction.xaframework.XaLogicalLog;
 
 class LuceneFulltextTransaction extends LuceneTransaction
 {

@@ -25,7 +25,7 @@ import org.apache.lucene.document.Field.Index;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
-import org.neo4j.impl.batchinsert.BatchInserter;
+import org.neo4j.kernel.impl.batchinsert.BatchInserter;
 
 /**
  * The "batch inserter" version of {@link LuceneFulltextIndexService}.

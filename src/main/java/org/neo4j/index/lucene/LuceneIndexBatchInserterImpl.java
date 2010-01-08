@@ -43,15 +43,15 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
-import org.neo4j.api.core.Node;
 import org.neo4j.commons.iterator.IterableWrapper;
-import org.neo4j.impl.batchinsert.BatchInserter;
-import org.neo4j.impl.util.ArrayMap;
-import org.neo4j.impl.util.FileUtils;
+import org.neo4j.graphdb.Node;
 import org.neo4j.index.IndexHits;
 import org.neo4j.index.IndexService;
 import org.neo4j.index.Isolation;
 import org.neo4j.index.impl.SimpleIndexHits;
+import org.neo4j.kernel.impl.batchinsert.BatchInserter;
+import org.neo4j.kernel.impl.util.ArrayMap;
+import org.neo4j.kernel.impl.util.FileUtils;
 
 /**
  * The implementation of {@link LuceneIndexBatchInserter}.
@@ -300,7 +300,7 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
                 @Override
                 protected Node underlyingObjectToObject( Long id )
                 {
-                    return neo.getNeoService().getNodeById( id );
+                    return neo.getGraphDbService().getNodeById( id );
                 }
             };
             return new SimpleIndexHits<Node>( nodes, ids.size() );
@@ -310,7 +310,7 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
         {
             long id =
                 LuceneIndexBatchInserterImpl.this.getSingleNode( key, value );
-            return id == -1 ? null : neo.getNeoService().getNodeById( id );
+            return id == -1 ? null : neo.getGraphDbService().getNodeById( id );
         }
 
         public void index( Node node, String key, Object value )

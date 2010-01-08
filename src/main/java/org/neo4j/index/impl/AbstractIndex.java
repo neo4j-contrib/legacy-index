@@ -25,17 +25,17 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-import org.neo4j.api.core.Direction;
-import org.neo4j.api.core.EmbeddedNeo;
-import org.neo4j.api.core.NeoService;
-import org.neo4j.api.core.Node;
-import org.neo4j.api.core.Relationship;
-import org.neo4j.api.core.RelationshipType;
-import org.neo4j.api.core.Transaction;
+import org.neo4j.graphdb.Direction;
+import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.Relationship;
+import org.neo4j.graphdb.RelationshipType;
+import org.neo4j.graphdb.Transaction;
 import org.neo4j.index.Index;
 import org.neo4j.index.IndexHits;
 import org.neo4j.index.impl.btree.BTree;
 import org.neo4j.index.impl.btree.KeyEntry;
+import org.neo4j.kernel.EmbeddedGraphDatabase;
 
 /**
  * A "multi" index implementation using {@link org.neo4j.util.btree.BTree BTree}
@@ -66,7 +66,7 @@ abstract class AbstractIndex implements Index
 	private final Node underlyingNode;
 	private BTree bTree;
 	private String name;
-	private NeoService neo;
+	private GraphDatabaseService neo;
 
 	protected abstract String getIndexType();
 	protected abstract void addOrReplace( KeyEntry entry, long value );
@@ -89,7 +89,8 @@ abstract class AbstractIndex implements Index
 	 * @throws IllegalArgumentException if the underlying node is a index with
 	 * a different name set or wrong index type.
 	 */
-	public AbstractIndex( String name, Node underlyingNode, NeoService neo )
+	public AbstractIndex( String name, Node underlyingNode,
+	    GraphDatabaseService neo )
 	{
 		if ( underlyingNode == null || neo == null )
 		{
@@ -526,7 +527,7 @@ abstract class AbstractIndex implements Index
             {
                 try
                 {
-                    ((EmbeddedNeo) neo).getConfig().getTxModule().
+                    ((EmbeddedGraphDatabase) neo).getConfig().getTxModule().
                         getTxManager().getTransaction().commit();
                 }
                 catch ( Exception e )
@@ -554,11 +555,11 @@ abstract class AbstractIndex implements Index
     {
         private Iterator<Node> currentNodes;
         private final Iterator<KeyEntry> bTreeIterator;
-        private final NeoService neo;
+        private final GraphDatabaseService neo;
         private final AbstractIndex index;
         
         private IndexIterator( AbstractIndex index, BTree bTree, 
-            NeoService neo )
+            GraphDatabaseService neo )
         {
             this.index = index;
             this.bTreeIterator = bTree.entries().iterator();

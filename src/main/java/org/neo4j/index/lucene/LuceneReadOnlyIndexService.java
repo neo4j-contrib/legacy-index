@@ -33,19 +33,19 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.TermQuery;
-import org.neo4j.api.core.EmbeddedNeo;
-import org.neo4j.api.core.EmbeddedReadOnlyNeo;
-import org.neo4j.api.core.NeoService;
-import org.neo4j.api.core.Node;
 import org.neo4j.commons.iterator.CombiningIterator;
 import org.neo4j.commons.iterator.IteratorAsIterable;
-import org.neo4j.impl.cache.LruCache;
+import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.Node;
 import org.neo4j.index.IndexHits;
 import org.neo4j.index.IndexService;
 import org.neo4j.index.ReadOnlyIndexException;
 import org.neo4j.index.impl.GenericIndexService;
 import org.neo4j.index.impl.IdToNodeIterator;
 import org.neo4j.index.impl.SimpleIndexHits;
+import org.neo4j.kernel.EmbeddedGraphDatabase;
+import org.neo4j.kernel.EmbeddedReadOnlyGraphDatabase;
+import org.neo4j.kernel.impl.cache.LruCache;
 
 /**
  * A version of {@link LuceneIndexService} which is read-only, i.e. will throw
@@ -65,19 +65,21 @@ public class LuceneReadOnlyIndexService extends GenericIndexService
     /**
      * @param neo the {@link NeoService} to use.
      */
-    public LuceneReadOnlyIndexService( NeoService neo )
+    public LuceneReadOnlyIndexService( GraphDatabaseService neo )
     {
         super( neo );
         String luceneDirectory;
-        if ( neo instanceof EmbeddedReadOnlyNeo )
+        if ( neo instanceof EmbeddedReadOnlyGraphDatabase )
         {
-            EmbeddedReadOnlyNeo embeddedNeo = ((EmbeddedReadOnlyNeo) neo);
+            EmbeddedReadOnlyGraphDatabase embeddedNeo =
+                ( ( EmbeddedReadOnlyGraphDatabase ) neo );
             luceneDirectory = 
                 embeddedNeo.getStoreDir() + "/" + getDirName();
         }
         else
         {
-            EmbeddedNeo embeddedNeo = ((EmbeddedNeo) neo);
+            EmbeddedGraphDatabase embeddedNeo =
+                ( ( EmbeddedGraphDatabase ) neo );
             luceneDirectory = 
                 embeddedNeo.getStoreDir() + "/" + getDirName();
         }

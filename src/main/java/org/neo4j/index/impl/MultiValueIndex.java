@@ -19,8 +19,8 @@
  */
 package org.neo4j.index.impl;
 
-import org.neo4j.api.core.NeoService;
-import org.neo4j.api.core.Node;
+import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.Node;
 import org.neo4j.index.impl.btree.KeyEntry;
 
 /**
@@ -48,7 +48,8 @@ public class MultiValueIndex extends AbstractIndex
 	 * @throws IllegalArgumentException if the underlying node is a index with
 	 * a different name set.
 	 */
-	public MultiValueIndex( String name, Node underlyingNode, NeoService neo )
+	public MultiValueIndex( String name, Node underlyingNode,
+	    GraphDatabaseService neo )
 	{
 		super( name, underlyingNode, neo );
 	}

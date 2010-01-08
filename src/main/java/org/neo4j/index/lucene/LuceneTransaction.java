@@ -30,12 +30,12 @@ import java.util.Set;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexWriter;
-import org.neo4j.api.core.Node;
-import org.neo4j.impl.transaction.xaframework.XaCommand;
-import org.neo4j.impl.transaction.xaframework.XaLogicalLog;
-import org.neo4j.impl.transaction.xaframework.XaTransaction;
+import org.neo4j.graphdb.Node;
 import org.neo4j.index.lucene.LuceneCommand.AddCommand;
 import org.neo4j.index.lucene.LuceneCommand.RemoveCommand;
+import org.neo4j.kernel.impl.transaction.xaframework.XaCommand;
+import org.neo4j.kernel.impl.transaction.xaframework.XaLogicalLog;
+import org.neo4j.kernel.impl.transaction.xaframework.XaTransaction;
 
 class LuceneTransaction extends XaTransaction
 {

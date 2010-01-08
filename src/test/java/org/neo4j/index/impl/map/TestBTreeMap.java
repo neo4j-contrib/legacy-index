@@ -21,20 +21,21 @@ package org.neo4j.index.impl.map;
 
 import junit.framework.TestCase;
 
-import org.neo4j.api.core.EmbeddedNeo;
-import org.neo4j.api.core.Node;
-import org.neo4j.api.core.Transaction;
+import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.Transaction;
+import org.neo4j.kernel.EmbeddedGraphDatabase;
 
 public class TestBTreeMap extends TestCase
 {
 	private BTreeMap<Character,Character> bTreeMap;
-	private EmbeddedNeo neo;
+	private GraphDatabaseService neo;
 	private Transaction tx;
 	
 	@Override
 	public void setUp()
 	{
-		neo = new EmbeddedNeo( "target/var/map" );
+		neo = new EmbeddedGraphDatabase( "target/var/map" );
 		tx = neo.beginTx();
 		Node bNode = neo.createNode();
 		bTreeMap = new BTreeMap<Character,Character>( "test_map", bNode, neo );

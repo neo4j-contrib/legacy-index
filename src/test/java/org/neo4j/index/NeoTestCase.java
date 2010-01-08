@@ -27,9 +27,9 @@ import java.util.List;
 
 import junit.framework.TestCase;
 
-import org.neo4j.api.core.EmbeddedNeo;
-import org.neo4j.api.core.NeoService;
-import org.neo4j.api.core.Transaction;
+import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.Transaction;
+import org.neo4j.kernel.EmbeddedGraphDatabase;
 
 /**
  * Base class for the meta model tests.
@@ -38,7 +38,7 @@ public abstract class NeoTestCase extends TestCase
 {
 	private File basePath = new File( "target/var" );
     private File neoPath = new File( basePath, "neo" );
-    private NeoService neo;
+    private GraphDatabaseService neo;
     private Transaction tx;
 
     @Override
@@ -46,7 +46,7 @@ public abstract class NeoTestCase extends TestCase
     {
         super.setUp();
         deleteFileOrDirectory( neoPath );
-        neo = new EmbeddedNeo( neoPath.getAbsolutePath() );
+        neo = new EmbeddedGraphDatabase( neoPath.getAbsolutePath() );
         tx = neo.beginTx();
     }
     
@@ -113,7 +113,7 @@ public abstract class NeoTestCase extends TestCase
         tx = neo.beginTx();
     }
 
-    protected NeoService neo()
+    protected GraphDatabaseService neo()
     {
         return neo;
     }

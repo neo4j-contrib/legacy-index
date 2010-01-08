@@ -26,8 +26,8 @@ import org.apache.lucene.queryParser.QueryParser;
 import org.apache.lucene.queryParser.QueryParser.Operator;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.util.Version;
-import org.neo4j.api.core.NeoService;
-import org.neo4j.api.core.Node;
+import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.Node;
 import org.neo4j.index.IndexHits;
 
 /**
@@ -45,7 +45,7 @@ public class LuceneFulltextQueryIndexService extends LuceneFulltextIndexService
     /**
      * @param neo the {@link NeoService} to use.
      */
-    public LuceneFulltextQueryIndexService( NeoService neo )
+    public LuceneFulltextQueryIndexService( GraphDatabaseService neo )
     {
         super( neo );
     }

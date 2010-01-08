@@ -19,7 +19,7 @@
  */
 package org.neo4j.index;
 
-import org.neo4j.api.core.Node;
+import org.neo4j.graphdb.Node;
 
 /**
  * An index service can be used to index nodes with a key and a value.

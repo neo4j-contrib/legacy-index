@@ -22,10 +22,10 @@ package org.neo4j.index.lucene;
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
 
-import org.neo4j.api.core.Node;
-import org.neo4j.impl.transaction.xaframework.XaConnectionHelpImpl;
-import org.neo4j.impl.transaction.xaframework.XaResourceHelpImpl;
-import org.neo4j.impl.transaction.xaframework.XaResourceManager;
+import org.neo4j.graphdb.Node;
+import org.neo4j.kernel.impl.transaction.xaframework.XaConnectionHelpImpl;
+import org.neo4j.kernel.impl.transaction.xaframework.XaResourceHelpImpl;
+import org.neo4j.kernel.impl.transaction.xaframework.XaResourceManager;
 
 /**
  * An XA connection used with {@link LuceneDataSource}.

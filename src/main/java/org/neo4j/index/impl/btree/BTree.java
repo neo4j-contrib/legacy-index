@@ -20,16 +20,17 @@
 package org.neo4j.index.impl.btree;
 
 import java.util.Iterator;
-import org.neo4j.api.core.Direction;
-import org.neo4j.api.core.NeoService;
-import org.neo4j.api.core.Node;
-import org.neo4j.api.core.Relationship;
-import org.neo4j.api.core.RelationshipType;
-import org.neo4j.api.core.ReturnableEvaluator;
-import org.neo4j.api.core.StopEvaluator;
-import org.neo4j.api.core.TraversalPosition;
-import org.neo4j.api.core.Traverser;
-import org.neo4j.api.core.Traverser.Order;
+
+import org.neo4j.graphdb.Direction;
+import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.Relationship;
+import org.neo4j.graphdb.RelationshipType;
+import org.neo4j.graphdb.ReturnableEvaluator;
+import org.neo4j.graphdb.StopEvaluator;
+import org.neo4j.graphdb.TraversalPosition;
+import org.neo4j.graphdb.Traverser;
+import org.neo4j.graphdb.Traverser.Order;
 
 /**
  * A b-tree implementation on top of neo (using nodes/relationships 
@@ -68,7 +69,7 @@ public class BTree
 		KEY_ENTRY 
 	};
 	
-	private NeoService neo;
+	private GraphDatabaseService neo;
 	private TreeNode treeRoot;
 	
 	/**
@@ -79,7 +80,7 @@ public class BTree
 	 * @param neo the embedded neo instance
 	 * @param rootNode root node with incoming {@code TREE_ROOT} relationship.
 	 */
-	public BTree( NeoService neo, Node rootNode )
+	public BTree( GraphDatabaseService neo, Node rootNode )
 	{
 		this.neo = neo;
 		this.treeRoot = new TreeNode( this, rootNode );
@@ -376,7 +377,7 @@ public class BTree
 		return 9;
 	}
 	
-	NeoService getNeo()
+	GraphDatabaseService getNeo()
 	{
 		return neo;
 	}

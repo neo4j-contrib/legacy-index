@@ -23,7 +23,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-import org.neo4j.api.core.Node;
+import org.neo4j.graphdb.Node;
 import org.neo4j.index.Index;
 import org.neo4j.index.IndexHits;
 import org.neo4j.index.NeoTestCase;

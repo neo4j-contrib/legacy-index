@@ -40,20 +40,21 @@ import org.apache.lucene.search.Hits;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.TermQuery;
-import org.neo4j.api.core.EmbeddedNeo;
-import org.neo4j.api.core.NeoService;
-import org.neo4j.api.core.Node;
-import org.neo4j.api.core.NotInTransactionException;
 import org.neo4j.commons.iterator.CombiningIterator;
 import org.neo4j.commons.iterator.IteratorAsIterable;
-import org.neo4j.impl.cache.LruCache;
-import org.neo4j.impl.transaction.LockManager;
-import org.neo4j.impl.transaction.TxModule;
-import org.neo4j.impl.util.ArrayMap;
+import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.NotInTransactionException;
 import org.neo4j.index.IndexHits;
+import org.neo4j.index.IndexService;
 import org.neo4j.index.impl.GenericIndexService;
 import org.neo4j.index.impl.IdToNodeIterator;
 import org.neo4j.index.impl.SimpleIndexHits;
+import org.neo4j.kernel.EmbeddedGraphDatabase;
+import org.neo4j.kernel.impl.cache.LruCache;
+import org.neo4j.kernel.impl.transaction.LockManager;
+import org.neo4j.kernel.impl.transaction.TxModule;
+import org.neo4j.kernel.impl.util.ArrayMap;
 
 /**
  * An implementation of {@link IndexService} which uses Lucene as backend.
@@ -92,10 +93,10 @@ public class LuceneIndexService extends GenericIndexService
     /**
      * @param neo the {@link NeoService} to use.
      */
-    public LuceneIndexService( NeoService neo )
+    public LuceneIndexService( GraphDatabaseService neo )
     {
         super( neo );
-        EmbeddedNeo embeddedNeo = ((EmbeddedNeo) neo);
+        EmbeddedGraphDatabase embeddedNeo = ( ( EmbeddedGraphDatabase ) neo );
         String luceneDirectory = 
             embeddedNeo.getConfig().getTxModule().getTxLogDirectory() +
                 "/" + getDirName();
@@ -398,7 +399,8 @@ public class LuceneIndexService extends GenericIndexService
     public synchronized void shutdown()
     {
         super.shutdown();
-        EmbeddedNeo embeddedNeo = ( ( EmbeddedNeo ) getNeo() );
+        EmbeddedGraphDatabase embeddedNeo =
+            ( ( EmbeddedGraphDatabase ) getNeo() );
         TxModule txModule = embeddedNeo.getConfig().getTxModule();
         if ( txModule.getXaDataSourceManager().hasDataSource( getDirName() ) )
         {

@@ -24,8 +24,8 @@ import java.util.Map;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Index;
-import org.neo4j.impl.transaction.xaframework.XaLogicalLog;
-import org.neo4j.impl.transaction.xaframework.XaTransaction;
+import org.neo4j.kernel.impl.transaction.xaframework.XaLogicalLog;
+import org.neo4j.kernel.impl.transaction.xaframework.XaTransaction;
 
 /**
  * A lucene XA data store for storing fulltext indexing.
