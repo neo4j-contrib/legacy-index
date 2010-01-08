@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package org.neo4j.util.timeline;
+package org.neo4j.index.timeline;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -34,7 +34,7 @@ import org.neo4j.api.core.Transaction;
 import org.neo4j.api.core.TraversalPosition;
 import org.neo4j.api.core.Traverser;
 import org.neo4j.api.core.Traverser.Order;
-import org.neo4j.util.btree.BTree;
+import org.neo4j.index.impl.btree.BTree;
 
 /**
  * An implementation of {@link TimelineIndex} on top of neo4j,
