@@ -128,7 +128,7 @@ class NodeEntry
 	
     Node getTheNode()
     {
-        return getBTree().getNeo().getNodeById( 
+        return getBTree().getGraphDb().getNodeById( 
             (Long) getUnderlyingRelationship().getProperty( NODE_ID ) ); 
     }
     

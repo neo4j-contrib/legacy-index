@@ -33,7 +33,7 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
     @Override
     protected IndexService instantiateIndexService()
     {
-        return new LuceneFulltextIndexService( neo() );
+        return new LuceneFulltextIndexService( graphDb() );
     }
     
     @Override
@@ -50,7 +50,7 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
 
     public void testSimpleFulltext()
     {
-        Node node1 = neo().createNode();
+        Node node1 = graphDb().createNode();
         
         String value1 = "A value with spaces in it which the fulltext " +
             "index should tokenize";
@@ -73,7 +73,7 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
             value1 ).iterator().hasNext() );
 
         indexService().index( node1, key, value1 );
-        Node node2 = neo().createNode();
+        Node node2 = graphDb().createNode();
         indexService().index( node2, key, value1 );
         restartTx();
         
@@ -120,8 +120,8 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
     
     public void testSpecific() throws Exception
     {
-        Node andy = neo().createNode();
-        Node larry = neo().createNode();
+        Node andy = graphDb().createNode();
+        Node larry = graphDb().createNode();
         String key = "atest";
         indexService().index( andy, key, "Andy Wachowski" );
         indexService().index( larry, key, "Larry Wachowski" );
@@ -150,8 +150,8 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
     
     public void testAnotherChangeValueBug() throws Exception
     {
-        Node andy = neo().createNode();
-        Node larry = neo().createNode();
+        Node andy = graphDb().createNode();
+        Node larry = graphDb().createNode();
 
         andy.setProperty( "name", "Andy Wachowski" );
         // Deliberately set Larry's name wrong
@@ -184,7 +184,7 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
         String value = "value";
         for ( int i = 0; i < lazyThreshold + 1; i++ )
         {
-            Node node = neo().createNode();
+            Node node = graphDb().createNode();
             nodes.add( node );
             indexService().index( node, key, value );
         }

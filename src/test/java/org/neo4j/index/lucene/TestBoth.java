@@ -32,21 +32,21 @@ public class TestBoth extends NeoTestCase
     public void setUp() throws Exception
     {
         super.setUp();
-        this.indexService = new LuceneIndexService( neo() );
-        this.fulltextIndexService = new LuceneFulltextIndexService( neo() );
+        this.indexService = new LuceneIndexService( graphDb() );
+        this.fulltextIndexService = new LuceneFulltextIndexService( graphDb() );
     }
 
     @Override
-    protected void beforeNeoShutdown()
+    protected void beforeShutdown()
     {
-        super.beforeNeoShutdown();
+        super.beforeShutdown();
         this.indexService.shutdown();
         this.fulltextIndexService.shutdown();
     }
     
     public void testSome() throws Exception
     {
-        Node node = neo().createNode();
+        Node node = graphDb().createNode();
         
         String key = "some_key";
         String value1 = "347384738-2";

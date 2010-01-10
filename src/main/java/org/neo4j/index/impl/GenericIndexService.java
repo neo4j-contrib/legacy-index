@@ -25,9 +25,13 @@ import org.neo4j.graphdb.Transaction;
 import org.neo4j.index.IndexService;
 import org.neo4j.index.Isolation;
 
+/**
+ * Basic implementation of an {@link IndexService} which implements the
+ * {@link Isolation} aspects.
+ */
 public abstract class GenericIndexService implements IndexService
 {
-    private final GraphDatabaseService neo;
+    private final GraphDatabaseService graphDb;
     private final IndexServiceQueue queue;
     
     private ThreadLocal<Isolation> threadIsolation =
@@ -45,13 +49,17 @@ public abstract class GenericIndexService implements IndexService
 
     protected abstract void indexThisTx( Node node, String key, Object value );
 
-    public GenericIndexService( GraphDatabaseService service )
+    /**
+     * @param graphDb the {@link GraphDatabaseService} to associate this index
+     * to.
+     */
+    public GenericIndexService( GraphDatabaseService graphDb )
     {
-        if ( service == null )
+        if ( graphDb == null )
         {
             throw new IllegalArgumentException( "Null neo service" );
         }
-        this.neo = service;
+        this.graphDb = graphDb;
         queue = new IndexServiceQueue( this );
         queue.start();
     }
@@ -82,9 +90,9 @@ public abstract class GenericIndexService implements IndexService
         }
     }
     
-    protected GraphDatabaseService getNeo()
+    protected GraphDatabaseService getGraphDb()
     {
-        return neo;
+        return graphDb;
     }
     
     public void setIsolation( Isolation level )
@@ -92,14 +100,9 @@ public abstract class GenericIndexService implements IndexService
         threadIsolation.set( level );
     }
     
-    public Isolation getIsolation()
-    {
-        return threadIsolation.get();
-    }
-    
     protected Transaction beginTx()
     {
-        return neo.beginTx();
+        return graphDb.beginTx();
     }
     
     public void shutdown()

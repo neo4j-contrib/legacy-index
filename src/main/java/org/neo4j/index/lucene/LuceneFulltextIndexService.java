@@ -42,7 +42,7 @@ import org.neo4j.index.IndexHits;
  * It stores more data per lucene entry to make it possible. This makes it
  * incompatible with {@link LuceneIndexService} so it has got its own XA
  * resource ID. This means that can have one {@link LuceneIndexService} and
- * one {@link LuceneFulltextIndexService} for a {@link NeoService}.
+ * one {@link LuceneFulltextIndexService} for a {@link GraphDatabaseService}.
  * 
  * See more information at http://wiki.neo4j.org/content/Indexing_with_IndexService#Fulltext_indexing
  */
@@ -52,11 +52,11 @@ public class LuceneFulltextIndexService extends LuceneIndexService
     protected static final String FULLTEXT_DIR_NAME_POSTFIX = "-fulltext";
     
     /**
-     * @param neo the {@link NeoService} to use.
+     * @param graphDb the {@link GraphDatabaseService} to use.
      */
-    public LuceneFulltextIndexService( GraphDatabaseService neo )
+    public LuceneFulltextIndexService( GraphDatabaseService graphDb )
     {
-        super( neo );
+        super( graphDb );
     }
 
     @Override

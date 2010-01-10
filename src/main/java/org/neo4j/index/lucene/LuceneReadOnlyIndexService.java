@@ -52,7 +52,7 @@ import org.neo4j.kernel.impl.cache.LruCache;
  * {@link ReadOnlyIndexException} in
  * {@link IndexService#index(Node, String, Object)}
  * and {@link IndexService#removeIndex(Node, String, Object)}.
- * See {@link EmbeddedReadOnlyNeo}.
+ * See {@link EmbeddedReadOnlyGraphDatabase}.
  */
 public class LuceneReadOnlyIndexService extends GenericIndexService
 {
@@ -63,25 +63,25 @@ public class LuceneReadOnlyIndexService extends GenericIndexService
     private int lazynessThreshold = 100;
 
     /**
-     * @param neo the {@link NeoService} to use.
+     * @param graphDb the {@link GraphDatabaseService} to use.
      */
-    public LuceneReadOnlyIndexService( GraphDatabaseService neo )
+    public LuceneReadOnlyIndexService( GraphDatabaseService graphDb )
     {
-        super( neo );
+        super( graphDb );
         String luceneDirectory;
-        if ( neo instanceof EmbeddedReadOnlyGraphDatabase )
+        if ( graphDb instanceof EmbeddedReadOnlyGraphDatabase )
         {
-            EmbeddedReadOnlyGraphDatabase embeddedNeo =
-                ( ( EmbeddedReadOnlyGraphDatabase ) neo );
+            EmbeddedReadOnlyGraphDatabase embeddedGraphDb =
+                ( ( EmbeddedReadOnlyGraphDatabase ) graphDb );
             luceneDirectory = 
-                embeddedNeo.getStoreDir() + "/" + getDirName();
+                embeddedGraphDb.getStoreDir() + "/" + getDirName();
         }
         else
         {
-            EmbeddedGraphDatabase embeddedNeo =
-                ( ( EmbeddedGraphDatabase ) neo );
+            EmbeddedGraphDatabase embeddedGraphDb =
+                ( ( EmbeddedGraphDatabase ) graphDb );
             luceneDirectory = 
-                embeddedNeo.getStoreDir() + "/" + getDirName();
+                embeddedGraphDb.getStoreDir() + "/" + getDirName();
         }
         xaDs = new LuceneReadOnlyDataSource( luceneDirectory );
     }
@@ -118,13 +118,39 @@ public class LuceneReadOnlyIndexService extends GenericIndexService
         throw new ReadOnlyIndexException();
     }
     
-    public void setLazynessThreshold( int numberOfHitsBeforeLazyLoading )
+    /**
+     * (Copied from {@link LuceneIndexService#setLazySearchResultThreshold(int)})
+     *
+     * Sets the threshold for when a result is considered big enough to
+     * skip cache and be returned as a totally lazy iterator so that
+     * {@link #getNodes(String, Object)} will return very fast and all the
+     * reading and fetching of nodes is done lazily before each step in the
+     * iteration of the returned result. The default value is
+     * {@link LuceneIndexService#DEFAULT_LAZY_SEARCH_RESULT_THRESHOLD}.
+     * @param numberOfHitsBeforeLazyLoading the threshold where results which
+     * are bigger than that threshold becomes lazy.
+     */
+    public void setLazySearchResultThreshold(
+        int numberOfHitsBeforeLazyLoading )
     {
         this.lazynessThreshold = numberOfHitsBeforeLazyLoading;
         xaDs.invalidateCache();
     }
     
-    public int getLazynessThreshold()
+    /**
+     * (Copied from {@link LuceneIndexService#getLazySearchResultThreshold()}
+     * 
+     * Returns the threshold for when a result is considered big enough to
+     * skip cache and be returned as a totally lazy iterator so that
+     * {@link #getNodes(String, Object)} will return very fast and all the
+     * reading and fetching of nodes is done lazily before each step in the
+     * iteration of the returned result. The default value is
+     * {@link LuceneIndexService#DEFAULT_LAZY_SEARCH_RESULT_THRESHOLD}.
+     * 
+     * @return the threshold for when a result is considered big enough
+     * to be returned as a lazy iteration.
+     */
+    public int getLazySearchResultThreshold()
     {
         return this.lazynessThreshold;
     }
@@ -217,7 +243,7 @@ public class LuceneReadOnlyIndexService extends GenericIndexService
     protected Iterator<Node> instantiateIdToNodeIterator(
         final Iterator<Long> ids )
     {
-        return new IdToNodeIterator( ids, getNeo() );
+        return new IdToNodeIterator( ids, getGraphDb() );
     }
     
     protected Query formQuery( String key, Object value )

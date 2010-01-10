@@ -157,11 +157,12 @@ class TreeNode
 		}
 		if ( count >= commitInterval )
 		{
-            EmbeddedGraphDatabase neo = (EmbeddedGraphDatabase) bTree.getNeo();
+            EmbeddedGraphDatabase graphDb =
+                ( EmbeddedGraphDatabase ) bTree.getGraphDb();
             try
             {
-                Transaction tx = neo.getConfig().getTxModule().getTxManager().
-                    getTransaction();
+                Transaction tx = graphDb.getConfig().getTxModule()
+                    .getTxManager().getTransaction();
                 if ( tx != null )
                 {
                     tx.commit();
@@ -171,7 +172,7 @@ class TreeNode
             {
                 throw new RuntimeException( e );
             }
-            neo.beginTx();
+            graphDb.beginTx();
 			count = 0;
 		}
 		return count;
@@ -249,7 +250,7 @@ class TreeNode
 					entry = entry.getNextKey();
 				}
 				// create new blank node for key entry relationship
-				Node blankNode = bTree.getNeo().createNode();
+				Node blankNode = bTree.getGraphDb().createNode();
 				createEntry( keyEntry.getStartNode(), blankNode, theNode );
 				// move previous keyEntry to start at blank node
 				keyEntry.move( this, blankNode, keyEntry.getEndNode() );
@@ -271,7 +272,7 @@ class TreeNode
 					return subTree.addEntry( theNode, ignoreIfExist );
 				}
 				// ok just append the element
-				Node blankNode = bTree.getNeo().createNode();				
+				Node blankNode = bTree.getGraphDb().createNode();				
 				createEntry( keyEntry.getEndNode(), blankNode, theNode );
 				entryCount++;
 				assert entryCount <= bTree.getOrder();
@@ -289,7 +290,7 @@ class TreeNode
 		assert !treeNode.getRelationships( 
 			RelTypes.SUB_TREE ).iterator().hasNext();
 		// ok add first entry in root
-		Node blankNode = bTree.getNeo().createNode();
+		Node blankNode = bTree.getGraphDb().createNode();
 		createEntry( treeNode, blankNode, theNode );
         return true;
 	}
@@ -357,7 +358,7 @@ class TreeNode
 			if ( bTree.getComparator().compare( theNode, currentNode ) < 0 )
 			{
 				// create new blank node for key entry relationship
-				Node blankNode = bTree.getNeo().createNode();
+				Node blankNode = bTree.getGraphDb().createNode();
 				NodeEntry newEntry = createEntry( keyEntry.getStartNode(), 
 					blankNode, theNode );
 				// move previous keyEntry to start at blank node
@@ -368,13 +369,13 @@ class TreeNode
 			if ( keyEntry.getNextKey() == null )
 			{
 				// just append the element
-				Node blankNode = bTree.getNeo().createNode();
+				Node blankNode = bTree.getGraphDb().createNode();
 				return createEntry( keyEntry.getEndNode(), blankNode, theNode );
 			}
 			keyEntry = keyEntry.getNextKey();
 		}
 		// ok insert first entry (in new root)
-		Node blankNode = bTree.getNeo().createNode();
+		Node blankNode = bTree.getGraphDb().createNode();
 		return createEntry( treeNode, blankNode, theNode );
 	}
 	
@@ -385,7 +386,7 @@ class TreeNode
 		{
 			assert isRoot();
 			// make new root
-			parent = new TreeNode( bTree, bTree.getNeo().createNode() );
+			parent = new TreeNode( bTree, bTree.getGraphDb().createNode() );
 			bTree.makeRoot( parent );
 		}
 		else
@@ -562,7 +563,7 @@ class TreeNode
 		entryToMoveUp.getEndNode().delete();
 		entryToMoveUp.move( parentNode, entryToMoveDown.getStartNode(), 
 			entryToMoveDown.getEndNode() );
-		Node newStartNode = bTree.getNeo().createNode();
+		Node newStartNode = bTree.getGraphDb().createNode();
 		entryToMoveDown.move( this, newStartNode, treeNode );
 		Node parentToReAttachTo = disconnectFromParent();
 		treeNode = newStartNode;
@@ -596,7 +597,7 @@ class TreeNode
 		entryToMoveUp.getStartNode().delete();
 		entryToMoveUp.move( parentNode, entryToMoveDown.getStartNode(), 
 			entryToMoveDown.getEndNode() );
-		Node newLastNode = bTree.getNeo().createNode();
+		Node newLastNode = bTree.getGraphDb().createNode();
 		entryToMoveDown.move( this, this.getLastEntry().getEndNode(), 
 			newLastNode );
 		if ( subTree != null )
@@ -630,7 +631,7 @@ class TreeNode
 		}
 		this.disconnectFromParent();
 		entryToMoveDown.getEndNode().delete();
-		Node blankNode = bTree.getNeo().createNode();
+		Node blankNode = bTree.getGraphDb().createNode();
 		entryToMoveDown.move( leftSibling, 
 			leftSibling.getLastEntry().getEndNode(), blankNode );
 		entry.getStartNode().delete();
@@ -680,7 +681,7 @@ class TreeNode
 		}
 		rightSibling.disconnectFromParent();
 		entryToMoveDown.getEndNode().delete();
-		Node blankNode = bTree.getNeo().createNode();
+		Node blankNode = bTree.getGraphDb().createNode();
 		entryToMoveDown.move( this, this.getLastEntry().getEndNode(), 
 			blankNode );
 		entry.getStartNode().delete();

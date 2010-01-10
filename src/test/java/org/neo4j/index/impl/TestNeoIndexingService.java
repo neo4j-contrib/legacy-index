@@ -36,18 +36,18 @@ public class TestNeoIndexingService extends NeoTestCase
 	public void setUp() throws Exception
 	{
 	    super.setUp();
-        indexService = new NeoIndexService( neo() );
+        indexService = new NeoIndexService( graphDb() );
 	}
 	
 	@Override
-	protected void beforeNeoShutdown()
+	protected void beforeShutdown()
 	{
         indexService.shutdown();
 	}
     
     public void testSimple()
     {
-        Node node1 = neo().createNode();
+        Node node1 = graphDb().createNode();
         
         assertTrue( !indexService.getNodes( "a_property", 
             1 ).iterator().hasNext() );
@@ -64,7 +64,7 @@ public class TestNeoIndexingService extends NeoTestCase
             1 ).iterator().hasNext() );
 
         indexService.index( node1, "a_property", 1 );
-        Node node2 = neo().createNode();
+        Node node2 = graphDb().createNode();
         indexService.index( node2, "a_property", 1 );
         
         IndexHits hits = indexService.getNodes( "a_property", 1 );
@@ -131,9 +131,9 @@ public class TestNeoIndexingService extends NeoTestCase
         restartTx();
         try 
         {
-            Node newNode = neo().createNode();
+            Node newNode = graphDb().createNode();
             newNode.setProperty("id", testValue);
-            neo().getReferenceNode().createRelationshipTo(newNode,
+            graphDb().getReferenceNode().createRelationshipTo(newNode,
                 DynamicRelationshipType.withName( "LINKS_TO" ));
             indexService.index(newNode, "id", testValue);
             restartTx( true );
@@ -148,9 +148,9 @@ public class TestNeoIndexingService extends NeoTestCase
         restartTx();
         try 
         {
-            Node newNode = neo().createNode();
+            Node newNode = graphDb().createNode();
             newNode.setProperty("id", testValue);
-            neo().getReferenceNode().createRelationshipTo(newNode,
+            graphDb().getReferenceNode().createRelationshipTo(newNode,
                 DynamicRelationshipType.withName( "LINKS_TO" ));
             indexService.index(newNode, "id", testValue);
             restartTx( false );

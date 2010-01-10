@@ -56,27 +56,27 @@ public class NeoIndexService extends GenericIndexService
     }
 
     /**
-     * @param neo the {@link NeoService} to use.
+     * @param graphDb the {@link GraphDatabaseService} to use.
      */
-    public NeoIndexService( GraphDatabaseService neo )
+    public NeoIndexService( GraphDatabaseService graphDb )
     {
-        super( neo );
-        Transaction tx = neo.beginTx();
+        super( graphDb );
+        Transaction tx = graphDb.beginTx();
         try
         {
-            Node refNode = neo.getReferenceNode();
+            Node refNode = graphDb.getReferenceNode();
             Relationship rel = refNode.getSingleRelationship( 
                 RelTypes.INDEX_SERVICE, Direction.OUTGOING );
             if ( rel == null )
             {
-                rootIndexService = neo.createNode();
+                rootIndexService = graphDb.createNode();
                 refNode.createRelationshipTo( rootIndexService, 
                     RelTypes.INDEX_SERVICE );
-                Node keyIndexRoot = neo.createNode();
+                Node keyIndexRoot = graphDb.createNode();
                 rootIndexService.createRelationshipTo( keyIndexRoot, 
                     RelTypes.KEY_INDEX );
                 keyToIndex = new SingleValueIndex( "keyToIndex", keyIndexRoot, 
-                    neo );
+                    graphDb );
             }
             else
             {
@@ -90,7 +90,7 @@ public class NeoIndexService extends GenericIndexService
                 }
                 Node keyIndexRoot = keyRel.getEndNode();
                 keyToIndex = new SingleValueIndex( "keyToIndex", keyIndexRoot, 
-                    neo );
+                    graphDb );
             }
             tx.success();
         }
@@ -117,18 +117,18 @@ public class NeoIndexService extends GenericIndexService
             if ( valueIndexNode == null && create )
             {
                 // create new value index
-                valueIndexNode = getNeo().createNode();
+                valueIndexNode = getGraphDb().createNode();
                 keyToIndex.index( valueIndexNode, key );
                 rootIndexService.createRelationshipTo( valueIndexNode, 
                     RelTypes.VALUE_INDEX );
                 valueIndex = new MultiValueIndex( "index_" + key, 
-                    valueIndexNode, getNeo() );
+                    valueIndexNode, getGraphDb() );
                 keyToIndexCache.put( key, valueIndex );
             }
             else if ( valueIndexNode != null )
             {
                 valueIndex = new MultiValueIndex( "index_" + key, 
-                    valueIndexNode, getNeo() );
+                    valueIndexNode, getGraphDb() );
                 keyToIndexCache.put( key, valueIndex );
             }
         }

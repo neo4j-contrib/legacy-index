@@ -37,17 +37,17 @@ import org.neo4j.kernel.EmbeddedGraphDatabase;
 public abstract class NeoTestCase extends TestCase
 {
 	private File basePath = new File( "target/var" );
-    private File neoPath = new File( basePath, "neo" );
-    private GraphDatabaseService neo;
+    private File dbPath = new File( basePath, "neo" );
+    private GraphDatabaseService graphDb;
     private Transaction tx;
 
     @Override
     protected void setUp() throws Exception
     {
         super.setUp();
-        deleteFileOrDirectory( neoPath );
-        neo = new EmbeddedGraphDatabase( neoPath.getAbsolutePath() );
-        tx = neo.beginTx();
+        deleteFileOrDirectory( dbPath );
+        graphDb = new EmbeddedGraphDatabase( dbPath.getAbsolutePath() );
+        tx = graphDb.beginTx();
     }
     
     @Override
@@ -55,12 +55,12 @@ public abstract class NeoTestCase extends TestCase
     {
         tx.success();
         tx.finish();
-        beforeNeoShutdown();
-        neo.shutdown();
+        beforeShutdown();
+        graphDb.shutdown();
         super.tearDown();
     }
     
-    protected void beforeNeoShutdown()
+    protected void beforeShutdown()
     {
     }
     
@@ -71,7 +71,7 @@ public abstract class NeoTestCase extends TestCase
     
     protected File getNeoPath()
     {
-        return neoPath;
+        return dbPath;
     }
     
     protected void deleteFileOrDirectory( File file )
@@ -110,12 +110,12 @@ public abstract class NeoTestCase extends TestCase
             tx.failure();
         }
         tx.finish();
-        tx = neo.beginTx();
+        tx = graphDb.beginTx();
     }
 
-    protected GraphDatabaseService neo()
+    protected GraphDatabaseService graphDb()
     {
-        return neo;
+        return graphDb;
     }
     
     protected <T> void assertCollection( Collection<T> collection,

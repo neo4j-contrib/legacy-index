@@ -24,10 +24,10 @@ import org.neo4j.graphdb.Node;
 import org.neo4j.index.impl.btree.KeyEntry;
 
 /**
- * A "multi" index implementation using {@link org.neo4j.util.btree.BTree BTree}
- * that can index multiple nodes per key. They key is checked for equality 
- * using both {@link #hashCode()} and {@link #equals(Object)} methods. 
- * <p>
+ * A "multi" index implementation using
+ * {@link org.neo4j.index.impl.btree.BTree BTree} that can index multiple nodes
+ * per key. They key is checked for equality using both {@link #hashCode()} and
+ * {@link #equals(Object)} methods. <p>
  * Note: this implementation is not thread safe (yet).
  * 
  * This class isn't ready for general usage yet and use of it is discouraged.
@@ -44,14 +44,14 @@ public class MultiValueIndex extends AbstractIndex
 	 * @param name The unique name of the index or null if index already
 	 * created (using specified underlying node)
 	 * @param underlyingNode The underlying node representing the index
-	 * @param neo The embedded neo instance
+	 * @param graphDb The embedded neo instance
 	 * @throws IllegalArgumentException if the underlying node is a index with
 	 * a different name set.
 	 */
 	public MultiValueIndex( String name, Node underlyingNode,
-	    GraphDatabaseService neo )
+	    GraphDatabaseService graphDb )
 	{
-		super( name, underlyingNode, neo );
+		super( name, underlyingNode, graphDb );
 	}
 	
 	@Override

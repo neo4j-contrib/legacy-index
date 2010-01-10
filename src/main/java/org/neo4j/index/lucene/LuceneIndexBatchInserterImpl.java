@@ -59,7 +59,7 @@ import org.neo4j.kernel.impl.util.FileUtils;
 public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
 {
     private final String storeDir;
-    private final BatchInserter neo;
+    private final BatchInserter inserter;
 
     private final ArrayMap<String,IndexWriterContext> indexWriters = 
         new ArrayMap<String,IndexWriterContext>( 6, false, false );
@@ -78,12 +78,12 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
     private IndexService asIndexService;
     
     /**
-     * @param neo the {@link BatchInserter} to use.
+     * @param inserter the {@link BatchInserter} to use.
      */
-    public LuceneIndexBatchInserterImpl( BatchInserter neo )
+    public LuceneIndexBatchInserterImpl( BatchInserter inserter )
     {
-        this.neo = neo;
-        this.storeDir = fixPath( neo.getStore() + "/" + getDirName() );
+        this.inserter = inserter;
+        this.storeDir = fixPath( inserter.getStore() + "/" + getDirName() );
         this.asIndexService = new AsIndexService();
     }
     
@@ -300,7 +300,7 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
                 @Override
                 protected Node underlyingObjectToObject( Long id )
                 {
-                    return neo.getGraphDbService().getNodeById( id );
+                    return inserter.getGraphDbService().getNodeById( id );
                 }
             };
             return new SimpleIndexHits<Node>( nodes, ids.size() );
@@ -310,7 +310,7 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
         {
             long id =
                 LuceneIndexBatchInserterImpl.this.getSingleNode( key, value );
-            return id == -1 ? null : neo.getGraphDbService().getNodeById( id );
+            return id == -1 ? null : inserter.getGraphDbService().getNodeById( id );
         }
 
         public void index( Node node, String key, Object value )

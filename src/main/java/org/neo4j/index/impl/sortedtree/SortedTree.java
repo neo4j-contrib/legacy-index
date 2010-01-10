@@ -46,21 +46,21 @@ public class SortedTree
 		KEY_ENTRY 
 	};
 	
-	private final GraphDatabaseService neo;
+	private final GraphDatabaseService graphDb;
     private final Comparator<Node> nodeComparator;
 	private TreeNode treeRoot;
 	
 	/**
-	 * @param neo the {@link NeoService} instance.
+	 * @param graphDb the {@link GraphDatabaseService} instance.
 	 * @param rootNode the root of this tree.
 	 * @param nodeComparator the {@link Comparator} to use to sort the nodes.
 	 * It's important to use the same {@link Comparator} for a given root node
 	 * to get the expected results.
 	 */
-	public SortedTree( GraphDatabaseService neo, Node rootNode, 
+	public SortedTree( GraphDatabaseService graphDb, Node rootNode, 
         Comparator<Node> nodeComparator )
 	{
-		this.neo = neo;
+		this.graphDb = graphDb;
         this.nodeComparator = nodeComparator;
 		this.treeRoot = new TreeNode( this, rootNode );
 	}
@@ -138,9 +138,9 @@ public class SortedTree
 		return 9;
 	}
 	
-	GraphDatabaseService getNeo()
+	GraphDatabaseService getGraphDb()
 	{
-		return neo;
+		return graphDb;
 	}
     
     /**

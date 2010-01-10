@@ -13,7 +13,7 @@ public class TestLuceneIndexLazyness extends NeoTestCase
     
     protected IndexService instantiateIndexService()
     {
-        return new LuceneIndexService( neo() );
+        return new LuceneIndexService( graphDb() );
     }
     
     @Override
@@ -29,7 +29,7 @@ public class TestLuceneIndexLazyness extends NeoTestCase
     }
     
     @Override
-    protected void beforeNeoShutdown()
+    protected void beforeShutdown()
     {
         indexService().shutdown();
     }
@@ -41,7 +41,7 @@ public class TestLuceneIndexLazyness extends NeoTestCase
         Collection<Node> nodes = new ArrayList<Node>();
         for ( int i = 0; i < 20000; i++ )
         {
-            Node node = neo().createNode();
+            Node node = graphDb().createNode();
             indexService.index( node, key, value );
             nodes.add( node );
             if ( i == 2000 )

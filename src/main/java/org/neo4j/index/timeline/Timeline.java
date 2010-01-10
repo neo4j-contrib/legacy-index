@@ -63,7 +63,7 @@ public class Timeline implements TimelineIndex
 	private final boolean indexed;
 	private BTree indexBTree;
 	private final String name;
-	private final GraphDatabaseService neo;
+	private final GraphDatabaseService graphDb;
 	
 	// lazy init cache holders for first and last
 	private Node firstNode;
@@ -78,20 +78,20 @@ public class Timeline implements TimelineIndex
 	 * timeline already exist
 	 * @param underlyingNode The underlying node representing the timeline
 	 * @param indexed Set to <CODE>true</CODE> if this timeline is indexed 
-	 * @param neo The embedded neo instance
+	 * @param graphDb the {@link GraphDatabaseService}
 	 */
 	public Timeline( String name, Node underlyingNode, boolean indexed, 
-	    GraphDatabaseService neo )
+	    GraphDatabaseService graphDb )
 	{
-		if ( underlyingNode == null || neo == null )
+		if ( underlyingNode == null || graphDb == null )
 		{
 			throw new IllegalArgumentException( 
 				"Null parameter underlyingNode=" + underlyingNode +
-				" neo=" + neo );
+				" graphDb=" + graphDb );
 		}
 		this.underlyingNode = underlyingNode;
-		this.neo = neo;
-		Transaction tx = neo.beginTx();
+		this.graphDb = graphDb;
+		Transaction tx = graphDb.beginTx();
 		try
 		{
 		    assertPropertyIsSame( TIMELINE_NAME, name );
@@ -104,11 +104,11 @@ public class Timeline implements TimelineIndex
 					BTree.RelTypes.TREE_ROOT, Direction.OUTGOING );
 				if ( bTreeRel == null )
 				{
-					Node bTreeNode = neo.createNode();
+					Node bTreeNode = graphDb.createNode();
 					bTreeRel = underlyingNode.createRelationshipTo( bTreeNode, 
 						BTree.RelTypes.TREE_ROOT );
 				}
-				indexBTree = new BTree( neo, bTreeRel.getEndNode() );
+				indexBTree = new BTree( graphDb, bTreeRel.getEndNode() );
 			}
 			tx.success();
 		}
@@ -144,12 +144,12 @@ public class Timeline implements TimelineIndex
      * @param name The unique name of the timeline or <CODE>null</CODE> if 
      * timeline already exist
      * @param underlyingNode The underlying node representing the timeline
-     * @param neo The embedded neo instance
+     * @param graphDb The {@link GraphDatabaseService}.
      */
     public Timeline( String name, Node underlyingNode,
-        GraphDatabaseService neo )
+        GraphDatabaseService graphDb )
     {
-        this( name, underlyingNode, true, neo );
+        this( name, underlyingNode, true, graphDb );
     }
     
     /**
@@ -168,7 +168,7 @@ public class Timeline implements TimelineIndex
 		{
 			return lastNode;
 		}
-		Transaction tx = neo.beginTx();
+		Transaction tx = graphDb.beginTx();
 		try
 		{
 			Relationship rel = underlyingNode.getSingleRelationship( 
@@ -195,7 +195,7 @@ public class Timeline implements TimelineIndex
 		{
 			return firstNode;
 		}
-		Transaction tx = neo.beginTx();
+		Transaction tx = graphDb.beginTx();
 		try
 		{
 			Relationship rel = underlyingNode.getSingleRelationship( 
@@ -222,7 +222,7 @@ public class Timeline implements TimelineIndex
 		{
 			throw new IllegalArgumentException( "Null node" );
 		}
-		Transaction tx = neo.beginTx();
+		Transaction tx = graphDb.beginTx();
 		try
 		{
 			for ( Relationship rel : nodeToAdd.getRelationships( 
@@ -331,7 +331,7 @@ public class Timeline implements TimelineIndex
 	
 	private Node createNewTimeNode( long timestamp, Node nodeToAdd )
 	{
-		Node node = neo.createNode();
+		Node node = graphDb.createNode();
 		node.setProperty( TIMESTAMP, timestamp );
 		Relationship instanceRel = node.createRelationshipTo( nodeToAdd, 
 			RelTypes.TIMELINE_INSTANCE );
@@ -341,7 +341,7 @@ public class Timeline implements TimelineIndex
 	
 	public long getTimestampForNode( Node node )
 	{
-		Transaction tx = neo.beginTx();
+		Transaction tx = graphDb.beginTx();
 		try
 		{
 			Traverser traverser = node.traverse( Traverser.Order.DEPTH_FIRST,
@@ -397,7 +397,7 @@ public class Timeline implements TimelineIndex
 		}
 		else
 		{
-			Node indexedNode = neo.getNodeById( nodeId );
+			Node indexedNode = graphDb.getNodeById( nodeId );
 			int indexCount = (Integer) indexedNode.getProperty( INDEX_COUNT );
 			indexCount++;
 			if ( indexCount >= INDEX_TRIGGER_COUNT )
@@ -446,7 +446,7 @@ public class Timeline implements TimelineIndex
 			throw new IllegalArgumentException( 
 				"Cannot remove underlying node" );
 		}
-		Transaction tx = neo.beginTx();
+		Transaction tx = graphDb.beginTx();
 		try
 		{
 			Relationship instanceRel = null;
@@ -526,7 +526,7 @@ public class Timeline implements TimelineIndex
 						timestamp );
 					if ( nodeId != null )
 					{
-						Node indexedNode = neo.getNodeById( nodeId );
+						Node indexedNode = graphDb.getNodeById( nodeId );
 						int count = (Integer) indexedNode.getProperty( 
 							INDEX_COUNT );
 						count--;
@@ -626,7 +626,7 @@ public class Timeline implements TimelineIndex
 			Long nodeId = (Long) indexBTree.getClosestLowerEntry( timestamp );
 			if ( nodeId != null )
 			{
-				startNode = neo.getNodeById( nodeId );
+				startNode = graphDb.getNodeById( nodeId );
 			}
 			return startNode;
 		}

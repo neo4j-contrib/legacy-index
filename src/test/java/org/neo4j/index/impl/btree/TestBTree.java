@@ -35,10 +35,10 @@ public class TestBTree extends NeoTestCase
 	public void setUp() throws Exception
 	{
 	    super.setUp();
-		Node bNode = neo().createNode();
-		neo().getReferenceNode().createRelationshipTo( bNode, 
+		Node bNode = graphDb().createNode();
+		graphDb().getReferenceNode().createRelationshipTo( bNode, 
 			BTree.RelTypes.TREE_ROOT );
-		bTree = new BTree( neo(), bNode );
+		bTree = new BTree( graphDb(), bNode );
 	}
 	
 	@Override

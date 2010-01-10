@@ -36,13 +36,13 @@ public class TestMultiIndex extends NeoTestCase
 	public void setUp() throws Exception
 	{
 	    super.setUp();
-		Node node = neo().createNode();
-		index = new MultiValueIndex( "test_simple", node, neo() ); 
+		Node node = graphDb().createNode();
+		index = new MultiValueIndex( "test_simple", node, graphDb() ); 
 	}
 	
 	public void testSimpleIndexBasic()
 	{
-		Node node1 = neo().createNode();
+		Node node1 = graphDb().createNode();
 		Object key1 = 1;
 		
 		assertTrue( !index.getNodesFor( key1 ).iterator().hasNext() );
@@ -59,7 +59,7 @@ public class TestMultiIndex extends NeoTestCase
 		assertTrue( !index.getNodesFor( key1 ).iterator().hasNext() );
 
 		index.index( node1, key1 );
-		Node node2 = neo().createNode();
+		Node node2 = graphDb().createNode();
 		index.index( node2, key1 );
 		
 		hits = index.getNodesFor( key1 );
@@ -80,10 +80,10 @@ public class TestMultiIndex extends NeoTestCase
 	
 	public void testIllegalStuff()
 	{
-		Node node1 = neo().createNode();
+		Node node1 = graphDb().createNode();
 		try 
 		{ 
-			new MultiValueIndex( "blabla", null, neo() );
+			new MultiValueIndex( "blabla", null, graphDb() );
 			fail( "Null parameter should throw exception" );
 		} 
 		catch ( IllegalArgumentException e ) { // good
@@ -95,10 +95,10 @@ public class TestMultiIndex extends NeoTestCase
 		} 
 		catch ( IllegalArgumentException e ) { // good
 		}
-		Index sIndex = new SingleValueIndex( "multi", node1, neo() );
+		Index sIndex = new SingleValueIndex( "multi", node1, graphDb() );
 		try 
 		{ 
-			new MultiValueIndex( "blabla", node1, neo() );
+			new MultiValueIndex( "blabla", node1, graphDb() );
 			fail( "Wrong index type should throw exception" );
 		} 
 		catch ( IllegalArgumentException e ) { // good
@@ -111,8 +111,8 @@ public class TestMultiIndex extends NeoTestCase
         Set<Node> nodes = new HashSet<Node>();
         for ( int i = 0; i < 100; i++ )
         {
-            Node node1 = neo().createNode();
-            Node node2 = neo().createNode();
+            Node node1 = graphDb().createNode();
+            Node node2 = graphDb().createNode();
             nodes.add( node1 );
             nodes.add( node2 );
             index.index( node1, i );

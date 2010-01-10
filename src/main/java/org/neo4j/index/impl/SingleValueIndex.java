@@ -24,7 +24,7 @@ import org.neo4j.graphdb.Node;
 import org.neo4j.index.impl.btree.KeyEntry;
 
 /**
- * A index implementation using {@link org.neo4j.util.btree.BTree BTree}. 
+ * A index implementation using {@link org.neo4j.index.impl.btree.BTree BTree}. 
  * This index can only hold a single value for each unique key.
  * <p>
  * Note: this implementation is not thread safe (yet).
@@ -42,15 +42,15 @@ public class SingleValueIndex extends AbstractIndex
 	 *
 	 * @param name The name of the index
 	 * @param underlyingNode The underlying node representing the index
-	 * @param neo The embedded neo instance
+	 * @param graphDb The embedded neo instance
 	 * @throws IllegalArgumentException if the underlying node is a index with
 	 * a different name set or the underlying node represents a different 
 	 * index
 	 */
 	public SingleValueIndex( String name, Node underlyingNode,
-	    GraphDatabaseService neo )
+	    GraphDatabaseService graphDb )
 	{
-		super( name, underlyingNode, neo );
+		super( name, underlyingNode, graphDb );
 	}
 
 	@Override

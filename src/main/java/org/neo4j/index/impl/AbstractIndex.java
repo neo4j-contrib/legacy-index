@@ -66,7 +66,7 @@ abstract class AbstractIndex implements Index
 	private final Node underlyingNode;
 	private BTree bTree;
 	private String name;
-	private GraphDatabaseService neo;
+	private GraphDatabaseService graphDb;
 
 	protected abstract String getIndexType();
 	protected abstract void addOrReplace( KeyEntry entry, long value );
@@ -85,22 +85,22 @@ abstract class AbstractIndex implements Index
 	 *
 	 * @param name The unique name of the index
 	 * @param underlyingNode The underlying node representing the index
-	 * @param neo The embedded neo instance
+	 * @param graphDb The embedded neo instance
 	 * @throws IllegalArgumentException if the underlying node is a index with
 	 * a different name set or wrong index type.
 	 */
 	public AbstractIndex( String name, Node underlyingNode,
-	    GraphDatabaseService neo )
+	    GraphDatabaseService graphDb )
 	{
-		if ( underlyingNode == null || neo == null )
+		if ( underlyingNode == null || graphDb == null )
 		{
 			throw new IllegalArgumentException( 
 				"Null parameter underlyingNode=" + underlyingNode +
-				" neo=" + neo );
+				" neo=" + graphDb );
 		}
 		this.underlyingNode = underlyingNode;
-		this.neo = neo;
-		Transaction tx = neo.beginTx();
+		this.graphDb = graphDb;
+		Transaction tx = graphDb.beginTx();
 		try
 		{
 			if ( underlyingNode.hasProperty( INDEX_NAME ) )
@@ -133,14 +133,14 @@ abstract class AbstractIndex implements Index
 				Direction.OUTGOING );
 			if ( bTreeRel != null )
 			{
-				bTree = new BTree( neo, bTreeRel.getEndNode() );
+				bTree = new BTree( graphDb, bTreeRel.getEndNode() );
 			}
 			else
 			{
-				Node bTreeNode = neo.createNode();
+				Node bTreeNode = graphDb.createNode();
 				underlyingNode.createRelationshipTo( bTreeNode, 
 					org.neo4j.index.impl.btree.BTree.RelTypes.TREE_ROOT );
-				bTree = new BTree( neo, bTreeNode );
+				bTree = new BTree( graphDb, bTreeNode );
 			}
 			tx.success();
 		}
@@ -179,7 +179,7 @@ abstract class AbstractIndex implements Index
 		{
 			throw new IllegalArgumentException( "Null node" );
 		}
-		Transaction tx = neo.beginTx();
+		Transaction tx = graphDb.beginTx();
 		try
 		{
 			int hashCode = indexKey.hashCode();
@@ -205,14 +205,14 @@ abstract class AbstractIndex implements Index
 						return;
 					}
 					entry.setKeyValue( GOTO_NODE );
-					bucketNode = neo.createNode();
+					bucketNode = graphDb.createNode();
 					entry.setValue( bucketNode.getId() );
-					Node prevEntry = neo.createNode();
+					Node prevEntry = graphDb.createNode();
 					bucketNode.createRelationshipTo( prevEntry, 
 						RelTypes.INDEX_ENTRY );
 					prevEntry.setProperty( INDEX_KEY, prevKey );
 					prevEntry.setProperty( INDEX_VALUES, prevValue );
-					Node newEntry = neo.createNode();
+					Node newEntry = graphDb.createNode();
 					bucketNode.createRelationshipTo( newEntry, 
 						RelTypes.INDEX_ENTRY );
 					newEntry.setProperty( INDEX_KEY, indexKey );
@@ -220,7 +220,7 @@ abstract class AbstractIndex implements Index
 				}
 				else
 				{
-					bucketNode = neo.getNodeById( (Long) entry.getValue() );
+					bucketNode = graphDb.getNodeById( (Long) entry.getValue() );
 					for ( Relationship rel : bucketNode.getRelationships( 
 						RelTypes.INDEX_ENTRY, Direction.OUTGOING ) )
 					{
@@ -233,7 +233,7 @@ abstract class AbstractIndex implements Index
 							return;
 						}
 					}
-					Node newEntry = neo.createNode();
+					Node newEntry = graphDb.createNode();
 					bucketNode.createRelationshipTo( newEntry, 
 						RelTypes.INDEX_ENTRY );
 					newEntry.setProperty( INDEX_KEY, indexKey );
@@ -264,7 +264,7 @@ abstract class AbstractIndex implements Index
 		{
 			throw new IllegalArgumentException( "Null node" );
 		}
-		Transaction tx = neo.beginTx();
+		Transaction tx = graphDb.beginTx();
 		try
 		{
 			int hashCode = indexKey.hashCode();
@@ -284,7 +284,7 @@ abstract class AbstractIndex implements Index
 				}
 				else
 				{
-					Node bucketNode = neo.getNodeById( 
+					Node bucketNode = graphDb.getNodeById( 
 						(Long) entry.getValue() );
 					for ( Relationship rel : bucketNode.getRelationships( 
 						RelTypes.INDEX_ENTRY, Direction.OUTGOING ) )
@@ -333,7 +333,7 @@ abstract class AbstractIndex implements Index
 		{
 			throw new IllegalArgumentException( "Null index key" );
 		}
-		Transaction tx = neo.beginTx();
+		Transaction tx = graphDb.beginTx();
 		try
 		{
 			int hashCode = indexKey.hashCode();
@@ -349,7 +349,7 @@ abstract class AbstractIndex implements Index
 						Node[] nodes = new Node[nodeIds.length];
 						for ( int i = 0; i < nodeIds.length; i++ )
 						{
-							nodes[i] = neo.getNodeById( nodeIds[i] );
+							nodes[i] = graphDb.getNodeById( nodeIds[i] );
 						}
 						tx.success();
 						return new SimpleIndexHits<Node>(
@@ -358,7 +358,7 @@ abstract class AbstractIndex implements Index
 				}
 				else
 				{
-					Node bucketNode = neo.getNodeById( 
+					Node bucketNode = graphDb.getNodeById( 
 						(Long) entry.getValue() );
 					for ( Relationship rel : bucketNode.getRelationships( 
 						RelTypes.INDEX_ENTRY, Direction.OUTGOING ) )
@@ -371,7 +371,7 @@ abstract class AbstractIndex implements Index
 							Node[] nodes = new Node[nodeIds.length];
 							for ( int i = 0; i < nodeIds.length; i++ )
 							{
-								nodes[i] = neo.getNodeById( nodeIds[i] );
+								nodes[i] = graphDb.getNodeById( nodeIds[i] );
 							}
 							tx.success();
 							return new SimpleIndexHits<Node>(
@@ -395,7 +395,7 @@ abstract class AbstractIndex implements Index
 		{
 			throw new IllegalArgumentException( "Null index key" );
 		}
-		Transaction tx = neo.beginTx();
+		Transaction tx = graphDb.beginTx();
 		try
 		{
 			int hashCode = indexKey.hashCode();
@@ -408,14 +408,14 @@ abstract class AbstractIndex implements Index
 					if ( goOtherNode.equals( indexKey ) )
 					{
 						long nodeId = getSingleValue( entry );
-						Node node = neo.getNodeById( nodeId );
+						Node node = graphDb.getNodeById( nodeId );
 						tx.success();
 						return node;
 					}
 				}
 				else
 				{
-					Node bucketNode = neo.getNodeById( 
+					Node bucketNode = graphDb.getNodeById( 
 						(Long) entry.getValue() );
 					for ( Relationship rel : bucketNode.getRelationships( 
 						RelTypes.INDEX_ENTRY, Direction.OUTGOING ) )
@@ -425,7 +425,7 @@ abstract class AbstractIndex implements Index
 							indexKey ) )
 						{
 							long nodeId = getSingleValue( entryNode );
-							Node node = neo.getNodeById( nodeId );
+							Node node = graphDb.getNodeById( nodeId );
 							tx.success();
 							return node;
 						}
@@ -451,7 +451,7 @@ abstract class AbstractIndex implements Index
 			Object goOtherNode = entry.getKeyValue();
 			if ( goOtherNode.equals( GOTO_NODE ) )
 			{
-				Node bucketNode = neo.getNodeById( 
+				Node bucketNode = graphDb.getNodeById( 
 					(Long) entry.getValue() );
 				for ( Relationship rel : bucketNode.getRelationships( 
 					RelTypes.INDEX_ENTRY, Direction.OUTGOING ) )
@@ -478,7 +478,7 @@ abstract class AbstractIndex implements Index
             Object goOtherNode = entry.getKeyValue();
             if ( goOtherNode.equals( GOTO_NODE ) )
             {
-                Node bucketNode = neo.getNodeById( 
+                Node bucketNode = graphDb.getNodeById( 
                     (Long) entry.getValue() );
                 for ( Relationship rel : bucketNode.getRelationships( 
                     RelTypes.INDEX_ENTRY, Direction.OUTGOING ) )
@@ -491,10 +491,10 @@ abstract class AbstractIndex implements Index
             }
         }
         bTree.delete();
-        Node bTreeNode = neo.createNode();
+        Node bTreeNode = graphDb.createNode();
         underlyingNode.createRelationshipTo( bTreeNode, 
             org.neo4j.index.impl.btree.BTree.RelTypes.TREE_ROOT );
-        bTree = new BTree( neo, bTreeNode );
+        bTree = new BTree( graphDb, bTreeNode );
     }
     
 	/**
@@ -511,7 +511,7 @@ abstract class AbstractIndex implements Index
 			Object goOtherNode = entry.getKeyValue();
 			if ( goOtherNode.equals( GOTO_NODE ) )
 			{
-				Node bucketNode = neo.getNodeById( 
+				Node bucketNode = graphDb.getNodeById( 
 					(Long) entry.getValue() );
 				for ( Relationship rel : bucketNode.getRelationships( 
 					RelTypes.INDEX_ENTRY, Direction.OUTGOING ) )
@@ -527,14 +527,14 @@ abstract class AbstractIndex implements Index
             {
                 try
                 {
-                    ((EmbeddedGraphDatabase) neo).getConfig().getTxModule().
+                    ((EmbeddedGraphDatabase) graphDb).getConfig().getTxModule().
                         getTxManager().getTransaction().commit();
                 }
                 catch ( Exception e )
                 {
                     throw new RuntimeException( e );
                 }
-                neo.beginTx();
+                graphDb.beginTx();
                 count = 0;
             }
 		}
@@ -547,7 +547,7 @@ abstract class AbstractIndex implements Index
 	 */
 	public Iterable<Node> values()
     {
-        return new IndexIterator( this, bTree, neo );
+        return new IndexIterator( this, bTree, graphDb );
     }
     
     private static class IndexIterator implements Iterable<Node>,
@@ -555,15 +555,15 @@ abstract class AbstractIndex implements Index
     {
         private Iterator<Node> currentNodes;
         private final Iterator<KeyEntry> bTreeIterator;
-        private final GraphDatabaseService neo;
+        private final GraphDatabaseService graphDb;
         private final AbstractIndex index;
         
         private IndexIterator( AbstractIndex index, BTree bTree, 
-            GraphDatabaseService neo )
+            GraphDatabaseService graphDb )
         {
             this.index = index;
             this.bTreeIterator = bTree.entries().iterator();
-            this.neo = neo;
+            this.graphDb = graphDb;
         }
         
         public boolean hasNext()
@@ -572,7 +572,7 @@ abstract class AbstractIndex implements Index
             {
                 return true;
             }
-            Transaction tx = neo.beginTx();
+            Transaction tx = graphDb.beginTx();
             try
             {
                 if ( bTreeIterator.hasNext() )
@@ -598,13 +598,13 @@ abstract class AbstractIndex implements Index
                 Node[] nodes = new Node[nodeIds.length];
                 for ( int i = 0; i < nodeIds.length; i++ )
                 {
-                    nodes[i] = neo.getNodeById( nodeIds[i] );
+                    nodes[i] = graphDb.getNodeById( nodeIds[i] );
                 }
                 currentNodes = Arrays.asList( nodes ).iterator();
             }
             else
             {
-                Node bucketNode = neo.getNodeById( 
+                Node bucketNode = graphDb.getNodeById( 
                     (Long) entry.getValue() );
                 List<Node> nodeList = new ArrayList<Node>();
                 for ( Relationship rel : bucketNode.getRelationships( 
@@ -615,7 +615,7 @@ abstract class AbstractIndex implements Index
                     Node[] nodes = new Node[nodeIds.length];
                     for ( int i = 0; i < nodeIds.length; i++ )
                     {
-                        nodes[i] = neo.getNodeById( nodeIds[i] );
+                        nodes[i] = graphDb.getNodeById( nodeIds[i] );
                     }
                     nodeList.addAll( Arrays.asList( nodes ) );
                 }

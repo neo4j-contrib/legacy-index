@@ -42,11 +42,11 @@ public class LuceneFulltextIndexBatchInserter
     extends LuceneIndexBatchInserterImpl
 {
     /**
-     * @param neo the {@link BatchInserter} to use.
+     * @param inserter the {@link BatchInserter} to use.
      */
-    public LuceneFulltextIndexBatchInserter( BatchInserter neo )
+    public LuceneFulltextIndexBatchInserter( BatchInserter inserter )
     {
-        super( neo );
+        super( inserter );
     }
 
     @Override

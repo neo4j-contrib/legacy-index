@@ -24,7 +24,7 @@ public abstract class TestLuceneIndexManyThreads extends NeoTestCase
     
     protected IndexService instantiateIndexService()
     {
-        return new LuceneIndexService( neo() );
+        return new LuceneIndexService( graphDb() );
     }
     
     @Override
@@ -40,14 +40,14 @@ public abstract class TestLuceneIndexManyThreads extends NeoTestCase
     }
     
     @Override
-    protected void beforeNeoShutdown()
+    protected void beforeShutdown()
     {
         indexService().shutdown();
     }
     
     public void testTryToBreak() throws Exception
     {
-        Node rootNode = neo().createNode();
+        Node rootNode = graphDb().createNode();
         restartTx();
         
         Collection<WorkerThread> threads = new ArrayList<WorkerThread>();
@@ -103,7 +103,7 @@ public abstract class TestLuceneIndexManyThreads extends NeoTestCase
             {
                 Collection<Long> createdIds = null;
                 Collection<Long> deletedIds = null;
-                Transaction tx = neo().beginTx();
+                Transaction tx = graphDb().beginTx();
                 try
                 {
                     int what = random.nextInt( 3 );
@@ -157,7 +157,7 @@ public abstract class TestLuceneIndexManyThreads extends NeoTestCase
             Collection<Long> ids = new ArrayList<Long>();
             for ( int i = 0; i < count; i++ )
             {
-                Node node = neo().createNode();
+                Node node = graphDb().createNode();
                 rootNode.createRelationshipTo( node, RelTypes.TEST_TYPE );
                 set( node, "type", "TYPE" );
                 set( node, "name", "user" + random.nextInt( 10000 ) );
@@ -205,7 +205,7 @@ public abstract class TestLuceneIndexManyThreads extends NeoTestCase
             {
                 return null;
             }
-            return neo().getNodeById( aliveNodes.get( random.nextInt(
+            return graphDb().getNodeById( aliveNodes.get( random.nextInt(
                 aliveNodes.size() ) ) );
         }
         

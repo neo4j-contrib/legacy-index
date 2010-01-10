@@ -33,10 +33,10 @@ public class TestSortedTree extends NeoTestCase
 	public void setUp() throws Exception
 	{
 	    super.setUp();
-		Node bNode = neo().createNode();
-		neo().getReferenceNode().createRelationshipTo( bNode, 
+		Node bNode = graphDb().createNode();
+		graphDb().getReferenceNode().createRelationshipTo( bNode, 
 			RelTypes.TREE_ROOT );
-		bTree = new SortedTree( neo(), bNode, new NodeSorter() );
+		bTree = new SortedTree( graphDb(), bNode, new NodeSorter() );
 	}
 
     private static final String VALUE = "value";
@@ -100,7 +100,7 @@ public class TestSortedTree extends NeoTestCase
     
     public Node createNode( char c )
     {
-        Node node = neo().createNode();
+        Node node = graphDb().createNode();
         node.setProperty( VALUE, c );
         return node;
     }

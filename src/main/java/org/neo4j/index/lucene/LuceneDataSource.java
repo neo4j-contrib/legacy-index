@@ -64,6 +64,9 @@ import org.neo4j.kernel.impl.util.ArrayMap;
  */
 public class LuceneDataSource extends XaDataSource
 {
+    /**
+     * Default {@link Analyzer} for fulltext parsing.
+     */
     public static final Analyzer LOWER_CASE_WHITESPACE_ANALYZER =
         new Analyzer()
     {
@@ -160,7 +163,7 @@ public class LuceneDataSource extends XaDataSource
             if ( !directories.mkdirs() )
             {
                 throw new IOException( "Unable to create directory path["
-                    + dirs + "] for Neo store." );
+                    + dirs + "] for Neo4j store." );
             }
         }
     }

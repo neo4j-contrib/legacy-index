@@ -16,7 +16,7 @@ public abstract class TestLuceneTooManyOpenFiles extends NeoTestCase
     
     protected IndexService instantiateIndexService()
     {
-        return new LuceneIndexService( neo() );
+        return new LuceneIndexService( graphDb() );
     }
     
     @Override
@@ -32,7 +32,7 @@ public abstract class TestLuceneTooManyOpenFiles extends NeoTestCase
     }
     
     @Override
-    protected void beforeNeoShutdown()
+    protected void beforeShutdown()
     {
         indexService().shutdown();
     }
@@ -40,7 +40,7 @@ public abstract class TestLuceneTooManyOpenFiles extends NeoTestCase
     public void testTooManyOpenFilesException() throws Exception
     {
         RelationshipType relType = DynamicRelationshipType.withName( "tmofe" );
-        Node root = neo().createNode();
+        Node root = graphDb().createNode();
         AtomicInteger counter = new AtomicInteger();
         createChildren( root, 0, counter, relType );
         restartTx();
@@ -97,7 +97,7 @@ public abstract class TestLuceneTooManyOpenFiles extends NeoTestCase
         int numChildren = random.nextInt( 2 ) + 2;
         for ( int i = 0; i < numChildren; i++ )
         {
-            Node child = neo().createNode();
+            Node child = graphDb().createNode();
             node.createRelationshipTo( child, relType );
             child.setProperty( "name", "Name " + counter.incrementAndGet() );
             indexService().index( child, "tmofe_name",

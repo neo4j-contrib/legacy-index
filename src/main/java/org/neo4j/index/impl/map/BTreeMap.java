@@ -33,7 +33,7 @@ import org.neo4j.index.impl.btree.BTree;
 import org.neo4j.index.impl.btree.KeyEntry;
 
 /**
- * A map implementation using {@link org.neo4j.util.btree.BTree BTree}
+ * A map implementation using {@link org.neo4j.index.impl.btree.BTree BTree}
  * <p>
  * Note: this implementation is not thread safe (yet).
  * @param <K> The key type
@@ -60,7 +60,7 @@ public class BTreeMap<K,V> implements Map<K,V>
 	private final Node underlyingNode;
 	private BTree bTree;
 	private String name;
-	private GraphDatabaseService neo;
+	private GraphDatabaseService graphDb;
 	
 	
 	/**
@@ -73,22 +73,22 @@ public class BTreeMap<K,V> implements Map<K,V>
 	 * of the underlyingNode, otherwise an {@link IllegalArgumentException}
 	 * will be thrown.
 	 * @param underlyingNode The underlying node representing the map
-	 * @param neo The embedded neo instance
+	 * @param graphDb The {@link GraphDatabaseService} instante.
 	 * @throws IllegalArgumentException if the underlying node is a map with
 	 * a different name set.
 	 */
 	public BTreeMap( String name, Node underlyingNode,
-	    GraphDatabaseService neo )
+	    GraphDatabaseService graphDb )
 	{
-		if ( underlyingNode == null || neo == null )
+		if ( underlyingNode == null || graphDb == null )
 		{
 			throw new IllegalArgumentException( 
 				"Null parameter underlyingNode=" + underlyingNode +
-				" neo=" + neo );
+				" graphDb=" + graphDb );
 		}
 		this.underlyingNode = underlyingNode;
-		this.neo = neo;
-		Transaction tx = neo.beginTx();
+		this.graphDb = graphDb;
+		Transaction tx = graphDb.beginTx();
 		try
 		{
 			if ( underlyingNode.hasProperty( MAP_NAME ) )
@@ -122,14 +122,14 @@ public class BTreeMap<K,V> implements Map<K,V>
 				Direction.OUTGOING );
 			if ( bTreeRel != null )
 			{
-				bTree = new BTree( neo, bTreeRel.getEndNode() );
+				bTree = new BTree( graphDb, bTreeRel.getEndNode() );
 			}
 			else
 			{
-				Node bTreeNode = neo.createNode();
+				Node bTreeNode = graphDb.createNode();
 				underlyingNode.createRelationshipTo( bTreeNode, 
 					org.neo4j.index.impl.btree.BTree.RelTypes.TREE_ROOT );
-				bTree = new BTree( neo, bTreeNode );
+				bTree = new BTree( graphDb, bTreeNode );
 			}
 			tx.success();
 		}
@@ -156,7 +156,7 @@ public class BTreeMap<K,V> implements Map<K,V>
 	
 	/**
 	 * If key or value is {@code null} {@link IllegalArgumentException} is 
-	 * thrown. Key and value must be valid neo properties.
+	 * thrown. Key and value must be valid neo4j properties.
 	 */
 	public V put( K key, V value )
 	{
@@ -164,7 +164,7 @@ public class BTreeMap<K,V> implements Map<K,V>
 		{
 			throw new IllegalArgumentException( "Null node" );
 		}
-		Transaction tx = neo.beginTx();
+		Transaction tx = graphDb.beginTx();
 		try
 		{
 			int hashCode = key.hashCode();
@@ -190,14 +190,14 @@ public class BTreeMap<K,V> implements Map<K,V>
 						return (V) oldValue;
 					}
 					entry.setKeyValue( GOTO_NODE );
-					bucketNode = neo.createNode();
+					bucketNode = graphDb.createNode();
 					entry.setValue( bucketNode.getId() );
-					Node prevEntry = neo.createNode();
+					Node prevEntry = graphDb.createNode();
 					bucketNode.createRelationshipTo( prevEntry, 
 						RelTypes.MAP_ENTRY );
 					prevEntry.setProperty( MAP_KEY, prevKey );
 					prevEntry.setProperty( MAP_VALUE, prevValue );
-					Node newEntry = neo.createNode();
+					Node newEntry = graphDb.createNode();
 					bucketNode.createRelationshipTo( newEntry, 
 						RelTypes.MAP_ENTRY );
 					newEntry.setProperty( MAP_KEY, key );
@@ -205,7 +205,7 @@ public class BTreeMap<K,V> implements Map<K,V>
 				}
 				else
 				{
-					bucketNode = neo.getNodeById( (Long) entry.getValue() );
+					bucketNode = graphDb.getNodeById( (Long) entry.getValue() );
 					for ( Relationship rel : bucketNode.getRelationships( 
 						RelTypes.MAP_ENTRY, Direction.OUTGOING ) )
 					{
@@ -217,7 +217,7 @@ public class BTreeMap<K,V> implements Map<K,V>
 							return null;
 						}
 					}
-					Node newEntry = neo.createNode();
+					Node newEntry = graphDb.createNode();
 					bucketNode.createRelationshipTo( newEntry, 
 						RelTypes.MAP_ENTRY );
 					newEntry.setProperty( MAP_KEY, key );
@@ -235,7 +235,7 @@ public class BTreeMap<K,V> implements Map<K,V>
 	
 	public V remove( Object key )
 	{
-		Transaction tx = neo.beginTx();
+		Transaction tx = graphDb.beginTx();
 		try
 		{
 			int hashCode = key.hashCode();
@@ -255,7 +255,7 @@ public class BTreeMap<K,V> implements Map<K,V>
 				}
 				else
 				{
-					Node bucketNode = neo.getNodeById( 
+					Node bucketNode = graphDb.getNodeById( 
 						(Long) entry.getValue() );
 					for ( Relationship rel : bucketNode.getRelationships( 
 						RelTypes.MAP_ENTRY, Direction.OUTGOING ) )
@@ -288,7 +288,7 @@ public class BTreeMap<K,V> implements Map<K,V>
 	
 	public V get( Object key )
 	{
-		Transaction tx = neo.beginTx();
+		Transaction tx = graphDb.beginTx();
 		try
 		{
 			int hashCode = key.hashCode();
@@ -306,7 +306,7 @@ public class BTreeMap<K,V> implements Map<K,V>
 				}
 				else
 				{
-					Node bucketNode = neo.getNodeById( 
+					Node bucketNode = graphDb.getNodeById( 
 						(Long) entry.getValue() );
 					for ( Relationship rel : bucketNode.getRelationships( 
 						RelTypes.MAP_ENTRY, Direction.OUTGOING ) )
@@ -333,10 +333,10 @@ public class BTreeMap<K,V> implements Map<K,V>
 	{
 		deleteBuckets();
 		bTree.delete();
-		Node bTreeNode = neo.createNode();
+		Node bTreeNode = graphDb.createNode();
 		underlyingNode.createRelationshipTo( bTreeNode, 
 			org.neo4j.index.impl.btree.BTree.RelTypes.TREE_ROOT );
-		bTree = new BTree( neo, bTreeNode );
+		bTree = new BTree( graphDb, bTreeNode );
 	}
 	
 	/**
@@ -356,7 +356,7 @@ public class BTreeMap<K,V> implements Map<K,V>
 			Object goOtherNode = entry.getKeyValue();
 			if ( goOtherNode.equals( GOTO_NODE ) )
 			{
-				Node bucketNode = neo.getNodeById( 
+				Node bucketNode = graphDb.getNodeById( 
 					(Long) entry.getValue() );
 				for ( Relationship rel : bucketNode.getRelationships( 
 					RelTypes.MAP_ENTRY, Direction.OUTGOING ) )

@@ -20,7 +20,10 @@
 package org.neo4j.index;
 
 /**
- * Thrown in a read-only index when the user tries to use the index* methods.
+ * Thrown in a read-only index when the user tries to use f.ex. the
+ * {@link IndexService#index(org.neo4j.graphdb.Node, String, Object)} or
+ * {@link IndexService#removeIndex(org.neo4j.graphdb.Node, String, Object)}
+ * methods.
  */
 public class ReadOnlyIndexException extends RuntimeException
 {
@@ -29,6 +32,6 @@ public class ReadOnlyIndexException extends RuntimeException
      */
     public ReadOnlyIndexException()
     {
-        super( "This is a read-only index." );
+        super( "You cannot modify a read-only index" );
     }
 }

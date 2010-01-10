@@ -69,7 +69,7 @@ public class BTree
 		KEY_ENTRY 
 	};
 	
-	private GraphDatabaseService neo;
+	private GraphDatabaseService graphDb;
 	private TreeNode treeRoot;
 	
 	/**
@@ -77,12 +77,12 @@ public class BTree
 	 * an incoming relationship of {@link RelTypes TREE_ROOT} else a runtime
 	 * exception will be thrown.
 	 * 
-	 * @param neo the embedded neo instance
+	 * @param graphDb the embedded neo instance
 	 * @param rootNode root node with incoming {@code TREE_ROOT} relationship.
 	 */
-	public BTree( GraphDatabaseService neo, Node rootNode )
+	public BTree( GraphDatabaseService graphDb, Node rootNode )
 	{
-		this.neo = neo;
+		this.graphDb = graphDb;
 		this.treeRoot = new TreeNode( this, rootNode );
 	}
 	
@@ -377,9 +377,9 @@ public class BTree
 		return 9;
 	}
 	
-	GraphDatabaseService getNeo()
+	GraphDatabaseService getGraphDb()
 	{
-		return neo;
+		return graphDb;
 	}
 	
 	/**

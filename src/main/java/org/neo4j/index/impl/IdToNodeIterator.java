@@ -7,15 +7,24 @@ import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.NotFoundException;
 
+/**
+ * Converts an Iterator<Long> of node ids to an Iterator<Node> where the
+ * {@link GraphDatabaseService#getNodeById(long)} is used to look up the nodes,
+ * one call per step in the iterator.
+ */
 public class IdToNodeIterator extends PrefetchingIterator<Node>
 {
     private final Iterator<Long> ids;
-    private final GraphDatabaseService neo;
+    private final GraphDatabaseService graphDb;
     
-    public IdToNodeIterator( Iterator<Long> ids, GraphDatabaseService neo )
+    /**
+     * @param ids the node ids to use as underlying iterator.
+     * @param graphDb the {@link GraphDatabaseService} to use for node lookups.
+     */
+    public IdToNodeIterator( Iterator<Long> ids, GraphDatabaseService graphDb )
     {
         this.ids = ids;
-        this.neo = neo;
+        this.graphDb = graphDb;
     }
     
     @Override
@@ -32,7 +41,7 @@ public class IdToNodeIterator extends PrefetchingIterator<Node>
             long id = ids.next();
             try
             {
-                return neo.getNodeById( id );
+                return graphDb.getNodeById( id );
             }
             catch ( NotFoundException e )
             {

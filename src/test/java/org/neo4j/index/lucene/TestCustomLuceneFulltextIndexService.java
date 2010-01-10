@@ -28,7 +28,7 @@ public class TestCustomLuceneFulltextIndexService
     @Override
     protected IndexService instantiateIndexService()
     {
-        return new LuceneFulltextQueryIndexService( neo() );
+        return new LuceneFulltextQueryIndexService( graphDb() );
     }
     
     @Override
@@ -44,8 +44,8 @@ public class TestCustomLuceneFulltextIndexService
 
     public void testCustomFulltext() throws Exception
     {
-        Node node1 = neo().createNode();
-        Node node2 = neo().createNode();
+        Node node1 = graphDb().createNode();
+        Node node2 = graphDb().createNode();
         
         String key1 = "lastName";
         String key2 = "modifiedTime";
@@ -74,8 +74,8 @@ public class TestCustomLuceneFulltextIndexService
 
     public void testSpecific() throws Exception
     {
-        Node andy = neo().createNode();
-        Node larry = neo().createNode();
+        Node andy = graphDb().createNode();
+        Node larry = graphDb().createNode();
         String key = "atest";
         indexService().index( andy, key, "Andy Wachowski" );
         indexService().index( larry, key, "Larry Wachowski" );
@@ -101,8 +101,8 @@ public class TestCustomLuceneFulltextIndexService
     @Override
     public void testChangeValueBug() throws Exception
     {
-        Node andy = neo().createNode();
-        Node larry = neo().createNode();
+        Node andy = graphDb().createNode();
+        Node larry = graphDb().createNode();
 
         andy.setProperty( "name", "Andy Wachowski" );
         andy.setProperty( "title", "Director" );

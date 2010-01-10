@@ -38,8 +38,8 @@ public class TestSingleIndex extends NeoTestCase
 	public void setUp() throws Exception
 	{
 	    super.setUp();
-		Node node = neo().createNode();
-		index = new SingleValueIndex( "test_simple", node, neo() ); 
+		Node node = graphDb().createNode();
+		index = new SingleValueIndex( "test_simple", node, graphDb() ); 
 	}
 	
 	@Override
@@ -51,7 +51,7 @@ public class TestSingleIndex extends NeoTestCase
 	
 	public void testSimpleIndexBasic()
 	{
-		Node node1 = neo().createNode();
+		Node node1 = graphDb().createNode();
 		Object key1 = 1;
 		
 		assertTrue( !index.getNodesFor( key1 ).iterator().hasNext() );
@@ -68,7 +68,7 @@ public class TestSingleIndex extends NeoTestCase
 		assertTrue( !index.getNodesFor( key1 ).iterator().hasNext() );
 
 		index.index( node1, key1 );
-		Node node2 = neo().createNode();
+		Node node2 = graphDb().createNode();
 		Object key2 = 2;
 		index.index( node2, key2 );
 		
@@ -90,10 +90,10 @@ public class TestSingleIndex extends NeoTestCase
 	
 	public void testIllegalStuff()
 	{
-		Node node1 = neo().createNode();
+		Node node1 = graphDb().createNode();
 		try 
 		{ 
-			new SingleValueIndex( "blabla", null, neo() );
+			new SingleValueIndex( "blabla", null, graphDb() );
 			fail( "Null parameter should throw exception" );
 		} 
 		catch ( IllegalArgumentException e ) { // good
@@ -105,10 +105,10 @@ public class TestSingleIndex extends NeoTestCase
 		} 
 		catch ( IllegalArgumentException e ) { // good
 		}
-		Index mIndex = new MultiValueIndex( "multi", node1, neo() );
+		Index mIndex = new MultiValueIndex( "multi", node1, graphDb() );
 		try 
 		{ 
-			new SingleValueIndex( "blabla", node1, neo() );
+			new SingleValueIndex( "blabla", node1, graphDb() );
 			fail( "Wrong index type should throw exception" );
 		} 
 		catch ( IllegalArgumentException e ) { // good
@@ -121,7 +121,7 @@ public class TestSingleIndex extends NeoTestCase
         Set<Node> nodes = new HashSet<Node>();
         for ( int i = 0; i < 100; i++ )
         {
-            Node node = neo().createNode();
+            Node node = graphDb().createNode();
             nodes.add( node );
             index.index( node, i );
         }
@@ -138,7 +138,7 @@ public class TestSingleIndex extends NeoTestCase
         List<Node> nodes = new LinkedList<Node>();
         for ( int i = 0; i < 100; i++ )
         {
-            Node node = neo().createNode();
+            Node node = graphDb().createNode();
             nodes.add( node );
             index.index( node, i );
         }

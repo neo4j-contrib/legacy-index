@@ -91,22 +91,23 @@ public class LuceneIndexService extends GenericIndexService
     private int lazynessThreshold = DEFAULT_LAZY_SEARCH_RESULT_THRESHOLD;
 
     /**
-     * @param neo the {@link NeoService} to use.
+     * @param graphDb the {@link GraphDatabaseService} to use.
      */
-    public LuceneIndexService( GraphDatabaseService neo )
+    public LuceneIndexService( GraphDatabaseService graphDb )
     {
-        super( neo );
-        EmbeddedGraphDatabase embeddedNeo = ( ( EmbeddedGraphDatabase ) neo );
+        super( graphDb );
+        EmbeddedGraphDatabase embeddedGraphDb =
+            ( ( EmbeddedGraphDatabase ) graphDb );
         String luceneDirectory = 
-            embeddedNeo.getConfig().getTxModule().getTxLogDirectory() +
+            embeddedGraphDb.getConfig().getTxModule().getTxLogDirectory() +
                 "/" + getDirName();
-        TxModule txModule = embeddedNeo.getConfig().getTxModule();
+        TxModule txModule = embeddedGraphDb.getConfig().getTxModule();
         txManager = txModule.getTxManager();
         byte resourceId[] = getXaResourceId();
         Map<Object,Object> params = getDefaultParams();
         params.put( "dir", luceneDirectory );
         params.put( LockManager.class, 
-            embeddedNeo.getConfig().getLockManager() );
+            embeddedGraphDb.getConfig().getLockManager() );
         xaDs = ( LuceneDataSource ) txModule.registerDataSource( getDirName(),
             getDataSourceClass().getName(), resourceId, params, true );
         broker = new ConnectionBroker( txManager, xaDs );
@@ -157,6 +158,8 @@ public class LuceneIndexService extends GenericIndexService
      * reading and fetching of nodes is done lazily before each step in the
      * iteration of the returned result. The default value is
      * {@link #DEFAULT_LAZY_SEARCH_RESULT_THRESHOLD}.
+     * @param numberOfHitsBeforeLazyLoading the threshold where results which
+     * are bigger than that threshold becomes lazy.
      */
     public void setLazySearchResultThreshold(
         int numberOfHitsBeforeLazyLoading )
@@ -331,7 +334,7 @@ public class LuceneIndexService extends GenericIndexService
     protected Iterator<Node> instantiateIdToNodeIterator(
         final Iterator<Long> ids )
     {
-        return new IdToNodeIterator( ids, getNeo() );
+        return new IdToNodeIterator( ids, getGraphDb() );
     }
     
     protected Query formQuery( String key, Object value )
@@ -399,9 +402,9 @@ public class LuceneIndexService extends GenericIndexService
     public synchronized void shutdown()
     {
         super.shutdown();
-        EmbeddedGraphDatabase embeddedNeo =
-            ( ( EmbeddedGraphDatabase ) getNeo() );
-        TxModule txModule = embeddedNeo.getConfig().getTxModule();
+        EmbeddedGraphDatabase embeddedGraphDb =
+            ( ( EmbeddedGraphDatabase ) getGraphDb() );
+        TxModule txModule = embeddedGraphDb.getConfig().getTxModule();
         if ( txModule.getXaDataSourceManager().hasDataSource( getDirName() ) )
         {
             txModule.getXaDataSourceManager().unregisterDataSource(

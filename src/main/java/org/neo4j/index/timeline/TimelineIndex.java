@@ -141,6 +141,7 @@ public interface TimelineIndex
      * timeline. If {@code node} hasn't been added to this timeline a
      * runtime exception will be thrown.
      * 
+     * @param node the node to return the timestamp for.
      * @return the timestamp for {@code node}.
      */
     long getTimestampForNode( Node node );

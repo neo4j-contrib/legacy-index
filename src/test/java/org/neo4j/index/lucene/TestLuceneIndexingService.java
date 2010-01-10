@@ -35,7 +35,7 @@ public class TestLuceneIndexingService extends NeoTestCase
 	
 	protected IndexService instantiateIndexService()
 	{
-	    return new LuceneIndexService( neo() );
+	    return new LuceneIndexService( graphDb() );
 	}
 	
 	@Override
@@ -51,14 +51,14 @@ public class TestLuceneIndexingService extends NeoTestCase
 	}
 	
 	@Override
-	protected void beforeNeoShutdown()
+	protected void beforeShutdown()
 	{
 	    indexService().shutdown();
 	}
 	
     public void testSimple()
     {
-        Node node1 = neo().createNode();
+        Node node1 = graphDb().createNode();
         
         assertTrue( !indexService().getNodes( "a_property", 
             1 ).iterator().hasNext() );
@@ -76,7 +76,7 @@ public class TestLuceneIndexingService extends NeoTestCase
             1 ).iterator().hasNext() );
 
         indexService().index( node1, "a_property", 1 );
-        Node node2 = neo().createNode();
+        Node node2 = graphDb().createNode();
         indexService().index( node2, "a_property", 1 );
         
         hits = indexService().getNodes( "a_property", 1 );
@@ -122,7 +122,7 @@ public class TestLuceneIndexingService extends NeoTestCase
     
     public void testMultipleAdd()
     {
-        Node node = neo().createNode();
+        Node node = graphDb().createNode();
         indexService().index( node, "a_property", 3 );
         restartTx();
         indexService().index( node, "a_property", 3 );
@@ -137,24 +137,24 @@ public class TestLuceneIndexingService extends NeoTestCase
         String key = "prop";
         Object value = 10;
         ( ( LuceneIndexService ) indexService() ).enableCache( key, 1000 );
-        Node node1 = neo().createNode();
+        Node node1 = graphDb().createNode();
         indexService().index( node1, key, value );
         indexService().getNodes( key, value );
         restartTx( false );
         
-        Node node2 = neo().createNode();
+        Node node2 = graphDb().createNode();
         indexService().getNodes( key, value );
         indexService().index( node2, key, value );
         indexService().getNodes( key, value );
         restartTx();
         
-        Node node3 = neo().createNode();
+        Node node3 = graphDb().createNode();
         indexService().getNodes( key, value );
         indexService().index( node3, key, value );
         indexService().getNodes( key, value );
         restartTx( false );
         
-        Node node4 = neo().createNode();
+        Node node4 = graphDb().createNode();
         indexService().getNodes( key, value );
         indexService().index( node4, key, value );
         indexService().getNodes( key, value );
@@ -171,8 +171,8 @@ public class TestLuceneIndexingService extends NeoTestCase
     
     public void testRollback()
     {
-        Node node1 = neo().createNode();
-        Node node2 = neo().createNode();
+        Node node1 = graphDb().createNode();
+        Node node2 = graphDb().createNode();
         restartTx();
         indexService().index( node1, "a_property", 3 );
         assertEquals( node1, indexService().getSingleNode( "a_property", 3 ) );
@@ -186,7 +186,7 @@ public class TestLuceneIndexingService extends NeoTestCase
     
     public void testDoubleIndexing() throws Exception
     {
-        Node node = neo().createNode();
+        Node node = graphDb().createNode();
         indexService.index( node, "double", "value" );
         restartTx();
         indexService.index( node, "double", "value" );
@@ -201,8 +201,8 @@ public class TestLuceneIndexingService extends NeoTestCase
     
     public void testChangeValueBug() throws Exception
     {
-        Node andy = neo().createNode();
-        Node larry = neo().createNode();
+        Node andy = graphDb().createNode();
+        Node larry = graphDb().createNode();
 
         andy.setProperty( "name", "Andy Wachowski" );
         andy.setProperty( "title", "Director" );
@@ -229,8 +229,8 @@ public class TestLuceneIndexingService extends NeoTestCase
     
     public void testGetNodesBug() throws Exception
     {
-        Node node1 = neo().createNode();
-        Node node2 = neo().createNode();
+        Node node1 = graphDb().createNode();
+        Node node2 = graphDb().createNode();
         String key = "getnodesbug";
         ( ( LuceneIndexService ) indexService() ).enableCache( key, 100 );
         indexService().index( node1, key, "value" );

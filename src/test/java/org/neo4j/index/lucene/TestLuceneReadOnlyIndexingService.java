@@ -35,7 +35,7 @@ public class TestLuceneReadOnlyIndexingService extends NeoTestCase
 	
 	protected IndexService instantiateIndexService()
 	{
-	    return new LuceneIndexService( neo() );
+	    return new LuceneIndexService( graphDb() );
 	}
 	
 	@Override
@@ -51,14 +51,14 @@ public class TestLuceneReadOnlyIndexingService extends NeoTestCase
 	}
 	
 	@Override
-	protected void beforeNeoShutdown()
+	protected void beforeShutdown()
 	{
 	    indexService().shutdown();
 	}
 	
     public void testSimple()
     {
-        Node node1 = neo().createNode();
+        Node node1 = graphDb().createNode();
         
         assertTrue( !indexService().getNodes( "a_property", 
             1 ).iterator().hasNext() );

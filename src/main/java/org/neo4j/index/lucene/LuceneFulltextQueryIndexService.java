@@ -43,11 +43,11 @@ public class LuceneFulltextQueryIndexService extends LuceneFulltextIndexService
         new WhitespaceAnalyzer();
     
     /**
-     * @param neo the {@link NeoService} to use.
+     * @param graphDb the {@link GraphDatabaseService} to use.
      */
-    public LuceneFulltextQueryIndexService( GraphDatabaseService neo )
+    public LuceneFulltextQueryIndexService( GraphDatabaseService graphDb )
     {
-        super( neo );
+        super( graphDb );
     }
 
     @Override
@@ -71,6 +71,14 @@ public class LuceneFulltextQueryIndexService extends LuceneFulltextIndexService
         }
     }
 
+    /**
+     * Returns the default operator (AND or OR) used when parsing the query.
+     * See more information at http://lucene.apache.org
+     * 
+     * @param key the index key.
+     * @param value the lucene query.
+     * @return the default operator (AND or OR ) used when parsing the query.
+     */
     public Operator getDefaultQueryOperator( String key, Object value )
     {
         return null;

@@ -33,8 +33,8 @@ public class TestTimeline extends NeoTestCase
 	public void setUp() throws Exception
 	{
 	    super.setUp();
-		Node node = neo().createNode();
-		timeline = new Timeline( "test_timeline", node, false, neo() ); 
+		Node node = graphDb().createNode();
+		timeline = new Timeline( "test_timeline", node, false, graphDb() ); 
 	}
 	
 	@Override
@@ -60,7 +60,7 @@ public class TestTimeline extends NeoTestCase
 	
 	public void testTimelineBasic()
 	{
-		Node node1 = neo().createNode();
+		Node node1 = graphDb().createNode();
 		long stamp1 = getStamp();
 		node1.setProperty( "timestamp", stamp1 );
 		
@@ -101,7 +101,7 @@ public class TestTimeline extends NeoTestCase
 
 		timeline.addNode( node1, stamp1 );
 		assertEquals( stamp1, timeline.getTimestampForNode( node1 ) );
-		Node node2 = neo().createNode();
+		Node node2 = graphDb().createNode();
 		long stamp2 = getStamp();
 		node2.setProperty( "timestamp", stamp2 );
 		timeline.addNode( node2, stamp2 );
@@ -156,7 +156,7 @@ public class TestTimeline extends NeoTestCase
 		
 		timeline.addNode( node1, stamp1 );
 		timeline.addNode( node2, stamp2 );
-		Node node3 = neo().createNode();
+		Node node3 = graphDb().createNode();
 		long stamp3 = getStamp();
 		node3.setProperty( "timestamp", stamp3 );
 		timeline.addNode( node3, stamp3 );
@@ -233,11 +233,11 @@ public class TestTimeline extends NeoTestCase
 	
 	public void testIllegalStuff()
 	{
-		Node node1 = neo().createNode();
+		Node node1 = graphDb().createNode();
 		long stamp1 = System.currentTimeMillis();
 		try 
 		{ 
-			new Timeline( "blabla", null, true, neo() );
+			new Timeline( "blabla", null, true, graphDb() );
 			fail( "Null parameter should throw exception" );
 		} 
 		catch ( IllegalArgumentException e ) { // good
@@ -280,13 +280,13 @@ public class TestTimeline extends NeoTestCase
 	
 	public void testIndexedTimeline()
 	{
-		Node tlNode = neo().createNode();
-		Timeline timeline = new Timeline( "test", tlNode, true, neo() ); 
+		Node tlNode = graphDb().createNode();
+		Timeline timeline = new Timeline( "test", tlNode, true, graphDb() ); 
 		LinkedList<Node> after = new LinkedList<Node>();
 		LinkedList<Node> before = new LinkedList<Node>();
 		for ( long i = 1; i < 128; i++ )
 		{
-			Node node = neo().createNode();
+			Node node = graphDb().createNode();
 			timeline.addNode( node, i );
 			if ( i > 64 )
 			{
@@ -326,12 +326,12 @@ public class TestTimeline extends NeoTestCase
 	
     public void testIndexedTimeline2()
     {
-        Node tlNode = neo().createNode();
-        Timeline timeline = new Timeline( "test", tlNode, true, neo() );
+        Node tlNode = graphDb().createNode();
+        Timeline timeline = new Timeline( "test", tlNode, true, graphDb() );
         Node nodes[] = new Node[1000];
         for ( int i = 0; i < 1000; i++ )
         {
-            Node node = neo().createNode();
+            Node node = graphDb().createNode();
             nodes[i] = node;
             timeline.addNode( node, i );
         }
@@ -350,12 +350,12 @@ public class TestTimeline extends NeoTestCase
     
 	public void testTimelineSameTimestamp()
 	{
-		Node tlNode = neo().createNode();
-		Timeline timeline = new Timeline( "test", tlNode, true, neo() );
-		Node node0 = neo().createNode();
-		Node node1_1 = neo().createNode();
-		Node node1_2 = neo().createNode();
-		Node node2 = neo().createNode();
+		Node tlNode = graphDb().createNode();
+		Timeline timeline = new Timeline( "test", tlNode, true, graphDb() );
+		Node node0 = graphDb().createNode();
+		Node node1_1 = graphDb().createNode();
+		Node node1_2 = graphDb().createNode();
+		Node node2 = graphDb().createNode();
 		timeline.addNode( node1_1, 1 );
 		timeline.addNode( node1_2, 1 );
 		timeline.addNode( node0, 0 );
@@ -400,14 +400,14 @@ public class TestTimeline extends NeoTestCase
 	
 	public void testMultipleTimelines()
 	{
-		Node tlNode1 = neo().createNode();
-		Timeline timeline1 = new Timeline( "test1", tlNode1, true, neo() );
-		Node tlNode2 = neo().createNode();
-		Timeline timeline2 = new Timeline( "test2", tlNode2, true, neo() );
-		Node node1 = neo().createNode();
-		Node node2 = neo().createNode();
-		Node node3 = neo().createNode();
-		Node node4 = neo().createNode();
+		Node tlNode1 = graphDb().createNode();
+		Timeline timeline1 = new Timeline( "test1", tlNode1, true, graphDb() );
+		Node tlNode2 = graphDb().createNode();
+		Timeline timeline2 = new Timeline( "test2", tlNode2, true, graphDb() );
+		Node node1 = graphDb().createNode();
+		Node node2 = graphDb().createNode();
+		Node node3 = graphDb().createNode();
+		Node node4 = graphDb().createNode();
 		
 		timeline1.addNode( node1, 1 );
 		timeline1.addNode( node2, 2 );
@@ -438,11 +438,11 @@ public class TestTimeline extends NeoTestCase
 
     public void testTimelineRemoveNode()
     {
-        Node tlNode = neo().createNode();
-        Timeline indexedTimeline = new Timeline( "test", tlNode, true, neo() ); 
+        Node tlNode = graphDb().createNode();
+        Timeline indexedTimeline = new Timeline( "test", tlNode, true, graphDb() ); 
         for ( long i = 1; i < 128; i++ )
         {
-            Node node = neo().createNode();
+            Node node = graphDb().createNode();
             indexedTimeline.addNode( node, i );
         }
         for ( Node node : indexedTimeline.getAllNodes() )
@@ -454,7 +454,7 @@ public class TestTimeline extends NeoTestCase
         LinkedList<Node> nodes = new LinkedList<Node>();
         for ( long i = 1; i < 128; i++ )
         {
-            Node node = neo().createNode();
+            Node node = graphDb().createNode();
             indexedTimeline.addNode( node, i );
             nodes.add( node );
         }
@@ -467,18 +467,18 @@ public class TestTimeline extends NeoTestCase
     
     public void testDeleteTimeline()
     {
-        Node tlNode = neo().createNode();
-        Timeline indexedTimeline = new Timeline( "test", tlNode, true, neo() );
+        Node tlNode = graphDb().createNode();
+        Timeline indexedTimeline = new Timeline( "test", tlNode, true, graphDb() );
         Node[] nodes = new Node[20];
         for ( int i = 1; i < nodes.length; i++ )
         {
-            nodes[i] = neo().createNode();
+            nodes[i] = graphDb().createNode();
             indexedTimeline.addNode( nodes[i], i );
         }
         indexedTimeline.delete();
         restartTx();
-        tlNode = neo().createNode();
-        indexedTimeline = new Timeline( "test", tlNode, true, neo() );
+        tlNode = graphDb().createNode();
+        indexedTimeline = new Timeline( "test", tlNode, true, graphDb() );
         for ( int i = 1; i < nodes.length; i++ )
         {
             indexedTimeline.addNode( nodes[i], i );
