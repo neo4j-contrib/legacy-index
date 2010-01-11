@@ -74,8 +74,8 @@
     </dependency>
     <dependency>
       <groupId>org.neo4j</groupId>
-      <artifactId>neo-component-commons</artifactId>
-      <version>0.3-SNAPSHOT</version>
+      <artifactId>commons</artifactId>
+      <version>0.4-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.apache.lucene</groupId>
