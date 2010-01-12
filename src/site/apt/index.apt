@@ -1,25 +1,27 @@
-Neo4j indexing utilities
+Neo4j indexing
 
 	This is a collection of various utilities for indexing parts of a neo4j
 	graph. The most straight-forward way to use this component is via
-	the <<org.neo4j.util.index.IndexService>> interface. This <<IndexService>>
-	is basically a service where you can index neo4j nodes with key-value pairs.
-	See more below.
+	the {{{http://components.neo4j.org/index/apidocs/org/neo4j/index/IndexService.html}IndexService}} interface.
+	It is basically a service where you can index neo4j nodes with key-value
+	pairs. See more below.
 
-	There's also other useful utilities, such as a <<Timeline>>.
+	There's also other useful utilities, such as a {{{http://components.neo4j.org/index/apidocs/org/neo4j/index/timeline/Timeline.html}Timeline}}.
 
 IndexService
 
-	In the <<org.neo4j.util.index>> package you will find the <<IndexService>> 
+	In the <<org.neo4j.index>> package you will find the <<IndexService>> 
 	interface which holds the most straight-forward way of indexing your neo4j
-	graph. Look at a quick example:
+	graph. Currently our main implementation is the
+	{{{http://components.neo4j.org/index/apidocs/org/neo4j/index/lucene/LuceneIndexService.html}LuceneIndexService}}.
+	Look at a quick example:
 
 ---
-NeoService neo = // An arbitrary NeoService instance
-IndexService index = new LuceneIndexService( neo );
+GraphDatabaseService graphDb = // An arbitrary GraphDatabaseService instance
+IndexService index = new LuceneIndexService( graphDb );
 
 // Create a node with a "name" property and index it in the IndexService.
-Node personNode = neo.createNode();
+Node personNode = graphDb.createNode();
 personNode.setProperty( "name", "Mattias Persson" );
 index.index( personNode, "name", personNode.getProperty( "name" ) );
 
@@ -29,9 +31,8 @@ Node node = index.getSingleNode( "name", "Mattias Persson" );
 assert personNode.equals( node );
 ---
 
-	Our main implementation uses {{{http://lucene.apache.org/java/}Lucene}} as
-	backend, see {{{http://components.neo4j.org/index-util/apidocs/org/neo4j/util/index/LuceneIndexService.html}LuceneIndexService}}.
-	Read more at our {{{http://wiki.neo4j.org/content/Indexing_with_IndexService}wiki}}
+	<<LuceneIndexService>> uses {{{http://lucene.apache.org/java/}Lucene}} as
+	backend. Read more at our {{{http://wiki.neo4j.org/content/Indexing_with_IndexService}wiki}}
 	
 Fulltext indexing
 
@@ -40,21 +41,21 @@ Fulltext indexing
 	the values in the key-value pairs for each entry and stores those individual
 	words in addition to the untouched value. This makes it possible to do queries
 	for individual words. The querying is also case-insensitive.
-	See {{{http://components.neo4j.org/index-util/apidocs/org/neo4j/util/index/LuceneFulltextIndexService.html}LuceneFulltextIndexService}}
+	See {{{http://components.neo4j.org/index/apidocs/org/neo4j/index/lucene/LuceneFulltextIndexService.html}LuceneFulltextIndexService}}
 	as well as {{{http://wiki.neo4j.org/content/Indexing_with_IndexService#Fulltext_indexing}wiki}}.
 	
 LuceneIndexBatchInserter
 
-	The "batch inserter" version of {{{http://components.neo4j.org/index-util/apidocs/org/neo4j/util/index/LuceneIndexService.html}LuceneIndexService}}.
+	The "batch inserter" version of {{{http://components.neo4j.org/index/apidocs/org/neo4j/index/lucene/LuceneIndexService.html}LuceneIndexService}}.
 	It should be used with a BatchInserter and stores the indexes in the same
 	format as the LuceneIndexService. There's also a fulltext version of this.
 	See more at our {{{http://wiki.neo4j.org/content/Indexing_with_BatchInserter}wiki}}.
 
 Timeline
 
-	You can create a timeline and add nodes to it, each with a timestamp and you
-	can then ask it to return all nodes within a specific period of time
-	(with optional upper and lower bounds).
+	You can create a {{{http://components.neo4j.org/index/apidocs/org/neo4j/index/timeline/Timeline.html}timeline}} and add nodes to it,
+	each with a timestamp and you can then ask it to return all nodes within a
+	specific period of time	(with optional upper and lower bounds).
 	
 	Node that the name you give the timeline is more a convenience thing, much
 	like the naming of a Thread in Java. It is also a security check so that
