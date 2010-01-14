@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.neo4j</groupId>
     <artifactId>parent-pom</artifactId>
-    <version>5</version>
+    <version>6</version>
   </parent>
 
   <modelVersion>4.0.0</modelVersion>
@@ -31,13 +31,10 @@
         </url>
   </scm>
 
-  <licenses>
-    <license>
-      <name>GNU Affero General Public License, Version 3</name>
-      <url>https://svn.neo4j.org/components/index/trunk/LICENSE.txt
-            </url>
-    </license>
-  </licenses>
+  <issueManagement>
+    <system>Trac</system>
+    <url>https://trac.neo4j.org/query?status=assigned&amp;status=new&amp;status=reopened&amp;component=index</url>
+  </issueManagement>
 
   <developers>
     <developer>
