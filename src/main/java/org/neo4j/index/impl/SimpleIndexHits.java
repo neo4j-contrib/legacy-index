@@ -84,6 +84,6 @@ public class SimpleIndexHits<T> implements IndexHits<T>
 
     public void remove()
     {
-        this.remove();
+        this.hits.remove();
     }
 }
