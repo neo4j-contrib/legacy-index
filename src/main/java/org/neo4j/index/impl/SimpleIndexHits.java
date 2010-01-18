@@ -79,7 +79,7 @@ public class SimpleIndexHits<T> implements IndexHits<T>
 
     public T next()
     {
-        return this.next();
+        return this.hits.next();
     }
 
     public void remove()
