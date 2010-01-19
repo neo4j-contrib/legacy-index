@@ -25,6 +25,7 @@ import java.util.Iterator;
  * It's just an {@link Iterator} with additional {@link #size()} and
  * {@link #close()} methods on it. It is first and foremost an {@link Iterator},
  * but also an {@link Iterable} JUST so that it can be used in a for-each loop.
+ * The <code>iterator()</code> method <i>always</i> returns <code>this</code>.
  * 
  * The size is calculated before-hand so that calling it's always fast.
  * 
@@ -32,7 +33,7 @@ import java.util.Iterator;
  * iteration you must call {@link #close()}. Results which are looped through
  * entirely closes automatically.
  * 
- * @param <T> the type of items in the Iterable.
+ * @param <T> the type of items in the Iterator.
  */
 public interface IndexHits<T> extends Iterator<T>, Iterable<T>
 {

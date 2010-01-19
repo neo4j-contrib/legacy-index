@@ -26,6 +26,10 @@ import org.neo4j.graphdb.Node;
  * and then you can query for nodes given a time period, w/ or w/o lower/upper
  * bounds, f.ex. "Give me all nodes before this given timestamp" or
  * "Give me all nodes between these two timestamps".
+ * 
+ * Please note that the timestamps don't need to represent actual points in
+ * time, any <code>long</code> that identifies the indexed {@link Node} and
+ * defines its total order is fine.
  */
 public interface TimelineIndex
 {

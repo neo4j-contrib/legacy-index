@@ -27,7 +27,8 @@ import org.neo4j.graphdb.Node;
  * manually. IndexService is a means of providing those indexing capabilities
  * for a neo4j graph and integrate it as tightly as possible.
  * 
- * See more at http://wiki.neo4j.org/content/Indexing_with_IndexService
+ * See more at <a href="http://wiki.neo4j.org/content/Indexing_with_IndexService">
+ * The Neo4j wiki page on "Indexing with IndexService"</a>.
  */
 public interface IndexService
 {
