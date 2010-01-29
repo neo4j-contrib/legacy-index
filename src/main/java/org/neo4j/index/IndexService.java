@@ -35,6 +35,11 @@ public interface IndexService
     /**
      * Index <code>node</code> with <code>key</code> and <code>value</code>.
      * A node can be associated with any number of key-value pairs.
+     * <p>
+     * Note about updating an index: If you've indexed a value from a property
+     * on a {@link Node} and that value gets updated, you'll have to remove the
+     * old value in addition to indexing the new value, else both values
+     * (the new and the old) will be indexed for that node.
      * 
      * @param node node to index
      * @param key the key in the key-value pair to associate with {@code node}.
