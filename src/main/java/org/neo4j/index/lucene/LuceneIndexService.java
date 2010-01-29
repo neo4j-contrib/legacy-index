@@ -228,7 +228,6 @@ public class LuceneIndexService extends GenericIndexService
             searcher = xaDs.getIndexSearcher( key );
             if ( searcher != null )
             {
-                searcher.incRef();
                 LruCache<String,Collection<Long>> cachedNodesMap = 
                     xaDs.getFromCache( key );
                 String valueAsString = value.toString();
@@ -351,6 +350,7 @@ public class LuceneIndexService extends GenericIndexService
         Query query = formQuery( key, value );
         try
         {
+            searcher.incRef();
             Hits hits = sortingOrNull != null ?
                 searcher.getSearcher().search( query, sortingOrNull ) :
                 searcher.getSearcher().search( query );
