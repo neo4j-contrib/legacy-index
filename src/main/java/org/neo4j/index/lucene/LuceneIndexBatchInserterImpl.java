@@ -210,6 +210,7 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
                 searcher.close();
             }
             indexSearchers.clear();
+            optimize();
             for ( IndexWriterContext writer : indexWriters.values() )
             {
                 writer.writer.close();
