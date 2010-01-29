@@ -7,7 +7,7 @@ import org.neo4j.graphdb.Node;
 import org.neo4j.index.IndexService;
 import org.neo4j.index.NeoTestCase;
 
-public class TestLuceneIndexLazyness extends NeoTestCase
+public abstract class TestLuceneIndexLazyness extends NeoTestCase
 {
     private IndexService indexService;
     
