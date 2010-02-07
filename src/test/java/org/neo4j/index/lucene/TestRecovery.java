@@ -200,4 +200,28 @@ public class TestRecovery extends TestCase
         source.close();
         dest.close();
     }
+
+    public void testRecoveryFulltextIndex()
+    {
+        GraphDatabaseService graphDb = new EmbeddedGraphDatabase(
+                "target/graphdb" );
+        LuceneFulltextIndexService idx = new LuceneFulltextIndexService(
+                graphDb );
+
+        Transaction tx = graphDb.beginTx();
+        try
+        {
+            Node node = graphDb.createNode();
+            idx.index( node, "test", "value" );
+            tx.success();
+        }
+        finally
+        {
+            // no tx commit
+        }
+        idx.shutdown();
+        graphDb.shutdown();
+        graphDb = new EmbeddedGraphDatabase( "target/graphdb" );
+        graphDb.shutdown();
+    }
 }
