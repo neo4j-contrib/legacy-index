@@ -145,7 +145,7 @@ public class LuceneDataSource extends XaDataSource
         this.indexService = indexService;
     }
     
-    protected LuceneIndexService getIndexService()
+    public LuceneIndexService getIndexService()
     {
         return this.indexService;
     }
