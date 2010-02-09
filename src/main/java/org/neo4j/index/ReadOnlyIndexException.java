@@ -20,7 +20,7 @@
 package org.neo4j.index;
 
 /**
- * Thrown in a read-only index when the user tries to use f.ex. the
+ * Thrown in a read-only index when the user tries to use for example the
  * {@link IndexService#index(org.neo4j.graphdb.Node, String, Object)} or
  * {@link IndexService#removeIndex(org.neo4j.graphdb.Node, String, Object)}
  * methods.
