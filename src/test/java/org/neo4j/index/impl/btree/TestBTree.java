@@ -25,9 +25,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.neo4j.graphdb.Node;
-import org.neo4j.index.NeoTestCase;
+import org.neo4j.index.Neo4jTestCase;
 
-public class TestBTree extends NeoTestCase
+public class TestBTree extends Neo4jTestCase
 {
 	private BTree bTree;
 	

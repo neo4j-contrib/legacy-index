@@ -21,9 +21,9 @@ package org.neo4j.index.lucene;
 
 import org.neo4j.graphdb.Node;
 import org.neo4j.index.IndexService;
-import org.neo4j.index.NeoTestCase;
+import org.neo4j.index.Neo4jTestCase;
 
-public class TestBoth extends NeoTestCase
+public class TestBoth extends Neo4jTestCase
 {
     private IndexService indexService;
     private IndexService fulltextIndexService;

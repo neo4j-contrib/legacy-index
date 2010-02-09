@@ -8,9 +8,9 @@ import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
 import org.neo4j.graphdb.RelationshipType;
 import org.neo4j.index.IndexService;
-import org.neo4j.index.NeoTestCase;
+import org.neo4j.index.Neo4jTestCase;
 
-public abstract class TestLuceneTooManyOpenFiles extends NeoTestCase
+public abstract class TestLuceneTooManyOpenFiles extends Neo4jTestCase
 {
     private IndexService indexService;
     

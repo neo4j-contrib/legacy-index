@@ -13,9 +13,9 @@ import org.neo4j.graphdb.RelationshipType;
 import org.neo4j.graphdb.Transaction;
 import org.neo4j.index.IndexHits;
 import org.neo4j.index.IndexService;
-import org.neo4j.index.NeoTestCase;
+import org.neo4j.index.Neo4jTestCase;
 
-public abstract class TestLuceneIndexManyThreads extends NeoTestCase
+public abstract class TestLuceneIndexManyThreads extends Neo4jTestCase
 {
     private IndexService indexService;
     private AtomicInteger COUNT_CREATES = new AtomicInteger();

@@ -26,9 +26,9 @@ import java.util.Set;
 import org.neo4j.graphdb.Node;
 import org.neo4j.index.Index;
 import org.neo4j.index.IndexHits;
-import org.neo4j.index.NeoTestCase;
+import org.neo4j.index.Neo4jTestCase;
 
-public class TestMultiIndex extends NeoTestCase
+public class TestMultiIndex extends Neo4jTestCase
 {
 	private MultiValueIndex index;
 	

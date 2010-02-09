@@ -23,9 +23,9 @@ import java.util.Iterator;
 import java.util.LinkedList;
 
 import org.neo4j.graphdb.Node;
-import org.neo4j.index.NeoTestCase;
+import org.neo4j.index.Neo4jTestCase;
 
-public class TestTimeline extends NeoTestCase
+public class TestTimeline extends Neo4jTestCase
 {
 	private Timeline timeline;
 	

@@ -26,9 +26,9 @@ import org.neo4j.graphdb.Node;
 import org.neo4j.index.IndexHits;
 import org.neo4j.index.IndexService;
 import org.neo4j.index.Isolation;
-import org.neo4j.index.NeoTestCase;
+import org.neo4j.index.Neo4jTestCase;
 
-public class TestNeoIndexingService extends NeoTestCase
+public class TestNeoIndexingService extends Neo4jTestCase
 {
 	private IndexService indexService;
 	

@@ -34,10 +34,10 @@ import org.neo4j.kernel.EmbeddedGraphDatabase;
 /**
  * Base class for the meta model tests.
  */
-public abstract class NeoTestCase extends TestCase
+public abstract class Neo4jTestCase extends TestCase
 {
 	private File basePath = new File( "target/var" );
-    private File dbPath = new File( basePath, "neo" );
+    private File dbPath = new File( basePath, "neo4j-db" );
     private GraphDatabaseService graphDb;
     private Transaction tx;
 
