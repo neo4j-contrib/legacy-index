@@ -19,7 +19,7 @@
  */
 
 /**
- * An indexing package using
+ * An indexing implementation using
  * <a href="http://lucene.apache.org/java/docs/index.html">Apache Lucene</a>
  * as backend. Nodes can be indexed using key/value pairs or by full text
  * indexing. There is also a batch inserter for inserting large amounts of

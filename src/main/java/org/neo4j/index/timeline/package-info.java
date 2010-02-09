@@ -19,7 +19,7 @@
  */
 
 /**
- * A Timeline is a utility for indexing nodes ordered by a timestamp. You add each
+ * A utility for indexing nodes ordered by a timestamp. You add each
  * node with a timestamp and then can then ask the timeline to return all nodes
  * within a specific period of time with optional start/end timestamps (exclusive).
  */
