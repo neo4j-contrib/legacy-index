@@ -1,0 +1,9 @@
+[2010-02-09] Make IndexService "stateless"
+    The actual state of the IndexService is not managed by the implementing
+    classes, it's handled by the XA-resources. It should thus be possible
+    to have the IndexService implementations simply lookup the XA-resource
+    and use it, instantiating it (with proper locking) if necessary.
+    This adds a problem: how should we deal with shutdown() if there are
+    multiple implementations - the solution is to use the event framework
+    and have the XA-resource subscribe to the pre-shutdown event from kernel,
+    and do it's shutdown procedures then.
