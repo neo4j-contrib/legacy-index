@@ -20,9 +20,9 @@
 package org.neo4j.index;
 
 /**
- * The isolation level of the indexing. F.ex. should the actual indexing be done
- * right now and in the same transaction? Or should it be put in a queue and
- * performed it at a later time?
+ * The isolation level of the indexing. For example should the actual indexing
+ * be done right now and in the same transaction? Or should it be put in a queue
+ * and performed at a later time?
  * 
  * See more information at <a href=
  * "http://wiki.neo4j.org/content/Indexing_with_IndexService#Isolation_levels">
@@ -34,7 +34,7 @@ public enum Isolation
     /**
      * Happens right now and in the same transaction. Pros:
      * <ul>
-     * <li>You have control that the indexing happens in your current
+     * <li>You have control of that the indexing happens in your current
      * transaction and the changes will be gracefully rolled back if an error
      * should occur in the middle of your transaction</li>
      * <li>You will get errors in the executing thread, making it easier to

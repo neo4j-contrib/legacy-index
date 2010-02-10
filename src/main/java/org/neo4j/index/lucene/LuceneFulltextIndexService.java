@@ -39,18 +39,19 @@ import org.neo4j.index.IndexHits;
  * tokenizes those into words so that you can query for those individual words
  * in {@link #getNodes(String, Object)}. Also queries are case-insensitive.
  * 
- * It stores more data per lucene entry to make it possible. This makes it
+ * It stores more data per Lucene entry to make this possible. This makes it
  * incompatible with {@link LuceneIndexService} so it has got its own XA
- * resource ID. This means that can have one {@link LuceneIndexService} and
+ * resource ID. This means that you can have one {@link LuceneIndexService} and
  * one {@link LuceneFulltextIndexService} for a {@link GraphDatabaseService}.
  * 
- * See more information at http://wiki.neo4j.org/content/Indexing_with_IndexService#Fulltext_indexing
+ * See more information at
+ * http://wiki.neo4j.org/content/Indexing_with_IndexService#Fulltext_indexing
  */
 public class LuceneFulltextIndexService extends LuceneIndexService
 {
     protected static final String DOC_INDEX_SOURCE_KEY = "index_source";
     protected static final String FULLTEXT_DIR_NAME_POSTFIX = "-fulltext";
-    
+
     /**
      * @param graphDb the {@link GraphDatabaseService} to use.
      */
@@ -76,7 +77,7 @@ public class LuceneFulltextIndexService extends LuceneIndexService
     {
         return "262374".getBytes();
     }
-    
+
     /**
      * Since this is a "fulltext" index it changes the contract of this method
      * slightly. It treats the {@code value} more like a query in than you can
@@ -103,8 +104,8 @@ public class LuceneFulltextIndexService extends LuceneIndexService
     @Override
     protected Query formQuery( String key, Object value )
     {
-        TokenStream stream = LuceneFulltextDataSource
-            .LOWER_CASE_WHITESPACE_ANALYZER.tokenStream( DOC_INDEX_KEY,
+        TokenStream stream = LuceneFulltextDataSource.LOWER_CASE_WHITESPACE_ANALYZER.tokenStream(
+                DOC_INDEX_KEY,
                 new StringReader( value.toString().toLowerCase() ) );
         Token token = new Token();
         BooleanQuery booleanQuery = new BooleanQuery();
@@ -113,8 +114,9 @@ public class LuceneFulltextIndexService extends LuceneIndexService
             while ( ( token = stream.next( token ) ) != null )
             {
                 String term = token.term();
-                booleanQuery.add( new TermQuery(
-                    new Term( DOC_INDEX_KEY, term ) ), Occur.MUST );
+                booleanQuery.add(
+                        new TermQuery( new Term( DOC_INDEX_KEY, term ) ),
+                        Occur.MUST );
             }
         }
         catch ( IOException e )

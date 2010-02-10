@@ -33,24 +33,22 @@ import org.neo4j.kernel.impl.cache.LruCache;
 import org.neo4j.kernel.impl.util.ArrayMap;
 
 /**
- * The underlying XA data source for a {@link LuceneReadOnlyIndexService}
- * This class is public since the XA framework requires it.
+ * The underlying XA data source for a {@link LuceneReadOnlyIndexService}. This
+ * class is public since the XA framework requires it.
  */
 public class LuceneReadOnlyDataSource // extends XaDataSource
 {
-    private final ArrayMap<String,IndexSearcher> indexSearchers = 
-        new ArrayMap<String,IndexSearcher>( 6, true, true );
+    private final ArrayMap<String, IndexSearcher> indexSearchers = new ArrayMap<String, IndexSearcher>(
+            6, true, true );
 
     private final String storeDir;
-    
-    private Map<String,LruCache<String,Collection<Long>>> caching = 
-        Collections.synchronizedMap( 
-            new HashMap<String,LruCache<String,Collection<Long>>>() );
+
+    private Map<String, LruCache<String, Collection<Long>>> caching = Collections.synchronizedMap( new HashMap<String, LruCache<String, Collection<Long>>>() );
 
     /**
-     * @param directory the root directory where the lucene indexes reside.
+     * @param directory the root directory where the Lucene indexes reside.
      */
-    public LuceneReadOnlyDataSource( String directory ) 
+    public LuceneReadOnlyDataSource( String directory )
     {
         this.storeDir = directory;
         String dir = storeDir;
@@ -60,7 +58,7 @@ public class LuceneReadOnlyDataSource // extends XaDataSource
             throw new RuntimeException( "No such directory " + dir );
         }
     }
-    
+
     /**
      * Closes this index service and frees all resources.
      */
@@ -87,8 +85,8 @@ public class LuceneReadOnlyDataSource // extends XaDataSource
         {
             try
             {
-                Directory dir = FSDirectory.open( 
-                    new File( storeDir + "/" + key ) );
+                Directory dir = FSDirectory.open( new File( storeDir + "/"
+                                                            + key ) );
                 if ( dir.listAll().length == 0 )
                 {
                     return null;
@@ -104,26 +102,26 @@ public class LuceneReadOnlyDataSource // extends XaDataSource
         return searcher;
     }
 
-    LruCache<String,Collection<Long>> getFromCache( String key )
+    LruCache<String, Collection<Long>> getFromCache( String key )
     {
         return caching.get( key );
     }
 
     void enableCache( String key, int maxNumberOfCachedEntries )
     {
-        this.caching.put( key, new LruCache<String,Collection<Long>>( key,
-            maxNumberOfCachedEntries, null ) );
+        this.caching.put( key, new LruCache<String, Collection<Long>>( key,
+                maxNumberOfCachedEntries, null ) );
     }
 
     void invalidateCache( String key, Object value )
     {
-        LruCache<String,Collection<Long>> cache = caching.get( key );
+        LruCache<String, Collection<Long>> cache = caching.get( key );
         if ( cache != null )
         {
             cache.remove( value.toString() );
         }
     }
-    
+
     void invalidateCache()
     {
         caching.clear();

@@ -48,11 +48,11 @@ import org.neo4j.kernel.EmbeddedReadOnlyGraphDatabase;
 import org.neo4j.kernel.impl.cache.LruCache;
 
 /**
- * A version of {@link LuceneIndexService} which is read-only, i.e. will throw
+ * A version of {@link LuceneIndexService} which is read-only and will throw
  * {@link ReadOnlyIndexException} in
- * {@link IndexService#index(Node, String, Object)}
- * and {@link IndexService#removeIndex(Node, String, Object)}.
- * See {@link EmbeddedReadOnlyGraphDatabase}.
+ * {@link IndexService#index(Node, String, Object)} and
+ * {@link IndexService#removeIndex(Node, String, Object)}. See
+ * {@link EmbeddedReadOnlyGraphDatabase}.
  */
 public class LuceneReadOnlyIndexService extends GenericIndexService
 {
@@ -71,40 +71,38 @@ public class LuceneReadOnlyIndexService extends GenericIndexService
         String luceneDirectory;
         if ( graphDb instanceof EmbeddedReadOnlyGraphDatabase )
         {
-            EmbeddedReadOnlyGraphDatabase embeddedGraphDb =
-                ( ( EmbeddedReadOnlyGraphDatabase ) graphDb );
-            luceneDirectory = 
-                embeddedGraphDb.getStoreDir() + "/" + getDirName();
+            EmbeddedReadOnlyGraphDatabase embeddedGraphDb = ( (EmbeddedReadOnlyGraphDatabase) graphDb );
+            luceneDirectory = embeddedGraphDb.getStoreDir() + "/"
+                              + getDirName();
         }
         else
         {
-            EmbeddedGraphDatabase embeddedGraphDb =
-                ( ( EmbeddedGraphDatabase ) graphDb );
-            luceneDirectory = 
-                embeddedGraphDb.getStoreDir() + "/" + getDirName();
+            EmbeddedGraphDatabase embeddedGraphDb = ( (EmbeddedGraphDatabase) graphDb );
+            luceneDirectory = embeddedGraphDb.getStoreDir() + "/"
+                              + getDirName();
         }
         xaDs = new LuceneReadOnlyDataSource( luceneDirectory );
     }
-    
+
     protected String getDirName()
     {
         return "lucene";
     }
-    
+
     protected Field.Index getIndexStrategy()
     {
         return Field.Index.NOT_ANALYZED;
     }
-    
+
     /**
-     * Enables an LRU cache for a specific index (specified by {@code key})
-     * so that the {@code maxNumberOfCachedEntries} number of results found with
+     * Enables an LRU cache for a specific index (specified by {@code key}) so
+     * that the {@code maxNumberOfCachedEntries} number of results found with
      * {@link #getNodes(String, Object)} are cached for faster consecutive
-     * lookups. It's prefered to enable cache at construction time.
+     * lookups. It's preferred to enable cache at construction time.
      * 
      * @param key the index to enable cache for.
-     * @param maxNumberOfCachedEntries the max size of the cache before old
-     * ones are flushed from the cache.
+     * @param maxNumberOfCachedEntries the max size of the cache before old ones
+     *            are flushed from the cache.
      * @see LuceneIndexService#enableCache(String, int)
      */
     public void enableCache( String key, int maxNumberOfCachedEntries )
@@ -117,61 +115,62 @@ public class LuceneReadOnlyIndexService extends GenericIndexService
     {
         throw new ReadOnlyIndexException();
     }
-    
+
     /**
-     * (Copied from {@link LuceneIndexService#setLazySearchResultThreshold(int)})
-     *
-     * Sets the threshold for when a result is considered big enough to
-     * skip cache and be returned as a totally lazy iterator so that
+     * (Copied from {@link LuceneIndexService#setLazySearchResultThreshold(int)}
+     * )
+     * 
+     * Sets the threshold for when a result is considered big enough to skip
+     * cache and be returned as a fully lazy iterator so that
      * {@link #getNodes(String, Object)} will return very fast and all the
      * reading and fetching of nodes is done lazily before each step in the
      * iteration of the returned result. The default value is
      * {@link LuceneIndexService#DEFAULT_LAZY_SEARCH_RESULT_THRESHOLD}.
+     * 
      * @param numberOfHitsBeforeLazyLoading the threshold where results which
-     * are bigger than that threshold becomes lazy.
+     *            are bigger than that threshold becomes lazy.
      */
-    public void setLazySearchResultThreshold(
-        int numberOfHitsBeforeLazyLoading )
+    public void setLazySearchResultThreshold( int numberOfHitsBeforeLazyLoading )
     {
         this.lazynessThreshold = numberOfHitsBeforeLazyLoading;
         xaDs.invalidateCache();
     }
-    
+
     /**
      * (Copied from {@link LuceneIndexService#getLazySearchResultThreshold()}
      * 
-     * Returns the threshold for when a result is considered big enough to
-     * skip cache and be returned as a totally lazy iterator so that
+     * Returns the threshold for when a result is considered big enough to skip
+     * cache and be returned as a fully lazy iterator so that
      * {@link #getNodes(String, Object)} will return very fast and all the
      * reading and fetching of nodes is done lazily before each step in the
      * iteration of the returned result. The default value is
      * {@link LuceneIndexService#DEFAULT_LAZY_SEARCH_RESULT_THRESHOLD}.
      * 
-     * @return the threshold for when a result is considered big enough
-     * to be returned as a lazy iteration.
+     * @return the threshold for when a result is considered big enough to be
+     *         returned as a lazy iteration.
      */
     public int getLazySearchResultThreshold()
     {
         return this.lazynessThreshold;
     }
-    
+
     public IndexHits<Node> getNodes( String key, Object value )
     {
         return getNodes( key, value, null );
     }
-    
+
     /**
      * Just like {@link #getNodes(String, Object)}, but with sorted result.
      * 
      * @param key the index to query.
      * @param value the value to query for.
-     * @param sortingOrNull lucene sorting behaviour for the result. Ignored
-     * if {@code null}.
-     * @return nodes that has been indexed with key and value, optionally
-     * sorted with {@code sortingOrNull}.
+     * @param sortingOrNull lucene sorting behaviour for the result. Ignored if
+     *            {@code null}.
+     * @return nodes that has been indexed with key and value, optionally sorted
+     *         with {@code sortingOrNull}.
      */
     public IndexHits<Node> getNodes( String key, Object value,
-        Sort sortingOrNull )
+            Sort sortingOrNull )
     {
         List<Long> nodeIds = new ArrayList<Long>();
         IndexSearcher searcher = xaDs.getIndexSearcher( key );
@@ -179,14 +178,12 @@ public class LuceneReadOnlyIndexService extends GenericIndexService
         Integer nodeIdIteratorSize = null;
         if ( searcher != null )
         {
-            LruCache<String,Collection<Long>> cachedNodesMap = 
-                xaDs.getFromCache( key );
+            LruCache<String, Collection<Long>> cachedNodesMap = xaDs.getFromCache( key );
             boolean foundInCache = false;
             String valueAsString = value.toString();
             if ( cachedNodesMap != null )
             {
-                Collection<Long> cachedNodes =
-                    cachedNodesMap.get( valueAsString );
+                Collection<Long> cachedNodes = cachedNodesMap.get( valueAsString );
                 if ( cachedNodes != null )
                 {
                     foundInCache = true;
@@ -195,23 +192,21 @@ public class LuceneReadOnlyIndexService extends GenericIndexService
             }
             if ( !foundInCache )
             {
-                DocToIdIterator searchedNodeIds = searchForNodes( key,
-                    value, sortingOrNull );
+                DocToIdIterator searchedNodeIds = searchForNodes( key, value,
+                        sortingOrNull );
                 if ( searchedNodeIds.size() >= this.lazynessThreshold )
                 {
                     if ( cachedNodesMap != null )
                     {
                         cachedNodesMap.remove( valueAsString );
                     }
-                    
-                    Collection<Iterator<Long>> iterators =
-                        new ArrayList<Iterator<Long>>();
+
+                    Collection<Iterator<Long>> iterators = new ArrayList<Iterator<Long>>();
                     iterators.add( nodeIds.iterator() );
                     iterators.add( searchedNodeIds );
-                    nodeIdIterator =
-                        new CombiningIterator<Long>( iterators );
-                    nodeIdIteratorSize = nodeIds.size() +
-                        searchedNodeIds.size();
+                    nodeIdIterator = new CombiningIterator<Long>( iterators );
+                    nodeIdIteratorSize = nodeIds.size()
+                                         + searchedNodeIds.size();
                 }
                 else
                 {
@@ -229,45 +224,44 @@ public class LuceneReadOnlyIndexService extends GenericIndexService
                 }
             }
         }
-        
+
         if ( nodeIdIterator == null )
         {
             nodeIdIterator = nodeIds.iterator();
             nodeIdIteratorSize = nodeIds.size();
         }
         return new SimpleIndexHits<Node>( new IteratorAsIterable<Node>(
-            instantiateIdToNodeIterator( nodeIdIterator ) ),
-            nodeIdIteratorSize );
+                instantiateIdToNodeIterator( nodeIdIterator ) ),
+                nodeIdIteratorSize );
     }
-    
+
     protected Iterator<Node> instantiateIdToNodeIterator(
-        final Iterator<Long> ids )
+            final Iterator<Long> ids )
     {
         return new IdToNodeIterator( ids, getGraphDb() );
     }
-    
+
     protected Query formQuery( String key, Object value )
     {
         return new TermQuery( new Term( DOC_INDEX_KEY, value.toString() ) );
     }
 
     private DocToIdIterator searchForNodes( String key, Object value,
-        Sort sortingOrNull )
+            Sort sortingOrNull )
     {
         Query query = formQuery( key, value );
         try
         {
             IndexSearcher searcher = xaDs.getIndexSearcher( key );
-            Hits hits = sortingOrNull != null ?
-                searcher.search( query, sortingOrNull ) :
-                searcher.search( query );
+            Hits hits = sortingOrNull != null ? searcher.search( query,
+                    sortingOrNull ) : searcher.search( query );
             return new DocToIdIterator( new HitsIterator( hits ),
-                Collections.<Long>emptyList(), null );
+                    Collections.<Long>emptyList(), null );
         }
         catch ( IOException e )
         {
             throw new RuntimeException( "Unable to search for " + key + ","
-                + value, e );
+                                        + value, e );
         }
     }
 
@@ -278,7 +272,7 @@ public class LuceneReadOnlyIndexService extends GenericIndexService
         if ( nodes.hasNext() )
         {
             throw new RuntimeException( "More than one node for " + key + "="
-                + value );
+                                        + value );
         }
         return node;
     }

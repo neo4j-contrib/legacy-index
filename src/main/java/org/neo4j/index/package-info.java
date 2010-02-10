@@ -23,7 +23,8 @@
  * collection of various utilities for indexing parts of a Neo4j graph in 
  * different ways. The most straight-forward way is via
  * {@link org.neo4j.index.IndexService}. It is basically a service where you can
- * index Neo4j nodes with key-value pairs.
+ * index Neo4j nodes with key-value pairs. The index operations participate in
+ * Neo4j transactions, which means the indexes are covered by roll-backs etc.
  */
 package org.neo4j.index;
 

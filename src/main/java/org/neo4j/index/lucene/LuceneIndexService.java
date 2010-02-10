@@ -60,18 +60,18 @@ import org.neo4j.kernel.impl.util.ArrayMap;
  * An implementation of {@link IndexService} which uses Lucene as backend.
  * Additional features to {@link IndexService} is:
  * <ul>
- *   <li>{@link #enableCache(String, int)} will enable a LRU cache for the
- *   specific key and will boost performance in performance-critical areas.</li>
- *   <li>{@link #getNodes(String, Object, Sort)} where you can pass in a
- *   {@link Sort} option to control in which order lucene returns the
- *   results</li>
- *   <li>{@link #setLazySearchResultThreshold(int)} will control the threshold
- *   for then a search result is considered big enough to be returned as a
- *   lazy iteration, making {@link #getNodes(String, Object)} return very fast,
- *   but skips caching</li>
+ * <li>{@link #enableCache(String, int)} will enable a LRU cache for the
+ * specific key and will boost performance in performance-critical areas.</li>
+ * <li>{@link #getNodes(String, Object, Sort)} where you can pass in a
+ * {@link Sort} option to control in which order Lucene returns the results</li>
+ * <li>{@link #setLazySearchResultThreshold(int)} will control the threshold for
+ * when a search result is considered big enough to be returned as a lazy
+ * iteration, making {@link #getNodes(String, Object)} return very fast, but
+ * skips caching</li>
  * </ul>
  * 
- * See more information at http://wiki.neo4j.org/content/Indexing_with_IndexService
+ * See more information at
+ * http://wiki.neo4j.org/content/Indexing_with_IndexService
  */
 public class LuceneIndexService extends GenericIndexService
 {
@@ -79,15 +79,15 @@ public class LuceneIndexService extends GenericIndexService
      * The default value for {@link #getLazySearchResultThreshold()}
      */
     public static final int DEFAULT_LAZY_SEARCH_RESULT_THRESHOLD = 100;
-    
+
     protected static final String DOC_ID_KEY = "id";
     protected static final String DOC_INDEX_KEY = "index";
     protected static final String DIR_NAME = "lucene";
-    
+
     private final TransactionManager txManager;
     private final ConnectionBroker broker;
     private final LuceneDataSource xaDs;
-    
+
     private int lazynessThreshold = DEFAULT_LAZY_SEARCH_RESULT_THRESHOLD;
 
     /**
@@ -96,88 +96,86 @@ public class LuceneIndexService extends GenericIndexService
     public LuceneIndexService( GraphDatabaseService graphDb )
     {
         super( graphDb );
-        EmbeddedGraphDatabase embeddedGraphDb =
-            ( ( EmbeddedGraphDatabase ) graphDb );
-        String luceneDirectory = 
-            embeddedGraphDb.getConfig().getTxModule().getTxLogDirectory() +
-                "/" + getDirName();
+        EmbeddedGraphDatabase embeddedGraphDb = ( (EmbeddedGraphDatabase) graphDb );
+        String luceneDirectory = embeddedGraphDb.getConfig().getTxModule().getTxLogDirectory()
+                                 + "/" + getDirName();
         TxModule txModule = embeddedGraphDb.getConfig().getTxModule();
         txManager = txModule.getTxManager();
         byte resourceId[] = getXaResourceId();
-        Map<Object,Object> params = getDefaultParams();
+        Map<Object, Object> params = getDefaultParams();
         params.put( "dir", luceneDirectory );
-        params.put( LockManager.class, 
-            embeddedGraphDb.getConfig().getLockManager() );
-        xaDs = ( LuceneDataSource ) txModule.registerDataSource( getDirName(),
-            getDataSourceClass().getName(), resourceId, params, true );
+        params.put( LockManager.class,
+                embeddedGraphDb.getConfig().getLockManager() );
+        xaDs = (LuceneDataSource) txModule.registerDataSource( getDirName(),
+                getDataSourceClass().getName(), resourceId, params, true );
         broker = new ConnectionBroker( txManager, xaDs );
         xaDs.setIndexService( this );
     }
-    
+
     protected Class<? extends LuceneDataSource> getDataSourceClass()
     {
         return LuceneDataSource.class;
     }
-    
+
     protected String getDirName()
     {
         return DIR_NAME;
     }
-    
+
     protected byte[] getXaResourceId()
     {
         return "162373".getBytes();
     }
-    
-    private Map<Object,Object> getDefaultParams()
+
+    private Map<Object, Object> getDefaultParams()
     {
-        Map<Object,Object> params = new HashMap<Object,Object>();
+        Map<Object, Object> params = new HashMap<Object, Object>();
         params.put( LuceneIndexService.class, this );
         return params;
     }
 
     /**
-     * Enables an LRU cache for a specific index (specified by {@code key})
-     * so that the {@code maxNumberOfCachedEntries} number of results found with
+     * Enables an LRU cache for a specific index (specified by {@code key}) so
+     * that the {@code maxNumberOfCachedEntries} number of results found with
      * {@link #getNodes(String, Object)} are cached for faster consecutive
-     * lookups. It's prefered to enable cache at construction time.
+     * lookups. It's preferred to enable cache at construction time.
      * 
      * @param key the index to enable cache for.
-     * @param maxNumberOfCachedEntries the max size of the cache before old
-     * ones are flushed from the cache.
+     * @param maxNumberOfCachedEntries the max size of the cache before old ones
+     *            are flushed from the cache.
      */
     public void enableCache( String key, int maxNumberOfCachedEntries )
     {
         xaDs.enableCache( key, maxNumberOfCachedEntries );
     }
-    
+
     /**
-     * Sets the threshold for when a result is considered big enough to
-     * skip cache and be returned as a totally lazy iterator so that
-     * {@link #getNodes(String, Object)} will return very fast and all the
-     * reading and fetching of nodes is done lazily before each step in the
-     * iteration of the returned result. The default value is
-     * {@link #DEFAULT_LAZY_SEARCH_RESULT_THRESHOLD}.
-     * @param numberOfHitsBeforeLazyLoading the threshold where results which
-     * are bigger than that threshold becomes lazy.
-     */
-    public void setLazySearchResultThreshold(
-        int numberOfHitsBeforeLazyLoading )
-    {
-        this.lazynessThreshold = numberOfHitsBeforeLazyLoading;
-        xaDs.invalidateCache();
-    }
-    
-    /**
-     * Returns the threshold for when a result is considered big enough to
-     * skip cache and be returned as a totally lazy iterator so that
+     * Sets the threshold for when a result is considered big enough to skip
+     * cache and be returned as a fully lazy iterator so that
      * {@link #getNodes(String, Object)} will return very fast and all the
      * reading and fetching of nodes is done lazily before each step in the
      * iteration of the returned result. The default value is
      * {@link #DEFAULT_LAZY_SEARCH_RESULT_THRESHOLD}.
      * 
-     * @return the threshold for when a result is considered big enough
-     * to be returned as a lazy iteration.
+     * @param numberOfHitsBeforeLazyLoading the threshold where results which
+     *            are bigger than that threshold becomes lazy.
+     */
+    public void setLazySearchResultThreshold( int numberOfHitsBeforeLazyLoading )
+    {
+        this.lazynessThreshold = numberOfHitsBeforeLazyLoading;
+        xaDs.invalidateCache();
+    }
+
+    /**
+     * Returns the threshold for when a result is considered big enough to skip
+     * cache and be returned as a fully lazy iterator so that
+     * {@link #getNodes(String, Object)} will return very fast and all the
+     * reading and fetching of nodes is done lazily before each step in the
+     * iteration of the returned result. The default value is
+     * {@link #DEFAULT_LAZY_SEARCH_RESULT_THRESHOLD}.
+     * 
+     * @return the threshold for when a result is considered big enough to be
+     *         returned as a lazy iteration.
      */
     public int getLazySearchResultThreshold()
     {
@@ -189,24 +187,24 @@ public class LuceneIndexService extends GenericIndexService
     {
         getConnection().index( node, key, value );
     }
-    
+
     public IndexHits<Node> getNodes( String key, Object value )
     {
         return getNodes( key, value, null );
     }
-    
+
     /**
      * Just like {@link #getNodes(String, Object)}, but with sorted result.
      * 
      * @param key the index to query.
      * @param value the value to query for.
-     * @param sortingOrNull lucene sorting behaviour for the result. Ignored
-     * if {@code null}.
-     * @return nodes that has been indexed with key and value, optionally
-     * sorted with {@code sortingOrNull}.
+     * @param sortingOrNull lucene sorting behaviour for the result. Ignored if
+     *            {@code null}.
+     * @return nodes that has been indexed with key and value, optionally sorted
+     *         with {@code sortingOrNull}.
      */
     public IndexHits<Node> getNodes( String key, Object value,
-        Sort sortingOrNull )
+            Sort sortingOrNull )
     {
         List<Long> nodeIds = new ArrayList<Long>();
         LuceneTransaction luceneTx = getConnection().getLuceneTx();
@@ -228,15 +226,14 @@ public class LuceneIndexService extends GenericIndexService
             searcher = xaDs.getIndexSearcher( key );
             if ( searcher != null )
             {
-                LruCache<String,Collection<Long>> cachedNodesMap = 
-                    xaDs.getFromCache( key );
+                LruCache<String, Collection<Long>> cachedNodesMap = xaDs.getFromCache( key );
                 String valueAsString = value.toString();
                 boolean foundInCache = fillFromCache( cachedNodesMap, nodeIds,
-                    key, valueAsString, deletedNodes );
+                        key, valueAsString, deletedNodes );
                 if ( !foundInCache )
                 {
                     DocToIdIterator searchedNodeIds = searchForNodes( searcher,
-                        key, value, sortingOrNull, deletedNodes );
+                            key, value, sortingOrNull, deletedNodes );
                     if ( searchedNodeIds.size() >= this.lazynessThreshold )
                     {
                         // Instantiate a lazy iterator
@@ -245,21 +242,19 @@ public class LuceneIndexService extends GenericIndexService
                         {
                             cachedNodesMap.remove( valueAsString );
                         }
-                        
-                        Collection<Iterator<Long>> iterators =
-                            new ArrayList<Iterator<Long>>();
+
+                        Collection<Iterator<Long>> iterators = new ArrayList<Iterator<Long>>();
                         iterators.add( nodeIds.iterator() );
                         iterators.add( searchedNodeIds );
-                        nodeIdIterator =
-                            new CombiningIterator<Long>( iterators );
-                        nodeIdIteratorSize = nodeIds.size() +
-                            searchedNodeIds.size();
+                        nodeIdIterator = new CombiningIterator<Long>( iterators );
+                        nodeIdIteratorSize = nodeIds.size()
+                                             + searchedNodeIds.size();
                     }
                     else
                     {
                         // Loop through result here (and cache it if possible)
                         readNodesFromHits( searchedNodeIds, nodeIds,
-                            cachedNodesMap, valueAsString );
+                                cachedNodesMap, valueAsString );
                     }
                 }
             }
@@ -270,28 +265,28 @@ public class LuceneIndexService extends GenericIndexService
             // or the LazyIterator if it's a lazy one. So no need here.
             xaDs.releaseReadLock();
         }
-        
+
         if ( nodeIdIterator == null )
         {
             nodeIdIterator = nodeIds.iterator();
             nodeIdIteratorSize = nodeIds.size();
         }
-        
+
         IndexHits<Node> hits = new SimpleIndexHits<Node>(
-            new IteratorAsIterable<Node>(
-                instantiateIdToNodeIterator( nodeIdIterator ) ),
-                    nodeIdIteratorSize );
+                new IteratorAsIterable<Node>(
+                        instantiateIdToNodeIterator( nodeIdIterator ) ),
+                nodeIdIteratorSize );
         if ( isLazy )
         {
             hits = new LazyIndexHits<Node>( hits, searcher );
         }
         return hits;
     }
-    
+
     private void readNodesFromHits( DocToIdIterator searchedNodeIds,
-        Collection<Long> nodeIds,
-        LruCache<String, Collection<Long>> cachedNodesMap,
-        String valueAsString )
+            Collection<Long> nodeIds,
+            LruCache<String, Collection<Long>> cachedNodesMap,
+            String valueAsString )
     {
         ArrayList<Long> readNodeIds = new ArrayList<Long>();
         while ( searchedNodeIds.hasNext() )
@@ -307,14 +302,14 @@ public class LuceneIndexService extends GenericIndexService
     }
 
     private boolean fillFromCache(
-        LruCache<String, Collection<Long>> cachedNodesMap, List<Long> nodeIds,
-        String key, String valueAsString, Set<Long> deletedNodes )
+            LruCache<String, Collection<Long>> cachedNodesMap,
+            List<Long> nodeIds, String key, String valueAsString,
+            Set<Long> deletedNodes )
     {
         boolean found = false;
         if ( cachedNodesMap != null )
         {
-            Collection<Long> cachedNodes =
-                cachedNodesMap.get( valueAsString );
+            Collection<Long> cachedNodes = cachedNodesMap.get( valueAsString );
             if ( cachedNodes != null )
             {
                 found = true;
@@ -331,11 +326,11 @@ public class LuceneIndexService extends GenericIndexService
     }
 
     protected Iterator<Node> instantiateIdToNodeIterator(
-        final Iterator<Long> ids )
+            final Iterator<Long> ids )
     {
         return new IdToNodeIterator( ids, getGraphDb() );
     }
-    
+
     protected Query formQuery( String key, Object value )
     {
         return new TermQuery( new Term( DOC_INDEX_KEY, value.toString() ) );
@@ -345,22 +340,22 @@ public class LuceneIndexService extends GenericIndexService
      * Returns a lazy iterator with the node ids.
      */
     private DocToIdIterator searchForNodes( IndexSearcherRef searcher,
-        String key, Object value, Sort sortingOrNull, Set<Long> deletedNodes )
+            String key, Object value, Sort sortingOrNull, Set<Long> deletedNodes )
     {
         Query query = formQuery( key, value );
         try
         {
             searcher.incRef();
-            Hits hits = sortingOrNull != null ?
-                searcher.getSearcher().search( query, sortingOrNull ) :
-                searcher.getSearcher().search( query );
-            return new DocToIdIterator( new HitsIterator( hits ),
-                deletedNodes, searcher );
+            Hits hits = sortingOrNull != null ? searcher.getSearcher().search(
+                    query, sortingOrNull ) : searcher.getSearcher().search(
+                    query );
+            return new DocToIdIterator( new HitsIterator( hits ), deletedNodes,
+                    searcher );
         }
         catch ( IOException e )
         {
             throw new RuntimeException( "Unable to search for " + key + ","
-                + value, e );
+                                        + value, e );
         }
     }
 
@@ -374,8 +369,8 @@ public class LuceneIndexService extends GenericIndexService
             Node node = nodes.hasNext() ? nodes.next() : null;
             if ( nodes.hasNext() )
             {
-                throw new RuntimeException( "More than one node for " + key + "="
-                    + value );
+                throw new RuntimeException( "More than one node for " + key
+                                            + "=" + value );
             }
             return node;
         }
@@ -402,13 +397,12 @@ public class LuceneIndexService extends GenericIndexService
     public synchronized void shutdown()
     {
         super.shutdown();
-        EmbeddedGraphDatabase embeddedGraphDb =
-            ( ( EmbeddedGraphDatabase ) getGraphDb() );
+        EmbeddedGraphDatabase embeddedGraphDb = ( (EmbeddedGraphDatabase) getGraphDb() );
         TxModule txModule = embeddedGraphDb.getConfig().getTxModule();
         if ( txModule.getXaDataSourceManager().hasDataSource( getDirName() ) )
         {
             txModule.getXaDataSourceManager().unregisterDataSource(
-                getDirName() );
+                    getDirName() );
         }
         xaDs.close();
     }
@@ -417,16 +411,16 @@ public class LuceneIndexService extends GenericIndexService
     {
         return broker.acquireResourceConnection();
     }
-        
+
     private static class ConnectionBroker
     {
-        private final ArrayMap<Transaction,LuceneXaConnection> txConnectionMap =
-            new ArrayMap<Transaction,LuceneXaConnection>( 5, true, true );
+        private final ArrayMap<Transaction, LuceneXaConnection> txConnectionMap = new ArrayMap<Transaction, LuceneXaConnection>(
+                5, true, true );
         private final TransactionManager transactionManager;
         private final LuceneDataSource xaDs;
 
         ConnectionBroker( TransactionManager transactionManager,
-            LuceneDataSource xaDs )
+                LuceneDataSource xaDs )
         {
             this.transactionManager = transactionManager;
             this.xaDs = xaDs;
@@ -445,7 +439,8 @@ public class LuceneIndexService extends GenericIndexService
                     if ( !tx.enlistResource( con.getXaResource() ) )
                     {
                         throw new RuntimeException( "Unable to enlist '"
-                            + con.getXaResource() + "' in " + tx );
+                                                    + con.getXaResource()
+                                                    + "' in " + tx );
                     }
                     tx.registerSynchronization( new TxCommitHook( tx ) );
                     txConnectionMap.put( tx, con );
@@ -457,8 +452,7 @@ public class LuceneIndexService extends GenericIndexService
                 }
                 catch ( javax.transaction.SystemException se )
                 {
-                    String msg = 
-                        "TM encountered an unexpected error condition.";
+                    String msg = "TM encountered an unexpected error condition.";
                     throw new RuntimeException( msg, se );
                 }
             }
@@ -466,7 +460,7 @@ public class LuceneIndexService extends GenericIndexService
         }
 
         void releaseResourceConnectionsForTransaction( Transaction tx )
-            throws NotInTransactionException
+                throws NotInTransactionException
         {
             LuceneXaConnection con = txConnectionMap.remove( tx );
             if ( con != null )
@@ -484,23 +478,23 @@ public class LuceneIndexService extends GenericIndexService
                 try
                 {
                     tx.delistResource( con.getXaResource(),
-                        XAResource.TMSUCCESS );
+                            XAResource.TMSUCCESS );
                 }
                 catch ( IllegalStateException e )
                 {
                     throw new RuntimeException(
-                        "Unable to delist lucene resource from tx", e );
+                            "Unable to delist lucene resource from tx", e );
                 }
                 catch ( SystemException e )
                 {
                     throw new RuntimeException(
-                        "Unable to delist lucene resource from tx", e );
+                            "Unable to delist lucene resource from tx", e );
                 }
             }
         }
 
         private Transaction getCurrentTransaction()
-            throws NotInTransactionException
+                throws NotInTransactionException
         {
             try
             {
@@ -508,14 +502,14 @@ public class LuceneIndexService extends GenericIndexService
                 if ( tx == null )
                 {
                     throw new NotInTransactionException(
-                        "No transaction found for current thread" );
+                            "No transaction found for current thread" );
                 }
                 return tx;
             }
             catch ( SystemException se )
             {
                 throw new NotInTransactionException(
-                    "Error fetching transaction for current thread", se );
+                        "Error fetching transaction for current thread", se );
             }
         }
 

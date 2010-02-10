@@ -22,10 +22,11 @@ package org.neo4j.index;
 import java.util.Iterator;
 
 /**
- * It's just an {@link Iterator} with additional {@link #size()} and
- * {@link #close()} methods on it. It is first and foremost an {@link Iterator},
- * but also an {@link Iterable} JUST so that it can be used in a for-each loop.
- * The <code>iterator()</code> method <i>always</i> returns <code>this</code>.
+ * An {@link Iterator} with additional {@link #size()} and {@link #close()}
+ * methods on it, used for iterating over index query results. It is first and
+ * foremost an {@link Iterator}, but also an {@link Iterable} JUST so that it
+ * can be used in a for-each loop. The <code>iterator()</code> method
+ * <i>always</i> returns <code>this</code>.
  * 
  * The size is calculated before-hand so that calling it's always fast.
  * 
@@ -38,19 +39,19 @@ import java.util.Iterator;
 public interface IndexHits<T> extends Iterator<T>, Iterable<T>
 {
     /**
-     * Returns the size of this iterable. The size is given at
-     * construction time so that the size is known before-hand so that it's
-     * basically just a simple return statement of an integer variable.
+     * Returns the size of this iterable. The size is given at construction time
+     * so that the size is known before-hand so that it's basically just a
+     * simple return statement of an integer variable.
      * 
      * @return the size if this iterable.
      */
     int size();
-    
+
     /**
      * Closes the underlying search result. This method should be called
      * whenever you've got what you wanted from the result and won't use it
-     * anymore. It's necessary to call it so that underlying indexes can
-     * dispose of allocated resources for this search result.
+     * anymore. It's necessary to call it so that underlying indexes can dispose
+     * of allocated resources for this search result.
      * 
      * You can however skip to call this method if you loop through the whole
      * result, then close() will be called automatically. Even if you loop

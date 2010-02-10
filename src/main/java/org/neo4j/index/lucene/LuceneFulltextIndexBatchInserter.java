@@ -28,18 +28,20 @@ import org.apache.lucene.search.TermQuery;
 import org.neo4j.kernel.impl.batchinsert.BatchInserter;
 
 /**
- * The "batch inserter" version of {@link LuceneFulltextIndexService}.
- * It should be used with a BatchInserter and stores the indexes in the same
- * format as {@link LuceneFulltextIndexService}.
+ * The "batch inserter" version of {@link LuceneFulltextIndexService}. It should
+ * be used with a BatchInserter and stores the indexes in the same format as
+ * {@link LuceneFulltextIndexService}.
  * 
  * It's optimized for large chunks of either reads or writes. So try to avoid
  * mixed reads and writes because there's a slight overhead to go from read mode
  * to write mode (the "mode" is per key and will not affect other keys)
  * 
- * See more information at http://wiki.neo4j.org/content/Indexing_with_BatchInserter
+ * See more information at {link
+ * http://wiki.neo4j.org/content/Indexing_with_BatchInserter the Indexing with
+ * BatchInserter wiki page}.
  */
-public class LuceneFulltextIndexBatchInserter
-    extends LuceneIndexBatchInserterImpl
+public class LuceneFulltextIndexBatchInserter extends
+        LuceneIndexBatchInserterImpl
 {
     /**
      * @param inserter the {@link BatchInserter} to use.
@@ -51,12 +53,12 @@ public class LuceneFulltextIndexBatchInserter
 
     @Override
     protected void fillDocument( Document document, long nodeId, String key,
-        Object value )
+            Object value )
     {
         super.fillDocument( document, nodeId, key, value );
         document.add( new Field(
-            LuceneFulltextIndexService.DOC_INDEX_SOURCE_KEY, value.toString(),
-            Field.Store.NO, Field.Index.NOT_ANALYZED ) );
+                LuceneFulltextIndexService.DOC_INDEX_SOURCE_KEY,
+                value.toString(), Field.Store.NO, Field.Index.NOT_ANALYZED ) );
     }
 
     @Override
@@ -68,14 +70,14 @@ public class LuceneFulltextIndexBatchInserter
     @Override
     protected String getDirName()
     {
-        return super.getDirName() +
-            LuceneFulltextIndexService.FULLTEXT_DIR_NAME_POSTFIX;
+        return super.getDirName()
+               + LuceneFulltextIndexService.FULLTEXT_DIR_NAME_POSTFIX;
     }
 
     @Override
     protected Query formQuery( String key, Object value )
     {
         return new TermQuery( new Term( LuceneIndexService.DOC_INDEX_KEY,
-            value.toString().toLowerCase() ) );
+                value.toString().toLowerCase() ) );
     }
 }
