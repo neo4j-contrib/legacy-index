@@ -91,7 +91,7 @@ public interface IndexService
      * invoked before any index ({@link #index(Node, String, Object)},
      * {@link #removeIndex(Node, String, Object)}) has been performed in the
      * current transaction. The default isolation level is
-     * {@link Isolation#SAME_TX} .
+     * {@link Isolation#SAME_TX} . The isolation level is thread confined.
      * 
      * @param level new isolation level
      */
