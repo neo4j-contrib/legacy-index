@@ -26,7 +26,10 @@ import org.neo4j.graphdb.Node;
  * indexing features built-in. Instead you'll have to manage indexing manually.
  * IndexService is a means of providing those indexing capabilities for a Neo4j
  * graph and integrate it as tightly as possible with the graph engine.
- * 
+ * <p>
+ * Note that changes on {@link Node} properties respective nodes that are
+ * deleted must be propagated to the index by the application.
+ * <p>
  * See more at <a
  * href="http://wiki.neo4j.org/content/Indexing_with_IndexService"> The Neo4j
  * wiki page on "Indexing with IndexService"</a>.
@@ -41,6 +44,9 @@ public interface IndexService
      * on a {@link Node} and that value gets updated, you'll have to remove the
      * old value in addition to indexing the new value, else both values (the
      * new and the old) will be indexed for that node.
+     * <p>
+     * When deleting a {@link Node}, application should remove the index entries
+     * for the node as well, to keep the index consistent with the node space.
      * 
      * @param node node to index
      * @param key the key in the key-value pair to associate with {@code node}.
