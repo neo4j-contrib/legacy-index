@@ -57,7 +57,7 @@ public abstract class GenericIndexService implements IndexService
     {
         if ( graphDb == null )
         {
-            throw new IllegalArgumentException( "Null neo service" );
+            throw new IllegalArgumentException( "Null graph database service" );
         }
         this.graphDb = graphDb;
         queue = new IndexServiceQueue( this );
