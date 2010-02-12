@@ -69,11 +69,7 @@ import org.neo4j.kernel.impl.util.ArrayMap;
  * iteration, making {@link #getNodes(String, Object)} return very fast, but
  * skips caching</li>
  * </ul>
- * <p>
- * Note that this implementation will cast objects given as the value to index
- * in {@link IndexService#index(Node, String, Object)} to
- * {@link java.lang.String}.
- * <p>
+ * 
  * See more information at
  * http://wiki.neo4j.org/content/Indexing_with_IndexService
  */
@@ -186,12 +182,30 @@ public class LuceneIndexService extends GenericIndexService
         return this.lazynessThreshold;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Note that this implementation will cast objects given as the value to
+     * {@link java.lang.String}.
+     */
+    @Override
+    public void index( Node node, String key, Object value )
+    {
+        super.index( node, key, value );
+    }
+
     @Override
     protected void indexThisTx( Node node, String key, Object value )
     {
         getConnection().index( node, key, value );
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Note that this implementation will cast objects given as the value to
+     * {@link java.lang.String}.
+     */
     public IndexHits<Node> getNodes( String key, Object value )
     {
         return getNodes( key, value, null );
