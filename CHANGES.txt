@@ -1,3 +1,11 @@
+1.0 (2010-02-16)
+----------------
+
+o Bugfixes regarding closing of underlying Lucene indices.
+o Fixed a recursion bug in IndexHits.
+o LuceneIndexBatchInserterImpl does optimize before shutdown.
+o More work on javadoc.
+
 1.0-b1 (2010-01-11)
 ------------------
 
