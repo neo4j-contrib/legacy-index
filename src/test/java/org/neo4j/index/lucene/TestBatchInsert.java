@@ -29,7 +29,7 @@ import org.neo4j.kernel.impl.batchinsert.BatchInserterImpl;
 
 public class TestBatchInsert extends TestCase
 {
-    private String getNeoPath()
+    private String getDbPath()
     {
         return "target/var/batch-insert";
     }
@@ -37,7 +37,7 @@ public class TestBatchInsert extends TestCase
     @Override
     public void tearDown() throws Exception
     {
-        deleteRecursivley( new File( getNeoPath() ) );
+        deleteRecursivley( new File( getDbPath() ) );
     }
     
     private void deleteRecursivley( File file )
@@ -54,12 +54,12 @@ public class TestBatchInsert extends TestCase
     
     public void testSimpleBatchInsert()
     {
-        BatchInserter neo = new BatchInserterImpl( getNeoPath() );
+        BatchInserter inserter = new BatchInserterImpl( getDbPath() );
         LuceneIndexBatchInserter index = 
-            new LuceneIndexBatchInserterImpl( neo );
+            new LuceneIndexBatchInserterImpl( inserter );
         try
         {
-            long node = neo.createNode( null );
+            long node = inserter.createNode( null );
             assertTrue( !index.getNodes( "test-key", 
                 "test-value" ).iterator().hasNext() );
             index.index( node, "test-key", "test-value" );
@@ -69,18 +69,18 @@ public class TestBatchInsert extends TestCase
         finally
         {
             index.shutdown();
-            neo.shutdown();
+            inserter.shutdown();
         }
     }
 
     public void testSimpleFulltextBatchInsert()
     {
-        BatchInserter neo = new BatchInserterImpl( getNeoPath() );
+        BatchInserter inserter = new BatchInserterImpl( getDbPath() );
         LuceneIndexBatchInserter index = 
-            new LuceneFulltextIndexBatchInserter( neo );
+            new LuceneFulltextIndexBatchInserter( inserter );
         try
         {
-            long node = neo.createNode( null );
+            long node = inserter.createNode( null );
             assertTrue( !index.getNodes( "test-key", 
                 "test-value" ).iterator().hasNext() );
             index.index( node, "test-key", "test-value" );
@@ -100,15 +100,15 @@ public class TestBatchInsert extends TestCase
         finally
         {
             index.shutdown();
-            neo.shutdown();
+            inserter.shutdown();
         }
     }
     
     public void testMoreFulltextBatchInsert()
     {
-        BatchInserter neo = new BatchInserterImpl( getNeoPath() );
+        BatchInserter inserter = new BatchInserterImpl( getDbPath() );
         LuceneIndexBatchInserter index = 
-            new LuceneFulltextIndexBatchInserter( neo );
+            new LuceneFulltextIndexBatchInserter( inserter );
         try
         {
             // Should be quite slow, i.e. don't build your code like this :)
@@ -137,15 +137,15 @@ public class TestBatchInsert extends TestCase
         finally
         {
             index.shutdown();
-            neo.shutdown();
+            inserter.shutdown();
         }
     }
     
     public void testHmm() throws Exception
     {
-        BatchInserter neo = new BatchInserterImpl( getNeoPath() );
+        BatchInserter inserter = new BatchInserterImpl( getDbPath() );
         LuceneIndexBatchInserter index = 
-            new LuceneIndexBatchInserterImpl( neo );
+            new LuceneIndexBatchInserterImpl( inserter );
         try
         {
             int titleIdStart = 0;
@@ -178,7 +178,7 @@ public class TestBatchInsert extends TestCase
         finally
         {
             index.shutdown();
-            neo.shutdown();
+            inserter.shutdown();
         }
     }
 }

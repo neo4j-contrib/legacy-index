@@ -33,7 +33,7 @@ import org.neo4j.graphdb.Traverser;
 import org.neo4j.graphdb.Traverser.Order;
 
 /**
- * A b-tree implementation on top of neo (using nodes/relationships 
+ * A b-tree implementation on top of neo4j (using nodes/relationships 
  * and properties).
  * <p>
  * This implementation is not thread safe (yet).
@@ -77,7 +77,7 @@ public class BTree
 	 * an incoming relationship of {@link RelTypes TREE_ROOT} else a runtime
 	 * exception will be thrown.
 	 * 
-	 * @param graphDb the embedded neo instance
+	 * @param graphDb the embedded graph database instance
 	 * @param rootNode root node with incoming {@code TREE_ROOT} relationship.
 	 */
 	public BTree( GraphDatabaseService graphDb, Node rootNode )

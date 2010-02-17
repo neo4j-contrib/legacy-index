@@ -73,16 +73,16 @@ public class TestLuceneReadOnlyIndexingService extends Neo4jTestCase
         assertEquals( 1, hits.size() );
         restartTx();
         
-        GraphDatabaseService readOnlyNeo = new EmbeddedReadOnlyGraphDatabase(
-            getNeoPath().getAbsolutePath() );
-        IndexService readOnlyIndex = new LuceneReadOnlyIndexService( readOnlyNeo );
-        Transaction tx = readOnlyNeo.beginTx();
+        GraphDatabaseService readOnlyGraphDb = new EmbeddedReadOnlyGraphDatabase(
+            getDbPath().getAbsolutePath() );
+        IndexService readOnlyIndex = new LuceneReadOnlyIndexService( readOnlyGraphDb );
+        Transaction tx = readOnlyGraphDb.beginTx();
         itr = readOnlyIndex.getNodes( "a_property", 1 ).iterator();
         assertEquals( node1, itr.next() );
         assertTrue( !itr.hasNext() );
         tx.finish();
         readOnlyIndex.shutdown();
-        readOnlyNeo.shutdown();
+        readOnlyGraphDb.shutdown();
         
         indexService().removeIndex( node1, "a_property", 1 );
         node1.delete();

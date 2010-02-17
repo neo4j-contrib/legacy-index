@@ -85,7 +85,7 @@ abstract class AbstractIndex implements Index
 	 *
 	 * @param name The unique name of the index
 	 * @param underlyingNode The underlying node representing the index
-	 * @param graphDb The embedded neo instance
+	 * @param graphDb The embedded graph database instance
 	 * @throws IllegalArgumentException if the underlying node is a index with
 	 * a different name set or wrong index type.
 	 */
@@ -96,7 +96,7 @@ abstract class AbstractIndex implements Index
 		{
 			throw new IllegalArgumentException( 
 				"Null parameter underlyingNode=" + underlyingNode +
-				" neo=" + graphDb );
+				" graphDb=" + graphDb );
 		}
 		this.underlyingNode = underlyingNode;
 		this.graphDb = graphDb;

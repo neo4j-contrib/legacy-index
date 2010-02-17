@@ -69,7 +69,7 @@ public abstract class Neo4jTestCase extends TestCase
         return basePath;
     }
     
-    protected File getNeoPath()
+    protected File getDbPath()
     {
         return dbPath;
     }

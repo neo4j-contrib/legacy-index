@@ -62,25 +62,25 @@ public class TestRecovery extends TestCase
         }
     }
     
-    private String getNeoPath()
+    private String getDbPath()
     {
         return "target/recovery";
     }
     
-    private GraphDatabaseService newNeoService()
+    private GraphDatabaseService newGraphDbService()
     {
-        String path = getNeoPath();
+        String path = getDbPath();
         deleteFileOrDirectory( new File( path ) );
         return new EmbeddedGraphDatabase( path );
     }
     
     public void testRecovery() throws Exception
     {
-        final GraphDatabaseService neo = newNeoService();
-        final IndexService index = new LuceneIndexService( neo );
+        final GraphDatabaseService graphDb = newGraphDbService();
+        final IndexService index = new LuceneIndexService( graphDb );
         
-        neo.beginTx();
-        Node node = neo.createNode();
+        graphDb.beginTx();
+        Node node = graphDb.createNode();
         Random random = new Random();
         Thread stopper = new Thread()
         {
@@ -88,7 +88,7 @@ public class TestRecovery extends TestCase
             {
                 sleepNice( 1000 );
                 index.shutdown();
-                neo.shutdown();
+                graphDb.shutdown();
             }
         };
         try
@@ -106,12 +106,12 @@ public class TestRecovery extends TestCase
         }
         
         sleepNice( 1000 );
-        final GraphDatabaseService newNeo =
-            new EmbeddedGraphDatabase( getNeoPath() );
-        final IndexService newIndexService = new LuceneIndexService( newNeo );
+        final GraphDatabaseService newGraphDb =
+            new EmbeddedGraphDatabase( getDbPath() );
+        final IndexService newIndexService = new LuceneIndexService( newGraphDb );
         sleepNice( 1000 );
         newIndexService.shutdown();
-        newNeo.shutdown();
+        newGraphDb.shutdown();
     }
     
     private static void sleepNice( long time )
@@ -128,15 +128,15 @@ public class TestRecovery extends TestCase
     
     public void testReCommit()
     {
-        GraphDatabaseService neo = newNeoService();
-        IndexService idx = new LuceneIndexService( neo );
-        Transaction tx = neo.beginTx();
+        GraphDatabaseService graphDb = newGraphDbService();
+        IndexService idx = new LuceneIndexService( graphDb );
+        Transaction tx = graphDb.beginTx();
         assertEquals( null, idx.getSingleNode( "test", "1" ) );
-        Node refNode = neo.getReferenceNode();
+        Node refNode = graphDb.getReferenceNode();
         tx.finish();
         idx.shutdown();
         Map<Object,Object> params = new HashMap<Object,Object>();
-        String luceneDir = getNeoPath() + "/lucene";
+        String luceneDir = getDbPath() + "/lucene";
         params.put( "dir", luceneDir );
         try
         {
@@ -154,8 +154,8 @@ public class TestRecovery extends TestCase
             copyLogicalLog( luceneDir + "/lucene.log.1", 
                 luceneDir + "/lucene.log.1.bak" );
             // test recovery re-commit
-            idx = new LuceneIndexService( neo );
-            tx = neo.beginTx();
+            idx = new LuceneIndexService( graphDb );
+            tx = graphDb.beginTx();
             assertEquals( refNode, idx.getSingleNode( "test", "1" ) );
             tx.finish();
             idx.shutdown();
@@ -166,12 +166,12 @@ public class TestRecovery extends TestCase
                 luceneDir + "/lucene.log.active" );
             copyLogicalLog( luceneDir + "/lucene.log.1.bak", 
                 luceneDir + "/lucene.log.1" );
-            idx = new LuceneIndexService( neo );
-            tx = neo.beginTx();
+            idx = new LuceneIndexService( graphDb );
+            tx = graphDb.beginTx();
             assertEquals( refNode, idx.getSingleNode( "test", "1" ) );
             tx.finish();
             idx.shutdown();
-            neo.shutdown();
+            graphDb.shutdown();
         }
         catch ( Exception e )
         {

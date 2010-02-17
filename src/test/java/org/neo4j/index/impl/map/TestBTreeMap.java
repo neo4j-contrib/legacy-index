@@ -29,16 +29,16 @@ import org.neo4j.kernel.EmbeddedGraphDatabase;
 public class TestBTreeMap extends TestCase
 {
 	private BTreeMap<Character,Character> bTreeMap;
-	private GraphDatabaseService neo;
+	private GraphDatabaseService graphDb;
 	private Transaction tx;
 	
 	@Override
 	public void setUp()
 	{
-		neo = new EmbeddedGraphDatabase( "target/var/map" );
-		tx = neo.beginTx();
-		Node bNode = neo.createNode();
-		bTreeMap = new BTreeMap<Character,Character>( "test_map", bNode, neo );
+		graphDb = new EmbeddedGraphDatabase( "target/var/map" );
+		tx = graphDb.beginTx();
+		Node bNode = graphDb.createNode();
+		bTreeMap = new BTreeMap<Character,Character>( "test_map", bNode, graphDb );
 	}
 	
 	@Override
@@ -46,7 +46,7 @@ public class TestBTreeMap extends TestCase
 	{
  		bTreeMap.delete();
 		tx.finish();
-		neo.shutdown();
+		graphDb.shutdown();
 	}
 	
 	public void testBasicBTreeMap()

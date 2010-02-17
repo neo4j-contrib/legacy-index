@@ -254,15 +254,15 @@ public class TestLuceneIndexingService extends Neo4jTestCase
 //        Integer valueAsInt = 10;
 //        String valueAsString = "10";
 //        
-//        Node node1 = neo().createNode();
+//        Node node1 = graphDb().createNode();
 //        indexService.index( node1, key, valueAsInt );
-//        Node node2 = neo().createNode();
+//        Node node2 = graphDb().createNode();
 //        indexService.index( node2, key, valueAsString );
 //        
 //        assertCollection( indexService.getNodes( key, valueAsInt ), node1 );
 //        assertCollection( indexService.getNodes( key, valueAsString ), node2 );
 //        
-//        tx.success(); tx.finish(); tx = neo().beginTx();
+//        tx.success(); tx.finish(); tx = graphDb().beginTx();
 //        
 //        assertCollection( indexService.getNodes( key, valueAsInt ), node1 );
 //        assertCollection( indexService.getNodes( key, valueAsString ), node2 );

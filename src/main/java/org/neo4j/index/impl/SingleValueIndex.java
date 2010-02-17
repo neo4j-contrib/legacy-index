@@ -42,7 +42,7 @@ public class SingleValueIndex extends AbstractIndex
 	 *
 	 * @param name The name of the index
 	 * @param underlyingNode The underlying node representing the index
-	 * @param graphDb The embedded neo instance
+     * @param graphDb The embedded graph database instance
 	 * @throws IllegalArgumentException if the underlying node is a index with
 	 * a different name set or the underlying node represents a different 
 	 * index

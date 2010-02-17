@@ -44,7 +44,7 @@ public class MultiValueIndex extends AbstractIndex
 	 * @param name The unique name of the index or null if index already
 	 * created (using specified underlying node)
 	 * @param underlyingNode The underlying node representing the index
-	 * @param graphDb The embedded neo instance
+     * @param graphDb The embedded graph database instance
 	 * @throws IllegalArgumentException if the underlying node is a index with
 	 * a different name set.
 	 */
