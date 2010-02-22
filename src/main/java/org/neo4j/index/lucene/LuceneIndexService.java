@@ -197,6 +197,9 @@ public class LuceneIndexService extends GenericIndexService
     @Override
     protected void indexThisTx( Node node, String key, Object value )
     {
+        assertArgumentNotNull( node, "node" );
+        assertArgumentNotNull( key, "key" );
+        assertArgumentNotNull( value, "value" );
         getConnection().index( node, key, value );
     }
 
@@ -228,11 +231,13 @@ public class LuceneIndexService extends GenericIndexService
         LuceneTransaction luceneTx = getConnection().getLuceneTx();
         Set<Long> addedNodes = Collections.emptySet();
         Set<Long> deletedNodes = Collections.emptySet();
+        boolean deleted = false;
         if ( luceneTx != null )
         {
             addedNodes = luceneTx.getNodesFor( key, value );
             nodeIds.addAll( addedNodes );
             deletedNodes = luceneTx.getDeletedNodesFor( key, value );
+            deleted = luceneTx.getIndexDeleted( key );
         }
         xaDs.getReadLock();
         Iterator<Long> nodeIdIterator = null;
@@ -242,7 +247,7 @@ public class LuceneIndexService extends GenericIndexService
         try
         {
             searcher = xaDs.getIndexSearcher( key );
-            if ( searcher != null )
+            if ( searcher != null && !deleted )
             {
                 LruCache<String, Collection<Long>> cachedNodesMap = xaDs.getFromCache( key );
                 String valueAsString = value.toString();
@@ -404,10 +409,9 @@ public class LuceneIndexService extends GenericIndexService
     @Override
     protected void removeIndexThisTx( Node node, String key, Object value )
     {
-        if ( value == null )
-        {
-            throw new IllegalArgumentException( "Value is null" );
-        }
+        assertArgumentNotNull( node, "node" );
+        assertArgumentNotNull( key, "key" );
+        assertArgumentNotNull( value, "value" );
         getConnection().removeIndex( node, key, value );
     }
 
@@ -550,5 +554,26 @@ public class LuceneIndexService extends GenericIndexService
                 delistResourcesForTransaction();
             }
         }
+    }
+
+    public void removeIndex( Node node, String key )
+    {
+        assertArgumentNotNull( node, "node" );
+        assertArgumentNotNull( key, "key" );
+        getConnection().removeIndex( node, key, null );
+    }
+
+    private void assertArgumentNotNull( Object object, String name )
+    {
+        if ( object == null )
+        {
+            throw new IllegalArgumentException( name + " is null" );
+        }
+    }
+
+    public void removeIndex( String key )
+    {
+        assertArgumentNotNull( key, "key" );
+        getConnection().removeIndex( null, key, null );
     }
 }

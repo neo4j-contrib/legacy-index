@@ -282,6 +282,16 @@ public class LuceneReadOnlyIndexService extends GenericIndexService
     {
         throw new ReadOnlyIndexException();
     }
+    
+    public void removeIndex( Node node, String key )
+    {
+        throw new ReadOnlyIndexException();
+    }
+    
+    public void removeIndex( String key )
+    {
+        throw new ReadOnlyIndexException();
+    }
 
     @Override
     public synchronized void shutdown()

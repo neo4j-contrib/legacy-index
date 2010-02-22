@@ -39,10 +39,8 @@ import org.neo4j.kernel.impl.transaction.xaframework.XaTransaction;
 
 class LuceneTransaction extends XaTransaction
 {
-    private final Map<String,Map<Object,Set<Long>>> txIndexed = 
-        new HashMap<String,Map<Object,Set<Long>>>();
-    private final Map<String,Map<Object,Set<Long>>> txRemoved = 
-        new HashMap<String,Map<Object,Set<Long>>>();
+    private final Map<String,TxCache> txIndexed = new HashMap<String,TxCache>();
+    private final Map<String,TxCache> txRemoved = new HashMap<String,TxCache>();
 
     private final LuceneDataSource luceneDs;
 
@@ -59,69 +57,98 @@ class LuceneTransaction extends XaTransaction
     void index( Node node, String key, Object value )
     {
         insert( node, key, value, txRemoved, txIndexed );
+        queueCommand( new AddCommand( node.getId(), key, value.toString() ) );
     }
 
     void removeIndex( Node node, String key, Object value )
     {
         insert( node, key, value, txIndexed, txRemoved );
+        queueCommand( new RemoveCommand( node != null ? node.getId() : null,
+            key, value != null ? value.toString() : null ) );
     }
 
+    private void queueCommand( LuceneCommand command )
+    {
+        String key = command.getKey();
+        List<LuceneCommand> commands = commandMap.get( key );
+        if ( commands == null )
+        {
+            commands = new ArrayList<LuceneCommand>();
+            commandMap.put( key, commands );
+        }
+        commands.add( command );
+    }
+    
     private void insert( Node node, String key, Object value,
-        Map<String,Map<Object,Set<Long>>> toRemoveFrom,
-        Map<String,Map<Object,Set<Long>>> toInsertInto )
+        Map<String,TxCache> toRemoveFrom, Map<String,TxCache> toInsertInto )
     {
         delFromIndex( node, key, value, toRemoveFrom );
-        Map<Object,Set<Long>> keyIndex = toInsertInto.get( key );
+        
+        TxCache keyIndex = toInsertInto.get( key );
         if ( keyIndex == null )
         {
-            keyIndex = new HashMap<Object,Set<Long>>();
+            keyIndex = new TxCache();
             toInsertInto.put( key, keyIndex );
         }
-        Set<Long> nodeIds = keyIndex.get( value );
-        if ( nodeIds == null )
-        {
-            nodeIds = new HashSet<Long>();
-        }
-        nodeIds.add( node.getId() );
-        keyIndex.put( value, nodeIds );
+        keyIndex.add( node != null ? node.getId() : null, value );
     }
 
     private boolean delFromIndex( Node node, String key, Object value,
-        Map<String,Map<Object,Set<Long>>> map )
+        Map<String,TxCache> map )
     {
-        Map<Object,Set<Long>> keyIndex = map.get( key );
+        TxCache keyIndex = map.get( key );
         if ( keyIndex == null )
         {
             return false;
         }
-        Set<Long> nodeIds = keyIndex.get( value );
-        if ( nodeIds != null )
+        
+        boolean modified = false;
+        if ( node != null )
         {
-            return nodeIds.remove( node.getId() );
+            Long nodeId = node.getId();
+            if ( value != null )
+            {
+                keyIndex.remove( nodeId, value );
+            }
+            else
+            {
+                keyIndex.remove( nodeId );
+            }
         }
-        return false;
+        else
+        {
+            keyIndex.remove();
+        }
+        return modified;
     }
 
     Set<Long> getDeletedNodesFor( String key, Object value )
     {
-        Map<Object,Set<Long>> keyIndex = txRemoved.get( key );
+        TxCache keyIndex = txRemoved.get( key );
+        LazyMergedSet<Long> result = null;
         if ( keyIndex != null )
         {
-            Set<Long> nodeIds = keyIndex.get( value );
-            if ( nodeIds != null )
-            {
-                return nodeIds;
-            }
+            result = new LazyMergedSet<Long>();
+            result.add( keyIndex.map.get( value ) );
+            // the 'null' value represents those removed with
+            // removeIndex( Node, String )
+            result.add( keyIndex.map.get( null ) );
         }
-        return Collections.emptySet();
+        return result != null ? result.get() : Collections.<Long>emptySet();
     }
-
+    
+    boolean getIndexDeleted( String key )
+    {
+        TxCache keyIndex = txRemoved.get( key );
+        return keyIndex != null ? keyIndex.all : false;
+    }
+    
     Set<Long> getNodesFor( String key, Object value )
     {
-        Map<Object,Set<Long>> keyIndex = txIndexed.get( key );
+        TxCache keyIndex = txIndexed.get( key );
         if ( keyIndex != null )
         {
-            Set<Long> nodeIds = keyIndex.get( value );
+            Set<Long> nodeIds = keyIndex.map.get( value );
             if ( nodeIds != null )
             {
                 return nodeIds;
@@ -153,15 +180,7 @@ class LuceneTransaction extends XaTransaction
     @Override
     protected void doAddCommand( XaCommand command )
     {
-        LuceneCommand luceneCommand = ( LuceneCommand ) command;
-        String key = luceneCommand.getKey();
-        List<LuceneCommand> list = commandMap.get( key );
-        if ( list == null )
-        {
-            list = new ArrayList<LuceneCommand>();
-            commandMap.put( key, list );
-        }
-        list.add( luceneCommand );
+        // We don't need this, we keep track of out commands when we add 'em
     }
 
     @Override
@@ -207,27 +226,12 @@ class LuceneTransaction extends XaTransaction
     @Override
     protected void doPrepare()
     {
-        for ( String key : txIndexed.keySet() )
+        for ( Map.Entry<String, List<LuceneCommand>> entry :
+            commandMap.entrySet() )
         {
-            Map<Object,Set<Long>> addIndex = txIndexed.get( key );
-            for ( Object object : addIndex.keySet() )
+            for ( LuceneCommand command : entry.getValue() )
             {
-                for ( long id : addIndex.get( object ) )
-                {
-                    addCommand( new AddCommand( id, key, object.toString() ) );
-                }
-            }
-        }
-        for ( String key : txRemoved.keySet() )
-        {
-            Map<Object,Set<Long>> removeIndex = txRemoved.get( key );
-            for ( Object object : removeIndex.keySet() )
-            {
-                for ( long id : removeIndex.get( object ) )
-                {
-                    addCommand( new RemoveCommand( id, key, 
-                        object.toString() ) );
-                }
+                addCommand( command );
             }
         }
     }
@@ -245,5 +249,117 @@ class LuceneTransaction extends XaTransaction
     public boolean isReadOnly()
     {
         return false;
+    }
+    
+    static class LazyMergedSet<T>
+    {
+        private Set<T> set;
+        private int count;
+        
+        private void add( Set<T> setOrNull )
+        {
+            if ( setOrNull == null )
+            {
+                return;
+            }
+            
+            if ( this.count == 0 )
+            {
+                this.set = setOrNull;
+            }
+            else
+            {
+                if ( count == 1 )
+                {
+                    this.set = new HashSet<T>( this.set );
+                }
+                this.set.addAll( setOrNull );
+            }
+            this.count++;
+        }
+        
+        private Set<T> get()
+        {
+            return this.set;
+        }
+    }
+    
+    private static class TxCache
+    {
+        private final Map<Object, Set<Long>> map =
+            new HashMap<Object, Set<Long>>();
+        private final Map<Long, Set<Object>> reverseMap =
+            new HashMap<Long, Set<Object>>();
+        boolean all;
+        
+        void add( Long nodeId, Object value )
+        {
+            if ( nodeId == null && value == null )
+            {
+                all = true;
+                return;
+            }
+            
+            Set<Long> ids = map.get( value );
+            if ( ids == null )
+            {
+                ids = new HashSet<Long>();
+                map.put( value, ids );
+            }
+            ids.add( nodeId );
+            
+            Set<Object> values = reverseMap.get( nodeId );
+            if ( values == null )
+            {
+                values = new HashSet<Object>();
+                reverseMap.put( nodeId, values );
+            }
+            values.add( value );
+        }
+        
+        void remove( Long nodeId, Object value )
+        {
+            Set<Long> ids = map.get( value );
+            if ( ids != null )
+            {
+                ids.remove( nodeId );
+            }
+            
+            Set<Object> values = reverseMap.get( nodeId );
+            if ( values != null )
+            {
+                values.remove( value );
+            }
+        }
+        
+        void remove( Long nodeId )
+        {
+            Set<Object> values = reverseMap.get( nodeId );
+            if ( values == null )
+            {
+                return;
+            }
+            
+            for ( Object value : values.toArray() )
+            {
+                Set<Long> ids = map.get( value );
+                if ( ids != null )
+                {
+                    ids.remove( nodeId );
+                }
+                reverseMap.remove( value );
+            }
+        }
+        
+        void remove()
+        {
+            map.clear();
+            reverseMap.clear();
+        }
+        
+        Iterable<Long> getNodesForValue( Object value )
+        {
+            return map.get( value );
+        }
     }
 }

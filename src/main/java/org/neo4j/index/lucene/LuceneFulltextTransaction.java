@@ -26,12 +26,16 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field;
+import org.apache.lucene.document.Field.Index;
+import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Hits;
 import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.store.Directory;
@@ -45,6 +49,9 @@ class LuceneFulltextTransaction extends LuceneTransaction
         new HashMap<String, DirectoryAndWorkers>();
     private final Map<String, DirectoryAndWorkers> fulltextRemoved =
         new HashMap<String, DirectoryAndWorkers>();
+    
+    private static final String DOC_ALWAYS_HIT = "always_hit";
+    private static final String ALWAYS_HIT_VALUE = "1";
     
     LuceneFulltextTransaction( int identifier, XaLogicalLog xaLog,
         LuceneDataSource luceneDs )
@@ -89,19 +96,42 @@ class LuceneFulltextTransaction extends LuceneTransaction
     {
         try
         {
-            BooleanQuery deletionQuery = new BooleanQuery();
-            deletionQuery.add( new TermQuery( new Term( getDataSource().
-                getDeleteDocumentsKey(), value.toString() ) ), Occur.MUST );
-            deletionQuery.add( new TermQuery( new Term(
-                LuceneIndexService.DOC_ID_KEY, "" + node.getId() ) ),
-                Occur.MUST );
-            removeFrom.writer.deleteDocuments( deletionQuery );
+            if ( node == null && value == null )
+            {
+                removeFrom.writer.deleteAll();
+            }
+            else
+            {
+                BooleanQuery deletionQuery = new BooleanQuery();
+                if ( value != null )
+                {
+                    deletionQuery.add( new TermQuery( new Term( getDataSource().
+                        getDeleteDocumentsKey(), value.toString() ) ),
+                        Occur.MUST );
+                }
+                deletionQuery.add( new TermQuery( new Term(
+                    LuceneIndexService.DOC_ID_KEY, "" + node.getId() ) ),
+                    Occur.MUST );
+                removeFrom.writer.deleteDocuments( deletionQuery );
+            }
             removeFrom.invalidateSearcher();
             
-            Document document = new Document();
-            this.getDataSource().fillDocument( document, node.getId(), key,
-                value );
-            insertTo.writer.addDocument( document );
+            if ( node == null && value == null )
+            {
+                insertTo.all = true;
+            }
+            else
+            {
+                Document document = new Document();
+                this.getDataSource().fillDocument( document, node.getId(), key,
+                    value != null ? value : "" );
+                if ( value == null )
+                {
+                    document.add( new Field( DOC_ALWAYS_HIT, ALWAYS_HIT_VALUE,
+                        Store.NO, Index.NOT_ANALYZED ) );
+                }
+                insertTo.writer.addDocument( document );
+            }
             insertTo.invalidateSearcher();
         }
         catch ( IOException e )
@@ -117,6 +147,12 @@ class LuceneFulltextTransaction extends LuceneTransaction
         insertAndRemove( getDirectory( fulltextIndexed, key ),
             getDirectory( fulltextRemoved, key ), node, key, value );
     }
+    
+    @Override
+    boolean getIndexDeleted( String key )
+    {
+        return getDirectory( fulltextRemoved, key ).all;
+    }
 
     @Override
     void removeIndex( Node node, String key, Object value )
@@ -129,23 +165,35 @@ class LuceneFulltextTransaction extends LuceneTransaction
     @Override
     Set<Long> getDeletedNodesFor( String key, Object value )
     {
-        return getNodes( getDirectory( fulltextRemoved, key ), key, value );
+        return getNodes( getDirectory( fulltextRemoved, key ), key, value,
+            true );
     }
 
     @Override
     Set<Long> getNodesFor( String key, Object value )
     {
-        return getNodes( getDirectory( fulltextIndexed, key ), key, value );
+        return getNodes( getDirectory( fulltextIndexed, key ), key, value,
+            false );
     }
     
     private Set<Long> getNodes( DirectoryAndWorkers directory, String key,
-        Object value )
+        Object value, boolean includeAlwaysHit )
     {
         try
         {
             IndexSearcher searcher = directory.getSearcher();
-            Hits hits = searcher.search(
-                getDataSource().getIndexService().formQuery( key, value ) );
+            Query query =
+                getDataSource().getIndexService().formQuery( key, value );
+            if ( includeAlwaysHit )
+            {
+                BooleanQuery booleanQuery = new BooleanQuery();
+                booleanQuery.add( query, Occur.SHOULD );
+                booleanQuery.add( new TermQuery(
+                    new Term( DOC_ALWAYS_HIT, ALWAYS_HIT_VALUE ) ),
+                    Occur.SHOULD );
+                query = booleanQuery;
+            }
+            Hits hits = searcher.search( query );
             HashSet<Long> result = new HashSet<Long>();
             for ( int i = 0; i < hits.length(); i++ )
             {
@@ -181,6 +229,7 @@ class LuceneFulltextTransaction extends LuceneTransaction
         private final Directory directory;
         private final IndexWriter writer;
         private IndexSearcher searcher;
+        private boolean all;
         
         private DirectoryAndWorkers( Directory directory )
             throws IOException

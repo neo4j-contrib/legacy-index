@@ -324,6 +324,16 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
             throw new UnsupportedOperationException();
         }
 
+        public void removeIndex( Node node, String key )
+        {
+            throw new UnsupportedOperationException();
+        }
+        
+        public void removeIndex( String key )
+        {
+            throw new UnsupportedOperationException();
+        }
+        
         public void setIsolation( Isolation level )
         {
             throw new UnsupportedOperationException();

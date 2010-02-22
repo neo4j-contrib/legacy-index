@@ -28,14 +28,14 @@ import org.neo4j.kernel.impl.transaction.xaframework.XaCommand;
 
 abstract class LuceneCommand extends XaCommand
 {
-    private final long nodeId;
+    private final Long nodeId;
     private final String key;
     private final String value;
     
     private static final byte ADD_COMMAND = (byte) 1;
     private static final byte REMOVE_COMMAND = (byte) 2;
     
-    LuceneCommand( long nodeId, String key, String value )
+    LuceneCommand( Long nodeId, String key, String value )
     {
         this.nodeId = nodeId;
         this.key = key;
@@ -49,7 +49,7 @@ abstract class LuceneCommand extends XaCommand
         this.value = data.value;
     }
     
-    public long getNodeId()
+    public Long getNodeId()
     {
         return nodeId;
     }
@@ -64,9 +64,34 @@ abstract class LuceneCommand extends XaCommand
         return value;
     }
     
+    @Override
+    public void execute()
+    {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public void writeToFile( LogBuffer buffer ) throws IOException
+    {
+        buffer.put( getCommandValue() );
+        buffer.putLong( getNodeId() != null ? getNodeId() : -1L );
+        char[] keyChars = getKey().toCharArray();
+        buffer.putInt( keyChars.length );
+        char[] valueChars = getValue() != null ?
+            getValue().toCharArray() : null;
+        buffer.putInt( valueChars != null ? valueChars.length : -1 );
+        buffer.put( keyChars );
+        if ( valueChars != null )
+        {
+            buffer.put( valueChars );
+        }
+    }
+    
+    protected abstract byte getCommandValue();
+    
     static class AddCommand extends LuceneCommand
     {
-        AddCommand( long nodeId, String key, String value )
+        AddCommand( Long nodeId, String key, String value )
         {
             super( nodeId, key, value );
         }
@@ -75,30 +100,17 @@ abstract class LuceneCommand extends XaCommand
         {
             super( data );
         }
-        
-        @Override
-        public void execute()
-        {
-            // TODO Auto-generated method stub
-        }
 
         @Override
-        public void writeToFile( LogBuffer buffer ) throws IOException
+        protected byte getCommandValue()
         {
-            buffer.put( ADD_COMMAND );
-            buffer.putLong( getNodeId() );
-            char[] keyChars = getKey().toCharArray();
-            buffer.putInt( keyChars.length );
-            char[] valueChars = getValue().toCharArray();
-            buffer.putInt( valueChars.length );
-            buffer.put( keyChars );
-            buffer.put( valueChars );
+            return ADD_COMMAND;
         }
     }
     
     static class RemoveCommand extends LuceneCommand
     {
-        RemoveCommand( long nodeId, String key, String value )
+        RemoveCommand( Long nodeId, String key, String value )
         {
             super( nodeId, key, value );
         }
@@ -107,34 +119,21 @@ abstract class LuceneCommand extends XaCommand
         {
             super( data );
         }
-        
-        @Override
-        public void execute()
-        {
-            // TODO Auto-generated method stub
-        }
 
         @Override
-        public void writeToFile( LogBuffer buffer ) throws IOException
+        protected byte getCommandValue()
         {
-            buffer.put( REMOVE_COMMAND );
-            buffer.putLong( getNodeId() );
-            char[] keyChars = getKey().toCharArray();
-            buffer.putInt( keyChars.length );
-            char[] valueChars = getValue().toCharArray();
-            buffer.putInt( valueChars.length );
-            buffer.put( keyChars );
-            buffer.put( valueChars );
+            return REMOVE_COMMAND;
         }
     }
 
     private static class CommandData
     {
-        private final long nodeId;
+        private final Long nodeId;
         private final String key;
         private final String value;
         
-        CommandData( long nodeId, String key, String value )
+        CommandData( Long nodeId, String key, String value )
         {
             this.nodeId = nodeId;
             this.key = key;
@@ -163,14 +162,14 @@ abstract class LuceneCommand extends XaCommand
         }
         String key = new String( keyChars );
 
-        char[] valueChars = new char[valueCharLength];
-        valueChars = readCharArray( channel, buffer, valueChars );
-        if ( valueChars == null )
+        String value = null;
+        if ( valueCharLength != -1 )
         {
-            return null;
+            char[] valueChars = new char[valueCharLength];
+            valueChars = readCharArray( channel, buffer, valueChars );
+            value = new String( valueChars );
         }
-        String value = new String( valueChars );
-        return new CommandData( nodeId, key, value );
+        return new CommandData( nodeId != -1 ? nodeId : null, key, value );
     }
     
     private static char[] readCharArray( ReadableByteChannel channel, 

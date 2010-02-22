@@ -188,7 +188,7 @@ public abstract class TestLuceneIndexManyThreads extends Neo4jTestCase
                 }
                 for ( String key : node.getPropertyKeys() )
                 {
-                    indexService.removeIndex( node, key,
+                    indexService().removeIndex( node, key,
                         node.getProperty( key ) );
                 }
                 node.getSingleRelationship( RelTypes.TEST_TYPE,
@@ -220,7 +220,7 @@ public abstract class TestLuceneIndexManyThreads extends Neo4jTestCase
 //                assertTrue( isRoughly( aliveNodes.size() / 20,
 //                    sometimesHits.size() ) );
 //            }
-            IndexHits<Node> hits = indexService.getNodes( "type", "TYPE" );
+            IndexHits<Node> hits = indexService().getNodes( "type", "TYPE" );
             for ( Node hit : hits )
             {
                 hit.getProperty( "name" );
@@ -233,7 +233,7 @@ public abstract class TestLuceneIndexManyThreads extends Neo4jTestCase
             {
                 String name = ( String ) node.getProperty( "name" );
                 boolean found = false;
-                for ( Node hit : indexService.getNodes( "name", name ) )
+                for ( Node hit : indexService().getNodes( "name", name ) )
                 {
                     COUNT_READS.incrementAndGet();
                     if ( hit.equals( node ) )

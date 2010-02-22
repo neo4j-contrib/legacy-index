@@ -77,7 +77,7 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
         indexService().index( node2, key, value1 );
         restartTx();
         
-        IndexHits hits = indexService().getNodes( key, "tokenize" );
+        IndexHits<Node> hits = indexService().getNodes( key, "tokenize" );
         itr = hits.iterator();
         assertTrue( itr.next() != null );
         assertTrue( itr.next() != null );
@@ -220,5 +220,28 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
         }
         ( ( LuceneIndexService ) indexService() ).setLazySearchResultThreshold(
             oldLazyThreshold );
+    }
+    
+    public void testFulltextRemoveAll() throws Exception
+    {
+        Node node1 = graphDb().createNode();
+        Node node2 = graphDb().createNode();
+        
+        String key = "removeall";
+        indexService().index( node1, key, "value1" );
+        indexService().index( node1, key, "value2" );
+        indexService().index( node2, key, "value1" );
+        indexService().index( node2, key, "value2" );
+        assertCollection( asCollection(
+            indexService().getNodes( key, "value1" ) ), node1, node2 );
+        indexService().removeIndex( node1, key );
+        assertCollection( asCollection(
+            indexService().getNodes( key, "value1" ) ), node2 );
+        assertCollection( asCollection(
+            indexService().getNodes( key, "value2" ) ), node2 );
+        
+        indexService().removeIndex( node2, key );
+        node2.delete();
+        node1.delete();
     }
 }

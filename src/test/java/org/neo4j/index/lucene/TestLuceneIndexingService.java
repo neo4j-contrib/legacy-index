@@ -65,7 +65,7 @@ public class TestLuceneIndexingService extends Neo4jTestCase
 
         indexService().index( node1, "a_property", 1 );
         
-        IndexHits hits = indexService().getNodes( "a_property", 1 );
+        IndexHits<Node> hits = indexService().getNodes( "a_property", 1 );
         Iterator<Node> itr = hits.iterator();
         assertEquals( node1, itr.next() );
         assertEquals( 1, hits.size() );
@@ -248,6 +248,45 @@ public class TestLuceneIndexingService extends Neo4jTestCase
         node2.delete();
     }
     
+    public void testRemoveAll() throws Exception
+    {
+        Node node1 = graphDb().createNode();
+        Node node2 = graphDb().createNode();
+        
+        String key = "removeall";
+        indexService().index( node1, key, "value1" );
+        indexService().index( node1, key, "value2" );
+        indexService().index( node2, key, "value1" );
+        indexService().index( node2, key, "value2" );
+        restartTx();
+        assertCollection( asCollection(
+            indexService().getNodes( key, "value1" ) ), node1, node2 );
+        indexService().removeIndex( node1, key );
+        indexService().index( node1, key, "value2" );
+        assertCollection( asCollection(
+            indexService().getNodes( key, "value1" ) ), node2 );
+        assertCollection( asCollection(
+            indexService().getNodes( key, "value2" ) ), node1, node2 );
+        indexService().index( node1, key, "value1" );
+        restartTx();
+        indexService().removeIndex( key );
+        assertCollection( asCollection(
+            indexService().getNodes( key, "value2" ) ) );
+        indexService().index( node1, key, "value1" );
+        indexService().index( node2, key, "value2" );
+        assertCollection( asCollection(
+            indexService().getNodes( key, "value1" ) ), node1 );
+        restartTx();
+        indexService().removeIndex( key );
+        assertCollection( asCollection(
+            indexService().getNodes( key, "value1" ) ) );
+        assertCollection( asCollection(
+            indexService().getNodes( key, "value2" ) ) );
+        
+        node2.delete();
+        node1.delete();
+    }
+    
 //    public void testDifferentTypesWithSameValueIssue()
 //    {
 //        String key = "prop";
@@ -272,10 +311,5 @@ public class TestLuceneIndexingService extends Neo4jTestCase
 //        
 //        node2.delete();
 //        node1.delete();
-//    }
-//    
-//    private <T> void assertCollection( Iterable<T> items, T... expectedItems )
-//    {
-//        assertCollection( items, Arrays.asList( expectedItems ) );
 //    }
 }

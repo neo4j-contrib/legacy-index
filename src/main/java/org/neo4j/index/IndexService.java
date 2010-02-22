@@ -87,6 +87,28 @@ public interface IndexService
     void removeIndex( Node node, String key, Object value );
 
     /**
+     * Dissociates a node from all indexed values for the given {@code key}.
+     * If no such association exists this method silently returns.
+     * Implementations may choose to not implement this method and should
+     * in such a case throw {@link UnsupportedOperationException}.
+     * 
+     * @param node the node to dissociate from all indexed values for the given
+     * {@code key}.
+     * @param key the key in the key-value pairs to remove.
+     */
+    void removeIndex( Node node, String key );
+    
+    /**
+     * Dissociates all key-value pairs which {@code key} is part of, i.e.
+     * clearing the an entire index {@code key} is cleared.
+     * Implementations may choose to not implement this method and should
+     * in such a case throw {@link UnsupportedOperationException}.
+     * 
+     * @param key the index to clear.
+     */
+    void removeIndex( String key );
+    
+    /**
      * Changes isolation level for the running transaction. This method must be
      * invoked before any index ({@link #index(Node, String, Object)},
      * {@link #removeIndex(Node, String, Object)}) has been performed in the

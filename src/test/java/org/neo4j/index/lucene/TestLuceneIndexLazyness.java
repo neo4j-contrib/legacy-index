@@ -65,19 +65,19 @@ public abstract class TestLuceneIndexLazyness extends Neo4jTestCase
         for ( int i = 0; i < 10; i++ )
         {
             // So that it'll get the nodes in the synchronous way
-            ( ( LuceneIndexService ) indexService ).setLazySearchResultThreshold(
-                nodes.size() + 10 );
+            ( ( LuceneIndexService ) indexService() ).
+                setLazySearchResultThreshold( nodes.size() + 10 );
             long time = System.currentTimeMillis();
-            Iterable<Node> itr = indexService.getNodes( key, value );
+            Iterable<Node> itr = indexService().getNodes( key, value );
             long syncTime = System.currentTimeMillis() - time;
             assertCollection( asCollection( itr ), nodeArray );
             long syncTotalTime = System.currentTimeMillis() - time;
             
             // So that it'll get the nodes in the lazy way
-            ( ( LuceneIndexService ) indexService ).setLazySearchResultThreshold(
-                nodes.size() - 10 );
+            ( ( LuceneIndexService ) indexService() ).
+                setLazySearchResultThreshold( nodes.size() - 10 );
             time = System.currentTimeMillis();
-            itr = indexService.getNodes( key, value );
+            itr = indexService().getNodes( key, value );
             long lazyTime = System.currentTimeMillis() - time;
             assertCollection( asCollection( itr ), nodeArray );
             long lazyTotalTime = System.currentTimeMillis() - time;

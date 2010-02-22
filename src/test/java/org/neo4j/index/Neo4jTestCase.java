@@ -130,6 +130,11 @@ public abstract class Neo4jTestCase extends TestCase
         }
     }
 
+    private <T> void assertCollection( Iterable<T> items, T... expectedItems )
+    {
+        assertCollection( asCollection( items ), expectedItems );
+    }
+    
     protected <T> Collection<T> asCollection( Iterable<T> iterable )
     {
         List<T> list = new ArrayList<T>();

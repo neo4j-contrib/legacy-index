@@ -379,16 +379,27 @@ public class LuceneDataSource extends XaDataSource
     }
     
     protected void deleteDocumentsUsingWriter( IndexWriter writer,
-        long nodeId, Object value )
+        Long nodeId, Object value )
     {
         try
         {
-            BooleanQuery query = new BooleanQuery();
-            query.add( new TermQuery( new Term( getDeleteDocumentsKey(),
-                value.toString() ) ), Occur.MUST );
-            query.add( new TermQuery( new Term( LuceneIndexService.DOC_ID_KEY,
-                "" + nodeId ) ), Occur.MUST );
-            writer.deleteDocuments( query );
+            if ( nodeId == null && value == null )
+            {
+                writer.deleteAll();
+            }
+            else
+            {
+                BooleanQuery query = new BooleanQuery();
+                if ( value != null )
+                {
+                    query.add( new TermQuery( new Term( getDeleteDocumentsKey(),
+                        value.toString() ) ), Occur.MUST );
+                }
+                query.add( new TermQuery( new Term(
+                    LuceneIndexService.DOC_ID_KEY, "" + nodeId ) ),
+                    Occur.MUST );
+                writer.deleteDocuments( query );
+            }
         }
         catch ( IOException e )
         {

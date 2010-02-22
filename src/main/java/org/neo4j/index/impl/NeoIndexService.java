@@ -165,4 +165,14 @@ public class NeoIndexService extends GenericIndexService
             valueIndex.remove( node, value );
         }
     }
+
+    public void removeIndex( Node node, String key )
+    {
+        throw new UnsupportedOperationException();
+    }
+    
+    public void removeIndex( String key )
+    {
+        throw new UnsupportedOperationException();
+    }
 }
