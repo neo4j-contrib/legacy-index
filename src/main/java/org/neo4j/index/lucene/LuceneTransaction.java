@@ -46,6 +46,7 @@ class LuceneTransaction extends XaTransaction
 
     private final Map<String,List<LuceneCommand>> commandMap = 
         new HashMap<String,List<LuceneCommand>>();
+    private boolean preparing;
 
     LuceneTransaction( int identifier, XaLogicalLog xaLog,
         LuceneDataSource luceneDs )
@@ -181,7 +182,11 @@ class LuceneTransaction extends XaTransaction
     @Override
     protected void doAddCommand( XaCommand command )
     {
-        // We don't need this, we keep track of out commands when we add 'em
+        if ( preparing )
+        {
+            return;
+        }
+        queueCommand( ( LuceneCommand ) command );
     }
 
     @Override
@@ -227,13 +232,21 @@ class LuceneTransaction extends XaTransaction
     @Override
     protected void doPrepare()
     {
-        for ( Map.Entry<String, List<LuceneCommand>> entry :
-            commandMap.entrySet() )
+        preparing = true;
+        try
         {
-            for ( LuceneCommand command : entry.getValue() )
+            for ( Map.Entry<String, List<LuceneCommand>> entry :
+                commandMap.entrySet() )
             {
-                addCommand( command );
+                for ( LuceneCommand command : entry.getValue() )
+                {
+                    addCommand( command );
+                }
             }
+        }
+        finally
+        {
+            preparing = false;
         }
     }
 
