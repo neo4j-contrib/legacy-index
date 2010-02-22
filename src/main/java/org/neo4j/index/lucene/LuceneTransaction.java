@@ -134,7 +134,8 @@ class LuceneTransaction extends XaTransaction
             // removeIndex( Node, String )
             result.add( keyIndex.map.get( null ) );
         }
-        return result != null ? result.get() : Collections.<Long>emptySet();
+        return result != null && result.get() != null ? result.get() :
+                Collections.<Long>emptySet();
     }
     
     boolean getIndexDeleted( String key )

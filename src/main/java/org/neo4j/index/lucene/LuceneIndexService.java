@@ -338,7 +338,8 @@ public class LuceneIndexService extends GenericIndexService
                 found = true;
                 for ( Long cachedNodeId : cachedNodes )
                 {
-                    if ( !deletedNodes.contains( cachedNodeId ) )
+                    if ( deletedNodes == null ||
+                            !deletedNodes.contains( cachedNodeId ) )
                     {
                         nodeIds.add( cachedNodeId );
                     }
