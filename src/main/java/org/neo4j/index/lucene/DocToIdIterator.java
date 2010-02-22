@@ -37,7 +37,7 @@ class DocToIdIterator extends PrefetchingIterator<Long>
             Document doc = docs.next();
             long id = Long.parseLong(
                 doc.getField( LuceneIndexService.DOC_ID_KEY ).stringValue() );
-            if ( !exclude.contains( id ) )
+            if ( exclude == null || !exclude.contains( id ) )
             {
                 if ( alreadyReturnedIds.add( id ) )
                 {
