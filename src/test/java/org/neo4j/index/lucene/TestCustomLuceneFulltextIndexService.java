@@ -42,6 +42,12 @@ public class TestCustomLuceneFulltextIndexService
         // Do nothing
     }
 
+    @Override
+    public void testRemoveAllWithCache()
+    {
+        // Do nothing
+    }
+    
     public void testCustomFulltext() throws Exception
     {
         Node node1 = graphDb().createNode();

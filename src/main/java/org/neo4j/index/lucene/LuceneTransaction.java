@@ -202,22 +202,31 @@ class LuceneTransaction extends XaTransaction
                 IndexWriter writer = luceneDs.getIndexWriter( key );
                 for ( LuceneCommand command : entry.getValue() )
                 {
+                    Long nodeId = command.getNodeId();
+                    String value = command.getValue();
                     if ( command instanceof AddCommand )
                     {
-                        indexWriter( writer, command.getNodeId(), key,
-                            command.getValue() );
+                        indexWriter( writer, nodeId, key, value );
                     }
                     else if ( command instanceof RemoveCommand )
                     {
                         luceneDs.deleteDocumentsUsingWriter(
-                            writer, command.getNodeId(), command.getValue() );
+                            writer, nodeId, value );
                     }
                     else
                     {
                         throw new RuntimeException( "Unknown command type " +
                             command + ", " + command.getClass() );
                     }
-                    luceneDs.invalidateCache( key, command.getValue() );
+                    
+                    if ( value != null )
+                    {
+                        luceneDs.invalidateCache( key, value );
+                    }
+                    else
+                    {
+                        luceneDs.invalidateCache( key );
+                    }
                 }
                 luceneDs.removeWriter( key, writer );
                 luceneDs.invalidateIndexSearcher( key );

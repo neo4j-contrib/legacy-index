@@ -290,6 +290,25 @@ public class TestLuceneIndexingService extends Neo4jTestCase
         node1.delete();
     }
     
+    public void testRemoveAllWithCache() throws Exception
+    {
+        Node node1 = graphDb().createNode();
+        String key = "removeallc";
+        ( (LuceneIndexService) indexService() ).enableCache( key, 1000 );
+        indexService().index( node1, key, "value1" );
+        indexService().index( node1, key, "value2" );
+        restartTx();
+        assertEquals( node1, indexService().getSingleNode( key, "value1" ) );
+        assertEquals( node1, indexService().getSingleNode( key, "value2" ) );
+        indexService().removeIndex( node1, key );
+        assertNull( indexService().getSingleNode( key, "value1" ) );
+        assertNull( indexService().getSingleNode( key, "value2" ) );
+        restartTx();
+        assertNull( indexService().getSingleNode( key, "value1" ) );
+        assertNull( indexService().getSingleNode( key, "value2" ) );
+        node1.delete();
+    }
+    
 //    public void testDifferentTypesWithSameValueIssue()
 //    {
 //        String key = "prop";

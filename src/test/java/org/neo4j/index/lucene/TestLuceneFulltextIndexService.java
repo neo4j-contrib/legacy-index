@@ -47,6 +47,12 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
     {
         // Do nothing
     }
+    
+    @Override
+    public void testRemoveAllWithCache()
+    {
+        // Do nothing
+    }
 
     public void testSimpleFulltext()
     {
