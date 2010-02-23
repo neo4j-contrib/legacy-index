@@ -556,4 +556,14 @@ public class LuceneDataSource extends XaDataSource
     {
         xaContainer.getLogicalLog().makeBackupSlave();
     }
+
+    public String getFileName( long version )
+    {
+        return xaContainer.getLogicalLog().getFileName( version );
+    }
+
+    public long getLogicalLogLength( long version )
+    {
+        return xaContainer.getLogicalLog().getLogicalLogLength( version );
+    }
 }
