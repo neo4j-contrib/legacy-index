@@ -85,8 +85,12 @@ public class LuceneReadOnlyDataSource // extends XaDataSource
         {
             try
             {
-                Directory dir = FSDirectory.open( new File( storeDir + "/"
-                                                            + key ) );
+                File fsDirectory = new File( storeDir, key );
+                if ( !fsDirectory.exists() )
+                {
+                    return null;
+                }
+                Directory dir = FSDirectory.open( fsDirectory );
                 if ( dir.listAll().length == 0 )
                 {
                     return null;
