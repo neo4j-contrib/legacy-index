@@ -436,6 +436,18 @@ public class LuceneDataSource extends XaDataSource
         this.caching.put( key, new LruCache<String,Collection<Long>>( key,
             maxNumberOfCachedEntries, null ) );
     }
+    
+    /**
+     * Returns the enabled cache size or {@code null} if not enabled
+     * for {@code key}.
+     * @param key the key to get the cache size for.
+     * @return the cache size for {@code key} or {@code null}.
+     */
+    Integer getEnabledCacheSize( String key )
+    {
+        LruCache<String, Collection<Long>> cache = this.caching.get( key );
+        return cache != null ? cache.maxSize() : null;
+    }
 
     void invalidateCache( String key, Object value )
     {

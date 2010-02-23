@@ -148,6 +148,20 @@ public class LuceneIndexService extends GenericIndexService
     {
         xaDs.enableCache( key, maxNumberOfCachedEntries );
     }
+    
+    /**
+     * Returns the enabled LRU cache size for {@code key}. Cache is enabled
+     * using {@link #enableCache(String, int)}. If cache hasn't been enabled
+     * for {@code key} then {@code null} is returned.
+     * 
+     * @param key the key to get the enabled cache size for.
+     * @return the max cache size for {@code key} or {@code null} if not
+     * enabled for that key.
+     */
+    public Integer getEnabledCacheSize( String key )
+    {
+        return xaDs.getEnabledCacheSize( key );
+    }
 
     /**
      * Sets the threshold for when a result is considered big enough to skip
