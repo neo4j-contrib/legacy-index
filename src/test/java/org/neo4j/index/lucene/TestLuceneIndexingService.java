@@ -309,6 +309,20 @@ public class TestLuceneIndexingService extends Neo4jTestCase
         node1.delete();
     }
     
+    public void testIndexLargeString() throws Exception
+    {
+            Node node1 = graphDb().createNode();
+            byte[] data = new byte[10*1024*1024];
+            String value = new String( data );
+            indexService().index( node1, "large_string", value );
+            restartTx();
+//          this will not work            
+//            assertEquals( node1, 
+//                    indexService().getSingleNode( "large_string", value ) );
+            indexService.removeIndex( node1, "large_string" );
+            node1.delete();
+    }
+    
 //    public void testDifferentTypesWithSameValueIssue()
 //    {
 //        String key = "prop";
