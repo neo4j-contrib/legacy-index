@@ -175,7 +175,7 @@ public class LuceneDataSource extends XaDataSource
         {
             try
             {
-                searcher.getSearcher().close();
+                searcher.dispose();
             }
             catch ( IOException e )
             {

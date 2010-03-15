@@ -41,11 +41,14 @@ class IndexSearcherRef
         this.refCount.incrementAndGet();
     }
     
-    private void dispose() throws IOException
+    void dispose() throws IOException
     {
-        this.searcher.close();
-        this.searcher.getIndexReader().close();
-        this.isClosed = true;
+        if ( !this.isClosed )
+        {
+            this.searcher.close();
+            this.searcher.getIndexReader().close();
+            this.isClosed = true;
+        }
     }
     
     void detachOrClose() throws IOException
