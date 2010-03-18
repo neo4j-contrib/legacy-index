@@ -1,3 +1,4 @@
+[2010-03-18] Check why BND thinks there are split packages over several jars, gives warnings in OSGi bundle phase right now
 [2010-02-09] Make IndexService "stateless"
     The actual state of the IndexService is not managed by the implementing
     classes, it's handled by the XA-resources. It should thus be possible
