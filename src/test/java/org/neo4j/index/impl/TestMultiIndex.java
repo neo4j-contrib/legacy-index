@@ -19,10 +19,16 @@
  */
 package org.neo4j.index.impl;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+import org.junit.Before;
+import org.junit.Test;
 import org.neo4j.graphdb.Node;
 import org.neo4j.index.Index;
 import org.neo4j.index.IndexHits;
@@ -32,14 +38,14 @@ public class TestMultiIndex extends Neo4jTestCase
 {
 	private MultiValueIndex index;
 	
-	@Override
+	@Before
 	public void setUp() throws Exception
 	{
-	    super.setUp();
 		Node node = graphDb().createNode();
 		index = new MultiValueIndex( "test_simple", node, graphDb() ); 
 	}
 	
+	@Test
 	public void testSimpleIndexBasic()
 	{
 		Node node1 = graphDb().createNode();
@@ -78,7 +84,8 @@ public class TestMultiIndex extends Neo4jTestCase
 		node2.delete();
 	}
 	
-	public void testIllegalStuff()
+	@Test
+    public void testIllegalStuff()
 	{
 		Node node1 = graphDb().createNode();
 		try 
@@ -106,6 +113,7 @@ public class TestMultiIndex extends Neo4jTestCase
 		sIndex.drop();
 	}	
 
+	@Test
     public void testValues()
     {
         Set<Node> nodes = new HashSet<Node>();

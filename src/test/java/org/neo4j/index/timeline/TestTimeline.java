@@ -19,9 +19,17 @@
  */
 package org.neo4j.index.timeline;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.util.Iterator;
 import java.util.LinkedList;
 
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.neo4j.graphdb.Node;
 import org.neo4j.index.Neo4jTestCase;
 
@@ -29,19 +37,17 @@ public class TestTimeline extends Neo4jTestCase
 {
 	private Timeline timeline;
 	
-	@Override
-	public void setUp() throws Exception
+	@Before
+	public void setUpTimeline() throws Exception
 	{
-	    super.setUp();
 		Node node = graphDb().createNode();
 		timeline = new Timeline( "test_timeline", node, false, graphDb() ); 
 	}
 	
-	@Override
-	public void tearDown() throws Exception
+	@After
+	public void tearDownTimeline() throws Exception
 	{
 		timeline.delete();
-		super.tearDown();
 	}
 	
 	private long getStamp()
@@ -58,6 +64,7 @@ public class TestTimeline extends Neo4jTestCase
 		return stamp;
 	}
 	
+	@Test
 	public void testTimelineBasic()
 	{
 		Node node1 = graphDb().createNode();
@@ -231,7 +238,8 @@ public class TestTimeline extends Neo4jTestCase
 		node3.delete();
 	}
 	
-	public void testIllegalStuff()
+	@Test
+    public void testIllegalStuff()
 	{
 		Node node1 = graphDb().createNode();
 		long stamp1 = System.currentTimeMillis();
@@ -278,7 +286,8 @@ public class TestTimeline extends Neo4jTestCase
 		node1.delete();
 	}
 	
-	public void testIndexedTimeline()
+	@Test
+    public void testIndexedTimeline()
 	{
 		Node tlNode = graphDb().createNode();
 		Timeline timeline = new Timeline( "test", tlNode, true, graphDb() ); 
@@ -324,6 +333,7 @@ public class TestTimeline extends Neo4jTestCase
 		timeline.delete();
 	}
 	
+	@Test
     public void testIndexedTimeline2()
     {
         Node tlNode = graphDb().createNode();
@@ -348,7 +358,8 @@ public class TestTimeline extends Neo4jTestCase
         }
     }
     
-	public void testTimelineSameTimestamp()
+	@Test
+    public void testTimelineSameTimestamp()
 	{
 		Node tlNode = graphDb().createNode();
 		Timeline timeline = new Timeline( "test", tlNode, true, graphDb() );
@@ -398,7 +409,8 @@ public class TestTimeline extends Neo4jTestCase
 		timeline.delete();
 	}
 	
-	public void testMultipleTimelines()
+	@Test
+    public void testMultipleTimelines()
 	{
 		Node tlNode1 = graphDb().createNode();
 		Timeline timeline1 = new Timeline( "test1", tlNode1, true, graphDb() );
@@ -436,6 +448,7 @@ public class TestTimeline extends Neo4jTestCase
 		node1.delete(); node2.delete(); node3.delete(); node4.delete();
 	}
 
+	@Test
     public void testTimelineRemoveNode()
     {
         Node tlNode = graphDb().createNode();
@@ -465,6 +478,7 @@ public class TestTimeline extends Neo4jTestCase
         }
     }
     
+	@Test
     public void testDeleteTimeline()
     {
         Node tlNode = graphDb().createNode();

@@ -19,6 +19,7 @@
  */
 package org.neo4j.index.lucene;
 
+import org.junit.Ignore;
 import org.neo4j.graphdb.Node;
 import org.neo4j.index.IndexService;
 
@@ -26,23 +27,27 @@ public class TestCustomLuceneFulltextIndexService
     extends TestLuceneIndexingService
 {
     @Override
-    protected IndexService instantiateIndexService()
+    protected IndexService instantiateIndex()
     {
         return new LuceneFulltextQueryIndexService( graphDb() );
     }
     
     @Override
+    @Ignore
     public void testCaching()
     {
+        // Do nothing
     }
     
     @Override
+    @Ignore
     public void testGetNodesBug()
     {
         // Do nothing
     }
 
     @Override
+    @Ignore
     public void testRemoveAllWithCache()
     {
         // Do nothing
@@ -56,26 +61,26 @@ public class TestCustomLuceneFulltextIndexService
         String key1 = "lastName";
         String key2 = "modifiedTime";
 
-        indexService().index( node1, key1, "Smith" );
-        indexService().index( node2, key1, "Mattias Smith" );
-        indexService().index( node2, key2, "2009" );
-        indexService().index( node1, key2, "449854" );
+        index().index( node1, key1, "Smith" );
+        index().index( node2, key1, "Mattias Smith" );
+        index().index( node2, key2, "2009" );
+        index().index( node1, key2, "449854" );
         
         assertCollection( asCollection(
-            indexService().getNodes( key1, "smith" ) ), node1, node2 );
+            index().getNodes( key1, "smith" ) ), node1, node2 );
         assertCollection( asCollection(
-            indexService().getNodes( key1, "smish~" ) ), node1, node2 );
+            index().getNodes( key1, "smish~" ) ), node1, node2 );
         assertCollection( asCollection(
-            indexService().getNodes( key2, "[2010 TO >]" ) ), node1 );
+            index().getNodes( key2, "[2010 TO >]" ) ), node1 );
         
         restartTx();
         
         assertCollection( asCollection(
-            indexService().getNodes( key1, "smith" ) ), node1, node2 );
+            index().getNodes( key1, "smith" ) ), node1, node2 );
         assertCollection( asCollection(
-            indexService().getNodes( key1, "smish~" ) ), node1, node2 );
+            index().getNodes( key1, "smish~" ) ), node1, node2 );
         assertCollection( asCollection(
-            indexService().getNodes( key2, "[2010 TO >]" ) ), node1 );
+            index().getNodes( key2, "[2010 TO >]" ) ), node1 );
     }
 
     public void testSpecific() throws Exception
@@ -83,25 +88,25 @@ public class TestCustomLuceneFulltextIndexService
         Node andy = graphDb().createNode();
         Node larry = graphDb().createNode();
         String key = "atest";
-        indexService().index( andy, key, "Andy Wachowski" );
-        indexService().index( larry, key, "Larry Wachowski" );
+        index().index( andy, key, "Andy Wachowski" );
+        index().index( larry, key, "Larry Wachowski" );
         
         assertCollection( asCollection(
-            indexService().getNodes( key, "+andy +wachowski" ) ), andy );
+            index().getNodes( key, "+andy +wachowski" ) ), andy );
         assertCollection( asCollection(
-            indexService().getNodes( key, "+Andy +Wachowski" ) ), andy );
+            index().getNodes( key, "+Andy +Wachowski" ) ), andy );
         assertCollection( asCollection(
-            indexService().getNodes( key, "andy" ) ), andy );
+            index().getNodes( key, "andy" ) ), andy );
         assertCollection( asCollection(
-            indexService().getNodes( key, "Andy" ) ), andy );
+            index().getNodes( key, "Andy" ) ), andy );
         assertCollection( asCollection(
-            indexService().getNodes( key, "larry" ) ), larry );
+            index().getNodes( key, "larry" ) ), larry );
         assertCollection( asCollection(
-            indexService().getNodes( key, "andy larry" ) ), andy, larry );
+            index().getNodes( key, "andy larry" ) ), andy, larry );
         assertCollection( asCollection(
-            indexService().getNodes( key, "+andy +larry" ) ) );
+            index().getNodes( key, "+andy +larry" ) ) );
         assertCollection( asCollection(
-            indexService().getNodes( key, "wachow*" ) ), andy, larry );
+            index().getNodes( key, "wachow*" ) ), andy, larry );
     }
 
     @Override
@@ -115,21 +120,21 @@ public class TestCustomLuceneFulltextIndexService
         // Deliberately set Larry's name wrong
         larry.setProperty( "name", "Andy Wachowski" );
         larry.setProperty( "title", "Director" );
-        indexService().index( andy, "name", andy.getProperty( "name" ) );
-        indexService().index( andy, "title", andy.getProperty( "title" ) );
-        indexService().index( larry, "name", larry.getProperty( "name" ) );
-        indexService().index( larry, "title", larry.getProperty( "title" ) );
+        index().index( andy, "name", andy.getProperty( "name" ) );
+        index().index( andy, "title", andy.getProperty( "title" ) );
+        index().index( larry, "name", larry.getProperty( "name" ) );
+        index().index( larry, "title", larry.getProperty( "title" ) );
     
         // Correct Larry's name
-        indexService().removeIndex( larry, "name",
+        index().removeIndex( larry, "name",
             larry.getProperty( "name" ) );
         larry.setProperty( "name", "Larry Wachowski" );
-        indexService().index( larry, "name",
+        index().index( larry, "name",
             larry.getProperty( "name" ) );
     
-        assertCollection( asCollection( indexService().getNodes(
+        assertCollection( asCollection( index().getNodes(
             "name", "Andy AND Wachowski" ) ), andy );
-        assertCollection( asCollection( indexService().getNodes(
+        assertCollection( asCollection( index().getNodes(
             "name", "Larry AND Wachowski" ) ), larry );
     }
 }

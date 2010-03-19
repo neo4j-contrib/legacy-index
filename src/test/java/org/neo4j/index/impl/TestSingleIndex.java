@@ -19,12 +19,19 @@
  */
 package org.neo4j.index.impl;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.neo4j.graphdb.Node;
 import org.neo4j.index.Index;
 import org.neo4j.index.IndexHits;
@@ -34,21 +41,20 @@ public class TestSingleIndex extends Neo4jTestCase
 {
 	private SingleValueIndex index;
 	
-	@Override
-	public void setUp() throws Exception
+	@Before
+	public void setUpIndex() throws Exception
 	{
-	    super.setUp();
 		Node node = graphDb().createNode();
 		index = new SingleValueIndex( "test_simple", node, graphDb() ); 
 	}
 	
-	@Override
-	public void tearDown() throws Exception
+	@After
+	public void tearDownIndex() throws Exception
 	{
 		index.drop();
-		super.tearDown();
 	}
 	
+	@Test
 	public void testSimpleIndexBasic()
 	{
 		Node node1 = graphDb().createNode();
@@ -88,7 +94,8 @@ public class TestSingleIndex extends Neo4jTestCase
 		node2.delete();
 	}
 	
-	public void testIllegalStuff()
+	@Test
+    public void testIllegalStuff()
 	{
 		Node node1 = graphDb().createNode();
 		try 

@@ -19,36 +19,33 @@
  */
 package org.neo4j.index.impl.map;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
-import org.neo4j.graphdb.GraphDatabaseService;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.neo4j.graphdb.Node;
-import org.neo4j.graphdb.Transaction;
-import org.neo4j.kernel.EmbeddedGraphDatabase;
+import org.neo4j.index.Neo4jTestCase;
 
-public class TestBTreeMap extends TestCase
+public class TestBTreeMap extends Neo4jTestCase
 {
 	private BTreeMap<Character,Character> bTreeMap;
-	private GraphDatabaseService graphDb;
-	private Transaction tx;
 	
-	@Override
-	public void setUp()
+	@Before
+	public void setUpMap()
 	{
-		graphDb = new EmbeddedGraphDatabase( "target/var/map" );
-		tx = graphDb.beginTx();
-		Node bNode = graphDb.createNode();
-		bTreeMap = new BTreeMap<Character,Character>( "test_map", bNode, graphDb );
+		Node bNode = graphDb().createNode();
+		bTreeMap = new BTreeMap<Character,Character>( "test_map", bNode, graphDb() );
 	}
 	
-	@Override
-	public void tearDown()
+	@After
+	public void tearDownMap()
 	{
  		bTreeMap.delete();
-		tx.finish();
-		graphDb.shutdown();
 	}
 	
+	@Test
 	public void testBasicBTreeMap()
 	{
 		assertNull( bTreeMap.put( 'c', 'a' ) );
@@ -77,6 +74,5 @@ public class TestBTreeMap extends TestCase
 		assertNull( bTreeMap.remove( 'h' ) );
 		assertEquals( (Character) 't', bTreeMap.remove( 't' ) );
 		assertEquals( (Character) 'r', bTreeMap.remove( 'r' ) );
-		tx.success();
 	}	
 }

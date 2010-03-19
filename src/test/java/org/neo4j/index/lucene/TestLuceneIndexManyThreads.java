@@ -1,5 +1,8 @@
 package org.neo4j.index.lucene;
 
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -7,45 +10,33 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.junit.Test;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.RelationshipType;
 import org.neo4j.graphdb.Transaction;
 import org.neo4j.index.IndexHits;
 import org.neo4j.index.IndexService;
-import org.neo4j.index.Neo4jTestCase;
+import org.neo4j.index.Neo4jWithIndexTestCase;
 
-public abstract class TestLuceneIndexManyThreads extends Neo4jTestCase
+/**
+ * This test is abstract because it takes a while to run. It belongs in a QA project
+ * instead really...
+ */
+public abstract class TestLuceneIndexManyThreads extends Neo4jWithIndexTestCase
 {
-    private IndexService indexService;
     private AtomicInteger COUNT_CREATES = new AtomicInteger();
     private AtomicInteger COUNT_DELETES = new AtomicInteger();
     private AtomicInteger COUNT_READS = new AtomicInteger();
     
-    protected IndexService instantiateIndexService()
+    @Override
+    protected IndexService instantiateIndex()
     {
         return new LuceneIndexService( graphDb() );
     }
     
-    @Override
-    protected void setUp() throws Exception
-    {
-        super.setUp();
-        indexService = instantiateIndexService();
-    }
-    
-    protected IndexService indexService()
-    {
-        return indexService;
-    }
-    
-    @Override
-    protected void beforeShutdown()
-    {
-        indexService().shutdown();
-    }
-    
-    public void testTryToBreak() throws Exception
+    @Test
+    public void tryToBreak() throws Exception
     {
         Node rootNode = graphDb().createNode();
         restartTx();
@@ -148,7 +139,7 @@ public abstract class TestLuceneIndexManyThreads extends Neo4jTestCase
         private void set( Node node, String key, Object value )
         {
             node.setProperty( key, value );
-            indexService().index( node, key, value );
+            index().index( node, key, value );
         }
 
         private Collection<Long> createStuff()
@@ -188,7 +179,7 @@ public abstract class TestLuceneIndexManyThreads extends Neo4jTestCase
                 }
                 for ( String key : node.getPropertyKeys() )
                 {
-                    indexService().removeIndex( node, key,
+                    index().removeIndex( node, key,
                         node.getProperty( key ) );
                 }
                 node.getSingleRelationship( RelTypes.TEST_TYPE,
@@ -220,7 +211,7 @@ public abstract class TestLuceneIndexManyThreads extends Neo4jTestCase
 //                assertTrue( isRoughly( aliveNodes.size() / 20,
 //                    sometimesHits.size() ) );
 //            }
-            IndexHits<Node> hits = indexService().getNodes( "type", "TYPE" );
+            IndexHits<Node> hits = index().getNodes( "type", "TYPE" );
             for ( Node hit : hits )
             {
                 hit.getProperty( "name" );
@@ -233,7 +224,7 @@ public abstract class TestLuceneIndexManyThreads extends Neo4jTestCase
             {
                 String name = ( String ) node.getProperty( "name" );
                 boolean found = false;
-                for ( Node hit : indexService().getNodes( "name", name ) )
+                for ( Node hit : index().getNodes( "name", name ) )
                 {
                     COUNT_READS.incrementAndGet();
                     if ( hit.equals( node ) )

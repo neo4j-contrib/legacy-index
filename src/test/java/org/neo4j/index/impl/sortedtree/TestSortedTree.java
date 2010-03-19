@@ -19,45 +19,39 @@
  */
 package org.neo4j.index.impl.sortedtree;
 
+import static org.junit.Assert.assertEquals;
+
 import java.util.Comparator;
 
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.neo4j.graphdb.Node;
 import org.neo4j.index.Neo4jTestCase;
 import org.neo4j.index.impl.btree.BTree.RelTypes;
 
 public class TestSortedTree extends Neo4jTestCase
 {
+    private static final String VALUE = "value";
+    
 	private SortedTree bTree;
 	
-	@Override
+	@Before
 	public void setUp() throws Exception
 	{
-	    super.setUp();
 		Node bNode = graphDb().createNode();
 		graphDb().getReferenceNode().createRelationshipTo( bNode, 
 			RelTypes.TREE_ROOT );
 		bTree = new SortedTree( graphDb(), bNode, new NodeSorter() );
 	}
 
-    private static final String VALUE = "value";
-    
-    static class NodeSorter implements Comparator<Node>
-    {
-        public int compare( Node o1, Node o2 )
-        {
-            Comparable c1 = (Comparable) o1.getProperty( VALUE );
-            Comparable c2 = (Comparable) o2.getProperty( VALUE );
-            return c1.compareTo( c2 );
-        }
-    }
-    
-	@Override
+	@After
 	public void tearDown() throws Exception
 	{
  		bTree.delete();
- 		super.tearDown();
 	}
     
+	@Test
     public void testBasicSort()
     {
         bTree.addNode( createNode( 'c' ) );
@@ -98,10 +92,20 @@ public class TestSortedTree extends Neo4jTestCase
         }
     }
     
-    public Node createNode( char c )
+    private Node createNode( char c )
     {
         Node node = graphDb().createNode();
         node.setProperty( VALUE, c );
         return node;
+    }
+
+    static class NodeSorter implements Comparator<Node>
+    {
+        public int compare( Node o1, Node o2 )
+        {
+            Comparable c1 = (Comparable) o1.getProperty( VALUE );
+            Comparable c2 = (Comparable) o2.getProperty( VALUE );
+            return c1.compareTo( c2 );
+        }
     }
 }

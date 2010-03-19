@@ -19,6 +19,9 @@
  */
 package org.neo4j.index.lucene;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -31,49 +34,33 @@ import java.util.Random;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
-import junit.framework.TestCase;
-
+import org.junit.Test;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Transaction;
 import org.neo4j.index.IndexService;
+import org.neo4j.index.Neo4jTestCase;
 import org.neo4j.kernel.EmbeddedGraphDatabase;
 import org.neo4j.kernel.impl.transaction.XidImpl;
 
-public class TestRecovery extends TestCase
+/**
+ * Don't extend Neo4jTestCase since these tests restarts the db in the tests. 
+ */
+public class TestRecovery
 {
-    private void deleteFileOrDirectory( File file )
-    {
-        if ( !file.exists() )
-        {
-            return;
-        }
-        
-        if ( file.isDirectory() )
-        {
-            for ( File child : file.listFiles() )
-            {
-                deleteFileOrDirectory( child );
-            }
-        }
-        else
-        {
-            file.delete();
-        }
-    }
-    
     private String getDbPath()
     {
-        return "target/recovery";
+        return "target/var/recovery";
     }
     
     private GraphDatabaseService newGraphDbService()
     {
         String path = getDbPath();
-        deleteFileOrDirectory( new File( path ) );
+        Neo4jTestCase.deleteFileOrDirectory( new File( path ) );
         return new EmbeddedGraphDatabase( path );
     }
     
+    @Test
     public void testRecovery() throws Exception
     {
         final GraphDatabaseService graphDb = newGraphDbService();
@@ -126,7 +113,8 @@ public class TestRecovery extends TestCase
         }
     }
     
-    public void testReCommit()
+    @Test
+    public void testReCommit() throws Exception
     {
         GraphDatabaseService graphDb = newGraphDbService();
         IndexService idx = new LuceneIndexService( graphDb );
@@ -138,47 +126,37 @@ public class TestRecovery extends TestCase
         Map<Object,Object> params = new HashMap<Object,Object>();
         String luceneDir = getDbPath() + "/lucene";
         params.put( "dir", luceneDir );
-        try
-        {
-            LuceneDataSource xaDs = new LuceneDataSource( params );
-            LuceneXaConnection xaC = (LuceneXaConnection) xaDs.getXaConnection();
-            XAResource xaR = xaC.getXaResource();
-            Xid xid = new XidImpl( new byte[1], new byte[1] );
-            xaR.start( xid, XAResource.TMNOFLAGS );
-            xaC.index( refNode, "test", "1" );
-            xaR.end( xid, XAResource.TMSUCCESS );
-            xaR.prepare( xid );
-            xaR.commit( xid, false );
-            copyLogicalLog( luceneDir + "/lucene.log.active", 
-                luceneDir + "/lucene.log.active.bak" );
-            copyLogicalLog( luceneDir + "/lucene.log.1", 
-                luceneDir + "/lucene.log.1.bak" );
-            // test recovery re-commit
-            idx = new LuceneIndexService( graphDb );
-            tx = graphDb.beginTx();
-            assertEquals( refNode, idx.getSingleNode( "test", "1" ) );
-            tx.finish();
-            idx.shutdown();
-            assertTrue( 
-                new File( luceneDir + "/lucene.log.active" ).delete() );
-            // test recovery again on same log and only still only get 1 node
-            copyLogicalLog( luceneDir + "/lucene.log.active.bak", 
-                luceneDir + "/lucene.log.active" );
-            copyLogicalLog( luceneDir + "/lucene.log.1.bak", 
-                luceneDir + "/lucene.log.1" );
-            idx = new LuceneIndexService( graphDb );
-            tx = graphDb.beginTx();
-            assertEquals( refNode, idx.getSingleNode( "test", "1" ) );
-            tx.finish();
-            idx.shutdown();
-            graphDb.shutdown();
-        }
-        catch ( Exception e )
-        {
-            e.printStackTrace();
-            fail( "" + e );
-        }
-        
+        LuceneDataSource xaDs = new LuceneDataSource( params );
+        LuceneXaConnection xaC = (LuceneXaConnection) xaDs.getXaConnection();
+        XAResource xaR = xaC.getXaResource();
+        Xid xid = new XidImpl( new byte[1], new byte[1] );
+        xaR.start( xid, XAResource.TMNOFLAGS );
+        xaC.index( refNode, "test", "1" );
+        xaR.end( xid, XAResource.TMSUCCESS );
+        xaR.prepare( xid );
+        xaR.commit( xid, false );
+        copyLogicalLog( luceneDir + "/lucene.log.active", 
+            luceneDir + "/lucene.log.active.bak" );
+        copyLogicalLog( luceneDir + "/lucene.log.1", 
+            luceneDir + "/lucene.log.1.bak" );
+        // test recovery re-commit
+        idx = new LuceneIndexService( graphDb );
+        tx = graphDb.beginTx();
+        assertEquals( refNode, idx.getSingleNode( "test", "1" ) );
+        tx.finish();
+        idx.shutdown();
+        assertTrue( new File( luceneDir + "/lucene.log.active" ).delete() );
+        // test recovery again on same log and only still only get 1 node
+        copyLogicalLog( luceneDir + "/lucene.log.active.bak", 
+            luceneDir + "/lucene.log.active" );
+        copyLogicalLog( luceneDir + "/lucene.log.1.bak", 
+            luceneDir + "/lucene.log.1" );
+        idx = new LuceneIndexService( graphDb );
+        tx = graphDb.beginTx();
+        assertEquals( refNode, idx.getSingleNode( "test", "1" ) );
+        tx.finish();
+        idx.shutdown();
+        graphDb.shutdown();
     }
 
     private void copyLogicalLog( String name, String copy ) throws IOException
@@ -201,6 +179,7 @@ public class TestRecovery extends TestCase
         dest.close();
     }
 
+    @Test
     public void testRecoveryFulltextIndex()
     {
         GraphDatabaseService graphDb = new EmbeddedGraphDatabase(

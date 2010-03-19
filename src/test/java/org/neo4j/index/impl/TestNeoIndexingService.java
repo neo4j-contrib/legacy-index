@@ -19,55 +19,52 @@
  */
 package org.neo4j.index.impl;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.util.Iterator;
 
+import org.junit.Test;
 import org.neo4j.graphdb.DynamicRelationshipType;
 import org.neo4j.graphdb.Node;
 import org.neo4j.index.IndexHits;
 import org.neo4j.index.IndexService;
 import org.neo4j.index.Isolation;
-import org.neo4j.index.Neo4jTestCase;
+import org.neo4j.index.Neo4jWithIndexTestCase;
 
-public class TestNeoIndexingService extends Neo4jTestCase
+public class TestNeoIndexingService extends Neo4jWithIndexTestCase
 {
-	private IndexService indexService;
-	
-	@Override
-	public void setUp() throws Exception
-	{
-	    super.setUp();
-        indexService = new NeoIndexService( graphDb() );
-	}
-	
-	@Override
-	protected void beforeShutdown()
-	{
-        indexService.shutdown();
-	}
+    @Override
+    protected IndexService instantiateIndex()
+    {
+        return new NeoIndexService( graphDb() );
+    }
     
+    @Test
     public void testSimple()
     {
         Node node1 = graphDb().createNode();
         
-        assertTrue( !indexService.getNodes( "a_property", 
+        assertTrue( !index().getNodes( "a_property", 
             1 ).iterator().hasNext() );
 
-        indexService.index( node1, "a_property", 1 );
+        index().index( node1, "a_property", 1 );
         
-        Iterator<Node> itr = indexService.getNodes( "a_property", 
+        Iterator<Node> itr = index().getNodes( "a_property", 
             1 ).iterator();
         assertEquals( node1, itr.next() );
         assertTrue( !itr.hasNext() );
         
-        indexService.removeIndex( node1, "a_property", 1 );
-        assertTrue( !indexService.getNodes( "a_property", 
+        index().removeIndex( node1, "a_property", 1 );
+        assertTrue( !index().getNodes( "a_property", 
             1 ).iterator().hasNext() );
 
-        indexService.index( node1, "a_property", 1 );
+        index().index( node1, "a_property", 1 );
         Node node2 = graphDb().createNode();
-        indexService.index( node2, "a_property", 1 );
+        index().index( node2, "a_property", 1 );
         
-        IndexHits hits = indexService.getNodes( "a_property", 1 );
+        IndexHits<Node> hits = index().getNodes( "a_property", 1 );
         assertEquals( 2, hits.size() );
         itr = hits.iterator();
         assertTrue( itr.next() != null );
@@ -75,17 +72,17 @@ public class TestNeoIndexingService extends Neo4jTestCase
         assertTrue( !itr.hasNext() );
         assertTrue( !itr.hasNext() );       
         
-        indexService.removeIndex( node1, "a_property", 1 );
-        indexService.removeIndex( node2, "a_property", 1 );
-        assertTrue( !indexService.getNodes( "a_property", 
+        index().removeIndex( node1, "a_property", 1 );
+        index().removeIndex( node2, "a_property", 1 );
+        assertTrue( !index().getNodes( "a_property", 
             1 ).iterator().hasNext() );
-        itr = indexService.getNodes( "a_property", 1 ).iterator();
+        itr = index().getNodes( "a_property", 1 ).iterator();
         assertTrue( !itr.hasNext() );
         restartTx();
         
-        indexService.setIsolation( Isolation.ASYNC_OTHER_TX );
-        indexService.index( node1, "a_property", 1 );
-        itr = indexService.getNodes( "a_property", 1 ).iterator();
+        index().setIsolation( Isolation.ASYNC_OTHER_TX );
+        index().index( node1, "a_property", 1 );
+        itr = index().getNodes( "a_property", 1 ).iterator();
         assertTrue( !itr.hasNext() );
         try
         {
@@ -95,16 +92,17 @@ public class TestNeoIndexingService extends Neo4jTestCase
         {
             Thread.interrupted();
         }
-        itr = indexService.getNodes( "a_property", 1 ).iterator();
+        itr = index().getNodes( "a_property", 1 ).iterator();
         assertTrue( itr.hasNext() );
-        indexService.setIsolation( Isolation.SYNC_OTHER_TX );
-        indexService.removeIndex( node1, "a_property", 1 );
-        itr = indexService.getNodes( "a_property", 1 ).iterator();
+        index().setIsolation( Isolation.SYNC_OTHER_TX );
+        index().removeIndex( node1, "a_property", 1 );
+        itr = index().getNodes( "a_property", 1 ).iterator();
         assertTrue( !itr.hasNext() );
         node1.delete();
         node2.delete();
     }
     
+    @Test
     public void testProgramaticGraphDbMultiCommit() 
     {
         String testValue = String.valueOf(System.nanoTime());
@@ -135,7 +133,7 @@ public class TestNeoIndexingService extends Neo4jTestCase
             newNode.setProperty("id", testValue);
             graphDb().getReferenceNode().createRelationshipTo(newNode,
                 DynamicRelationshipType.withName( "LINKS_TO" ));
-            indexService.index(newNode, "id", testValue);
+            index().index(newNode, "id", testValue);
             restartTx( true );
         } catch (Exception e) {
             e.printStackTrace();
@@ -152,7 +150,7 @@ public class TestNeoIndexingService extends Neo4jTestCase
             newNode.setProperty("id", testValue);
             graphDb().getReferenceNode().createRelationshipTo(newNode,
                 DynamicRelationshipType.withName( "LINKS_TO" ));
-            indexService.index(newNode, "id", testValue);
+            index().index(newNode, "id", testValue);
             restartTx( false );
         } catch (Exception e) {
             e.printStackTrace();
@@ -163,11 +161,11 @@ public class TestNeoIndexingService extends Neo4jTestCase
     private boolean hasNewNode(String testValue) 
     {
         restartTx();
-        Node node = indexService.getSingleNode("id", testValue);
+        Node node = index().getSingleNode("id", testValue);
         restartTx( true );
         return node != null;
     }
-    
+
 /*	public void testIllegalStuff()
 	{
 		Node node1 = graphDb().createNode();

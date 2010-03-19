@@ -19,10 +19,15 @@
  */
 package org.neo4j.index.lucene;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import org.junit.Ignore;
+import org.junit.Test;
 import org.neo4j.graphdb.Node;
 import org.neo4j.index.IndexHits;
 import org.neo4j.index.IndexService;
@@ -31,29 +36,33 @@ import org.neo4j.index.Isolation;
 public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
 {
     @Override
-    protected IndexService instantiateIndexService()
+    protected IndexService instantiateIndex()
     {
         return new LuceneFulltextIndexService( graphDb() );
     }
     
     @Override
+    @Ignore
     public void testCaching()
     {
         // Do nothing
     }
 
     @Override
+    @Ignore
     public void testGetNodesBug()
     {
         // Do nothing
     }
     
     @Override
+    @Ignore
     public void testRemoveAllWithCache()
     {
         // Do nothing
     }
 
+    @Test
     public void testSimpleFulltext()
     {
         Node node1 = graphDb().createNode();
@@ -62,28 +71,28 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
             "index should tokenize";
         String value2 = "Another value with spaces in it";
         String key = "some_property";
-        assertTrue( !indexService().getNodes( key, 
+        assertTrue( !index().getNodes( key, 
             value1 ).iterator().hasNext() );
-        assertTrue( !indexService().getNodes( key, 
+        assertTrue( !index().getNodes( key, 
             value2 ).iterator().hasNext() );
 
-        indexService().index( node1, key, value1 );
+        index().index( node1, key, value1 );
         
-        Iterator<Node> itr = indexService().getNodes( key, 
+        Iterator<Node> itr = index().getNodes( key, 
             "fulltext" ).iterator();
         assertEquals( node1, itr.next() );
         assertTrue( !itr.hasNext() );
         
-        indexService().removeIndex( node1, key, value1 );
-        assertTrue( !indexService().getNodes( key, 
+        index().removeIndex( node1, key, value1 );
+        assertTrue( !index().getNodes( key, 
             value1 ).iterator().hasNext() );
 
-        indexService().index( node1, key, value1 );
+        index().index( node1, key, value1 );
         Node node2 = graphDb().createNode();
-        indexService().index( node2, key, value1 );
+        index().index( node2, key, value1 );
         restartTx();
         
-        IndexHits<Node> hits = indexService().getNodes( key, "tokenize" );
+        IndexHits<Node> hits = index().getNodes( key, "tokenize" );
         itr = hits.iterator();
         assertTrue( itr.next() != null );
         assertTrue( itr.next() != null );
@@ -91,20 +100,20 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
         assertTrue( !itr.hasNext() );       
         assertEquals( 2, hits.size() );
         
-        indexService().removeIndex( node1, key, value1 );
-        indexService().removeIndex( node2, key, value1 );
-        assertTrue( !indexService().getNodes( key, 
+        index().removeIndex( node1, key, value1 );
+        index().removeIndex( node2, key, value1 );
+        assertTrue( !index().getNodes( key, 
             value1 ).iterator().hasNext() );
-        itr = indexService().getNodes( key, value1 ).iterator();
+        itr = index().getNodes( key, value1 ).iterator();
         assertTrue( !itr.hasNext() );
         restartTx();
         
-        indexService().setIsolation( Isolation.ASYNC_OTHER_TX );
-        itr = indexService().getNodes( key, value1 ).iterator();
+        index().setIsolation( Isolation.ASYNC_OTHER_TX );
+        itr = index().getNodes( key, value1 ).iterator();
         
         assertTrue( !itr.hasNext() );
-        indexService().index( node1, key, value1 );
-        itr = indexService().getNodes( key, "tokenize" ).iterator();
+        index().index( node1, key, value1 );
+        itr = index().getNodes( key, "tokenize" ).iterator();
         assertTrue( !itr.hasNext() );
         try
         {
@@ -114,11 +123,11 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
         {
             Thread.interrupted();
         }
-        itr = indexService().getNodes( key, "tokenize" ).iterator();
+        itr = index().getNodes( key, "tokenize" ).iterator();
         assertTrue( itr.hasNext() );
-        indexService().setIsolation( Isolation.SYNC_OTHER_TX );
-        indexService().removeIndex( node1, key, value1 );
-        itr = indexService().getNodes( key, value1 ).iterator();
+        index().setIsolation( Isolation.SYNC_OTHER_TX );
+        index().removeIndex( node1, key, value1 );
+        itr = index().getNodes( key, value1 ).iterator();
         assertTrue( !itr.hasNext() );
         node1.delete();
         node2.delete();
@@ -129,27 +138,27 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
         Node andy = graphDb().createNode();
         Node larry = graphDb().createNode();
         String key = "atest";
-        indexService().index( andy, key, "Andy Wachowski" );
-        indexService().index( larry, key, "Larry Wachowski" );
+        index().index( andy, key, "Andy Wachowski" );
+        index().index( larry, key, "Larry Wachowski" );
         
         assertCollection( asCollection(
-            indexService().getNodes( key, "andy wachowski" ) ), andy );
+            index().getNodes( key, "andy wachowski" ) ), andy );
         assertCollection( asCollection(
-            indexService().getNodes( key, "Andy   Wachowski\t  " ) ), andy );
+            index().getNodes( key, "Andy   Wachowski\t  " ) ), andy );
         assertCollection( asCollection(
-            indexService().getNodes( key, "wachowski larry" ) ), larry );
+            index().getNodes( key, "wachowski larry" ) ), larry );
         assertCollection( asCollection(
-            indexService().getNodes( key, "andy" ) ), andy );
+            index().getNodes( key, "andy" ) ), andy );
         assertCollection( asCollection(
-            indexService().getNodes( key, "Andy" ) ), andy );
+            index().getNodes( key, "Andy" ) ), andy );
         assertCollection( asCollection(
-            indexService().getNodes( key, "larry" ) ), larry );
+            index().getNodes( key, "larry" ) ), larry );
         assertCollection( asCollection(
-            indexService().getNodes( key, "andy larry" ) ) );
+            index().getNodes( key, "andy larry" ) ) );
         assertCollection( asCollection(
-            indexService().getNodes( key, "wachowski" ) ), andy, larry );
+            index().getNodes( key, "wachowski" ) ), andy, larry );
         assertCollection( asCollection(
-            indexService().getNodes( key, "wachow*" ) ) );
+            index().getNodes( key, "wachow*" ) ) );
         andy.delete();
         larry.delete();
     }
@@ -162,28 +171,28 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
         andy.setProperty( "name", "Andy Wachowski" );
         // Deliberately set Larry's name wrong
         larry.setProperty( "name", "Andy Wachowski" );
-        indexService().index( andy, "name", andy.getProperty( "name" ) );
-        indexService().index( larry, "name", larry.getProperty( "name" ) );
-        assertCollection( asCollection( indexService().getNodes(
+        index().index( andy, "name", andy.getProperty( "name" ) );
+        index().index( larry, "name", larry.getProperty( "name" ) );
+        assertCollection( asCollection( index().getNodes(
             "name", "wachowski" ) ), andy, larry );
     
         // Correct Larry's name
-        indexService().removeIndex( larry, "name",
+        index().removeIndex( larry, "name",
             larry.getProperty( "name" ) );
         larry.setProperty( "name", "Larry Wachowski" );
-        indexService().index( larry, "name",
+        index().index( larry, "name",
             larry.getProperty( "name" ) );
     
-        assertCollection( asCollection( indexService().getNodes(
+        assertCollection( asCollection( index().getNodes(
             "name", "wachowski" ) ), andy, larry );
     }    
     
     public void testBreakLazyIteratorAfterRemove() throws Exception
     {
-        int oldLazyThreshold = ( ( LuceneIndexService )
-            indexService() ).getLazySearchResultThreshold();
+        int oldLazyThreshold = ( ( LuceneFulltextIndexService )
+            index() ).getLazySearchResultThreshold();
         int lazyThreshold = 5;
-        ( ( LuceneIndexService ) indexService() ).setLazySearchResultThreshold(
+        ( ( LuceneFulltextIndexService ) index() ).setLazySearchResultThreshold(
             lazyThreshold );
         List<Node> nodes = new ArrayList<Node>();
         String key = "lazykey";
@@ -192,29 +201,29 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
         {
             Node node = graphDb().createNode();
             nodes.add( node );
-            indexService().index( node, key, value );
+            index().index( node, key, value );
         }
         restartTx();
         
         // Assert they're all there
-        IndexHits<Node> hits = indexService().getNodes( key, value );
+        IndexHits<Node> hits = index().getNodes( key, value );
         assertCollection( asCollection( hits ),
             nodes.toArray( new Node[ 0 ] ) );
         assertEquals( nodes.size(), hits.size() );
         
         // Search again, but don't iterate the result. then remove one node
         // and see how it goes (w/o committing).
-        hits = indexService().getNodes( key, value );
+        hits = index().getNodes( key, value );
         Node anyNode = nodes.get( nodes.size() - 1 );
-        indexService().removeIndex( anyNode, key, value );
+        index().removeIndex( anyNode, key, value );
         assertCollection( asCollection( hits ),
             nodes.toArray( new Node[ 0 ] ) );
         assertEquals( nodes.size(), hits.size() );
         restartTx( false );
 
         // do it again, but this time commit the removal
-        hits = indexService().getNodes( key, value );
-        indexService().removeIndex( anyNode, key, value );
+        hits = index().getNodes( key, value );
+        index().removeIndex( anyNode, key, value );
         Node anyOtherNode = nodes.get( nodes.size() - 2 );
         anyOtherNode.delete();
         restartTx();
@@ -224,7 +233,7 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
         for ( Node hit : hits )
         {
         }
-        ( ( LuceneIndexService ) indexService() ).setLazySearchResultThreshold(
+        ( ( LuceneFulltextIndexService ) index() ).setLazySearchResultThreshold(
             oldLazyThreshold );
     }
     
@@ -234,19 +243,19 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
         Node node2 = graphDb().createNode();
         
         String key = "removeall";
-        indexService().index( node1, key, "value1" );
-        indexService().index( node1, key, "value2" );
-        indexService().index( node2, key, "value1" );
-        indexService().index( node2, key, "value2" );
+        index().index( node1, key, "value1" );
+        index().index( node1, key, "value2" );
+        index().index( node2, key, "value1" );
+        index().index( node2, key, "value2" );
         assertCollection( asCollection(
-            indexService().getNodes( key, "value1" ) ), node1, node2 );
-        indexService().removeIndex( node1, key );
+            index().getNodes( key, "value1" ) ), node1, node2 );
+        index().removeIndex( node1, key );
         assertCollection( asCollection(
-            indexService().getNodes( key, "value1" ) ), node2 );
+            index().getNodes( key, "value1" ) ), node2 );
         assertCollection( asCollection(
-            indexService().getNodes( key, "value2" ) ), node2 );
+            index().getNodes( key, "value2" ) ), node2 );
         
-        indexService().removeIndex( node2, key );
+        index().removeIndex( node2, key );
         node2.delete();
         node1.delete();
     }

@@ -1,39 +1,24 @@
 package org.neo4j.index.lucene;
 
+import static org.junit.Assert.assertTrue;
+
 import java.util.ArrayList;
 import java.util.Collection;
 
+import org.junit.Test;
 import org.neo4j.graphdb.Node;
 import org.neo4j.index.IndexService;
-import org.neo4j.index.Neo4jTestCase;
+import org.neo4j.index.Neo4jWithIndexTestCase;
 
-public abstract class TestLuceneIndexLazyness extends Neo4jTestCase
+public abstract class TestLuceneIndexLazyness extends Neo4jWithIndexTestCase
 {
-    private IndexService indexService;
-    
-    protected IndexService instantiateIndexService()
+    @Override
+    protected IndexService instantiateIndex()
     {
         return new LuceneIndexService( graphDb() );
     }
     
-    @Override
-    protected void setUp() throws Exception
-    {
-        super.setUp();
-        indexService = instantiateIndexService();
-    }
-    
-    protected IndexService indexService()
-    {
-        return indexService;
-    }
-    
-    @Override
-    protected void beforeShutdown()
-    {
-        indexService().shutdown();
-    }
-    
+    @Test
     public void testIt() throws Exception
     {
         String key = "mykey";
@@ -42,11 +27,11 @@ public abstract class TestLuceneIndexLazyness extends Neo4jTestCase
         for ( int i = 0; i < 20000; i++ )
         {
             Node node = graphDb().createNode();
-            indexService.index( node, key, value );
+            index().index( node, key, value );
             nodes.add( node );
             if ( i == 2000 )
             {
-                Iterable<Node> itr = indexService.getNodes( key, value );
+                Iterable<Node> itr = index().getNodes( key, value );
                 assertCollection( asCollection( itr ),
                     nodes.toArray( new Node[ 0 ] ) );
             }
@@ -65,19 +50,19 @@ public abstract class TestLuceneIndexLazyness extends Neo4jTestCase
         for ( int i = 0; i < 10; i++ )
         {
             // So that it'll get the nodes in the synchronous way
-            ( ( LuceneIndexService ) indexService() ).
+            ( ( LuceneIndexService ) index() ).
                 setLazySearchResultThreshold( nodes.size() + 10 );
             long time = System.currentTimeMillis();
-            Iterable<Node> itr = indexService().getNodes( key, value );
+            Iterable<Node> itr = index().getNodes( key, value );
             long syncTime = System.currentTimeMillis() - time;
             assertCollection( asCollection( itr ), nodeArray );
             long syncTotalTime = System.currentTimeMillis() - time;
             
             // So that it'll get the nodes in the lazy way
-            ( ( LuceneIndexService ) indexService() ).
+            ( ( LuceneIndexService ) index() ).
                 setLazySearchResultThreshold( nodes.size() - 10 );
             time = System.currentTimeMillis();
-            itr = indexService().getNodes( key, value );
+            itr = index().getNodes( key, value );
             long lazyTime = System.currentTimeMillis() - time;
             assertCollection( asCollection( itr ), nodeArray );
             long lazyTotalTime = System.currentTimeMillis() - time;

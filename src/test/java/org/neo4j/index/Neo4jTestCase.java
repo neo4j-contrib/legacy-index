@@ -19,45 +19,70 @@
  */
 package org.neo4j.index;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
-import junit.framework.TestCase;
-
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Transaction;
 import org.neo4j.kernel.EmbeddedGraphDatabase;
 
-/**
- * Base class for the meta model tests.
- */
-public abstract class Neo4jTestCase extends TestCase
+public abstract class Neo4jTestCase
 {
-	private File basePath = new File( "target/var" );
-    private File dbPath = new File( basePath, "neo4j-db" );
-    private GraphDatabaseService graphDb;
+	private static File basePath = new File( "target/var" );
+    private static File dbPath = new File( basePath, "neo4j-db" );
+    private static GraphDatabaseService graphDb;
     private Transaction tx;
 
-    @Override
-    protected void setUp() throws Exception
+    @BeforeClass
+    public static void setUpDb() throws Exception
     {
-        super.setUp();
         deleteFileOrDirectory( dbPath );
         graphDb = new EmbeddedGraphDatabase( dbPath.getAbsolutePath() );
+    }
+    
+    @Before
+    public void setUpTest()
+    {
         tx = graphDb.beginTx();
     }
     
-    @Override
-    protected void tearDown() throws Exception
+    @After
+    public void tearDownTest()
     {
-        tx.success();
+        if ( !manageMyOwnTxFinish() )
+        {
+            finishTx( true );
+        }
+    }
+    
+    protected boolean manageMyOwnTxFinish()
+    {
+        return false;
+    }
+    
+    protected void finishTx( boolean commit )
+    {
+        if ( commit )
+        {
+            tx.success();
+        }
         tx.finish();
-        beforeShutdown();
+    }
+    
+    @AfterClass
+    public static void tearDownDb() throws Exception
+    {
         graphDb.shutdown();
-        super.tearDown();
     }
     
     protected void beforeShutdown()
@@ -74,7 +99,7 @@ public abstract class Neo4jTestCase extends TestCase
         return dbPath;
     }
     
-    protected void deleteFileOrDirectory( File file )
+    public static void deleteFileOrDirectory( File file )
     {
         if ( !file.exists() )
         {
@@ -113,7 +138,7 @@ public abstract class Neo4jTestCase extends TestCase
         tx = graphDb.beginTx();
     }
 
-    protected GraphDatabaseService graphDb()
+    protected static GraphDatabaseService graphDb()
     {
         return graphDb;
     }
@@ -130,7 +155,7 @@ public abstract class Neo4jTestCase extends TestCase
         }
     }
 
-    private <T> void assertCollection( Iterable<T> items, T... expectedItems )
+    protected <T> void assertCollection( Iterable<T> items, T... expectedItems )
     {
         assertCollection( asCollection( items ), expectedItems );
     }

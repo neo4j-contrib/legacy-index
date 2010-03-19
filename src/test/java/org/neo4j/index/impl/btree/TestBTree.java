@@ -19,11 +19,17 @@
  */
 package org.neo4j.index.impl.btree;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.neo4j.graphdb.Node;
 import org.neo4j.index.Neo4jTestCase;
 
@@ -31,23 +37,22 @@ public class TestBTree extends Neo4jTestCase
 {
 	private BTree bTree;
 	
-	@Override
-	public void setUp() throws Exception
+	@Before
+	public void setUpBTree() throws Exception
 	{
-	    super.setUp();
 		Node bNode = graphDb().createNode();
 		graphDb().getReferenceNode().createRelationshipTo( bNode, 
 			BTree.RelTypes.TREE_ROOT );
 		bTree = new BTree( graphDb(), bNode );
 	}
 	
-	@Override
-	protected void tearDown() throws Exception
+	@After
+	public void tearDownBTree() throws Exception
 	{
 	    bTree.delete();
-	    super.tearDown();
 	}
 	
+	@Test
 	public void testBasicBTree()
 	{
 		bTree.addEntry( 'c', 'c' );
@@ -72,29 +77,29 @@ public class TestBTree extends Neo4jTestCase
 		bTree.addEntry( 's', 's' );
 		
 		bTree.validateTree();
-		assert bTree.removeEntry( 'h' ).equals( 'h' );
-		assert bTree.removeEntry( 't' ).equals( 't' );
-		assert bTree.removeEntry( 'r' ).equals( 'r' );
+		assertEquals( bTree.removeEntry( 'h' ), 'h' );
+		assertEquals( bTree.removeEntry( 't' ), 't' );
+		assertEquals( bTree.removeEntry( 'r' ), 'r' );
 		bTree.validateTree();
-		assert bTree.removeEntry( 'e' ).equals( 'e' );
-		assert bTree.removeEntry( 'a' ).equals( 'a' );
-		assert bTree.removeEntry( 'x' ).equals( 'x' );
-		assert bTree.removeEntry( 'y' ).equals( 'y' );
-		assert bTree.removeEntry( 'z' ).equals( 'z' );
-		assert bTree.removeEntry( 'w' ).equals( 'w' );
+		assertEquals( bTree.removeEntry( 'e' ), 'e' );
+		assertEquals( bTree.removeEntry( 'a' ), 'a' );
+		assertEquals( bTree.removeEntry( 'x' ), 'x' );
+		assertEquals( bTree.removeEntry( 'y' ), 'y' );
+		assertEquals( bTree.removeEntry( 'z' ), 'z' );
+		assertEquals( bTree.removeEntry( 'w' ), 'w' );
 		bTree.validateTree();
-		assert bTree.removeEntry( 's' ).equals( 's' );
-		assert bTree.removeEntry( 'q' ).equals( 'q' );
-		assert bTree.removeEntry( 'm' ).equals( 'm' );
-		assert bTree.removeEntry( 'n' ).equals( 'n' );
-		assert bTree.removeEntry( 'p' ).equals( 'p' );
-		assert bTree.removeEntry( 'k' ).equals( 'k' );
+		assertEquals( bTree.removeEntry( 's' ), 's' );
+		assertEquals( bTree.removeEntry( 'q' ), 'q' );
+		assertEquals( bTree.removeEntry( 'm' ), 'm' );
+		assertEquals( bTree.removeEntry( 'n' ), 'n' );
+		assertEquals( bTree.removeEntry( 'p' ), 'p' );
+		assertEquals( bTree.removeEntry( 'k' ), 'k' );
 		bTree.validateTree();
-		assert bTree.removeEntry( 'l' ).equals( 'l' );
-		assert bTree.removeEntry( 'g' ).equals( 'g' );
-		assert bTree.removeEntry( 'c' ).equals( 'c' );
-		assert bTree.removeEntry( 'd' ).equals( 'd' );
-		assert bTree.removeEntry( 'f' ).equals( 'f' );
+		assertEquals( bTree.removeEntry( 'l' ), 'l' );
+		assertEquals( bTree.removeEntry( 'g' ), 'g' );
+		assertEquals( bTree.removeEntry( 'c' ), 'c' );
+		assertEquals( bTree.removeEntry( 'd' ), 'd' );
+		assertEquals( bTree.removeEntry( 'f' ), 'f' );
 		bTree.validateTree();
 	}
 	
@@ -109,6 +114,7 @@ public class TestBTree extends Neo4jTestCase
 		return value;
 	}
 	
+	@Test
 	public void testSomeMore()
 	{
 		java.util.Random r = new java.util.Random( System.currentTimeMillis() );
@@ -140,7 +146,8 @@ public class TestBTree extends Neo4jTestCase
 		}
 	}
 	
-	public void testGetValues()
+	@Test
+    public void testGetValues()
 	{
 		bTree.addEntry( 'c', 'c' );
 		bTree.addEntry( 'n', 'n' );
@@ -155,7 +162,8 @@ public class TestBTree extends Neo4jTestCase
 		}
 	}
 	
-	public void testClosestEntry()
+	@Test
+    public void testClosestEntry()
 	{
 		for ( long i = 1; i < 256; i+=2 )
 		{

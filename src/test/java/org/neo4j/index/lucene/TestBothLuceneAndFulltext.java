@@ -19,31 +19,38 @@
  */
 package org.neo4j.index.lucene;
 
+import static org.junit.Assert.assertEquals;
+
+import org.junit.Before;
+import org.junit.Test;
 import org.neo4j.graphdb.Node;
 import org.neo4j.index.IndexService;
-import org.neo4j.index.Neo4jTestCase;
+import org.neo4j.index.Neo4jWithIndexTestCase;
 
-public class TestBoth extends Neo4jTestCase
+public class TestBothLuceneAndFulltext extends Neo4jWithIndexTestCase
 {
-    private IndexService indexService;
     private IndexService fulltextIndexService;
     
     @Override
-    public void setUp() throws Exception
+    protected IndexService instantiateIndex()
     {
-        super.setUp();
-        this.indexService = new LuceneIndexService( graphDb() );
+        return new LuceneIndexService( graphDb() );
+    }
+    
+    @Before
+    public void setUpAdditionalFulltextIndex() throws Exception
+    {
         this.fulltextIndexService = new LuceneFulltextIndexService( graphDb() );
     }
 
     @Override
-    protected void beforeShutdown()
+    protected void shutdownIndex()
     {
         super.beforeShutdown();
-        this.indexService.shutdown();
         this.fulltextIndexService.shutdown();
     }
     
+    @Test
     public void testSome() throws Exception
     {
         Node node = graphDb().createNode();
@@ -51,16 +58,16 @@ public class TestBoth extends Neo4jTestCase
         String key = "some_key";
         String value1 = "347384738-2";
         String value2 = "Tjena hej hoj";
-        this.indexService.index( node, key, value1 );
+        index().index( node, key, value1 );
         this.fulltextIndexService.index( node, key, value2 );
         
         restartTx();
         
-        assertEquals( node, this.indexService.getSingleNode( key, value1 ) );
+        assertEquals( node, index().getSingleNode( key, value1 ) );
         assertEquals( node,
             this.fulltextIndexService.getSingleNode( key, "Tjena" ) );
         
-        this.indexService.removeIndex( node, "cpv", value1 );
+        index().removeIndex( node, "cpv", value1 );
         this.fulltextIndexService.removeIndex( node, "cpv-ft", value2 );
         node.delete();
     }

@@ -19,54 +19,39 @@
  */
 package org.neo4j.index.lucene;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.util.Iterator;
 
+import org.junit.Test;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Transaction;
 import org.neo4j.index.IndexHits;
 import org.neo4j.index.IndexService;
-import org.neo4j.index.Neo4jTestCase;
+import org.neo4j.index.Neo4jWithIndexTestCase;
 import org.neo4j.kernel.EmbeddedReadOnlyGraphDatabase;
 
-public class TestLuceneReadOnlyIndexingService extends Neo4jTestCase
+public class TestLuceneReadOnlyIndexingService extends Neo4jWithIndexTestCase
 {
-	private IndexService indexService;
+    @Override
+    protected IndexService instantiateIndex()
+    {
+        return new LuceneIndexService( graphDb() );
+    }
 	
-	protected IndexService instantiateIndexService()
-	{
-	    return new LuceneIndexService( graphDb() );
-	}
-	
-	@Override
-	protected void setUp() throws Exception
-	{
-	    super.setUp();
-        indexService = instantiateIndexService();
-	}
-	
-	protected IndexService indexService()
-	{
-	    return indexService;
-	}
-	
-	@Override
-	protected void beforeShutdown()
-	{
-	    indexService().shutdown();
-	}
-	
+    @Test
     public void testSimple()
     {
         Node node1 = graphDb().createNode();
         
-        assertTrue( !indexService().getNodes( "a_property", 
-            1 ).iterator().hasNext() );
-        assertEquals( 0, indexService().getNodes( "a_property", 1 ).size() );
+        assertTrue( !index().getNodes( "a_property", 1 ).iterator().hasNext() );
+        assertEquals( 0, index().getNodes( "a_property", 1 ).size() );
 
-        indexService().index( node1, "a_property", 1 );
+        index().index( node1, "a_property", 1 );
         
-        IndexHits hits = indexService().getNodes( "a_property", 1 );
+        IndexHits<Node> hits = index().getNodes( "a_property", 1 );
         Iterator<Node> itr = hits.iterator();
         assertEquals( node1, itr.next() );
         assertTrue( !itr.hasNext() );
@@ -84,7 +69,7 @@ public class TestLuceneReadOnlyIndexingService extends Neo4jTestCase
         readOnlyIndex.shutdown();
         readOnlyGraphDb.shutdown();
         
-        indexService().removeIndex( node1, "a_property", 1 );
+        index().removeIndex( node1, "a_property", 1 );
         node1.delete();
     }
 }
