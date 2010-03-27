@@ -103,6 +103,13 @@ public class TestLuceneIndexingService extends Neo4jWithIndexTestCase
         index().removeIndex( node1, "a_property", 1 );
         itr = index().getNodes( "a_property", 1 ).iterator();
         assertTrue( !itr.hasNext() );
+        try
+        {
+            index().getNodes( "a_property", null ).hasNext();
+        } catch (NullPointerException npe)
+        {
+            //this is expected
+        }
         node1.delete();
         node2.delete();
     }
