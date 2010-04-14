@@ -137,6 +137,12 @@ public abstract class Neo4jTestCase
         tx.finish();
         tx = graphDb.beginTx();
     }
+    
+    protected void commitTx()
+    {
+        tx.success();
+        tx.finish();
+    }
 
     protected static GraphDatabaseService graphDb()
     {

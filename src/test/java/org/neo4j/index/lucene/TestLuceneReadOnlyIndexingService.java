@@ -19,6 +19,7 @@
  */
 package org.neo4j.index.lucene;
 
+import static org.junit.Assert.fail;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -27,6 +28,7 @@ import java.util.Iterator;
 import org.junit.Test;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.NotInTransactionException;
 import org.neo4j.graphdb.Transaction;
 import org.neo4j.index.IndexHits;
 import org.neo4j.index.IndexService;
@@ -71,5 +73,42 @@ public class TestLuceneReadOnlyIndexingService extends Neo4jWithIndexTestCase
         
         index().removeIndex( node1, "a_property", 1 );
         node1.delete();
+    }
+    
+    @Test
+    public void testReadOnlyWithNoTransaction()
+    {
+        Node node1 = graphDb().createNode();
+        index().index( node1, "a_property", 1 );
+        IndexHits<Node> hits = index().getNodes( "a_property", 1 );
+        Iterator<Node> itr = hits.iterator();
+        assertEquals( node1, itr.next() );
+        assertTrue( !itr.hasNext() );
+        assertEquals( 1, hits.size() );
+        commitTx();
+        
+        try
+        {
+            index().index( node1, "a_property", 2 );
+            fail( "Write operation with no transaction should fail" );
+        }
+        catch ( NotInTransactionException e )
+        { // good
+        }
+        try
+        {
+            index().removeIndex( node1, "a_property", 1 );
+            fail( "Write operation with no transaction should fail" );
+        }
+        catch ( NotInTransactionException e )
+        { // good
+        }
+        
+        //now try read operation without tx
+        hits = index().getNodes( "a_property", 1 );
+        itr = hits.iterator();
+        assertEquals( node1, itr.next() );
+        assertTrue( !itr.hasNext() );
+        assertEquals( 1, hits.size() );
     }
 }

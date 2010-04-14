@@ -242,7 +242,12 @@ public class LuceneIndexService extends GenericIndexService
             Sort sortingOrNull )
     {
         List<Long> nodeIds = new ArrayList<Long>();
-        LuceneTransaction luceneTx = getConnection().getLuceneTx();
+        LuceneXaConnection con = getReadOnlyConnection();
+        LuceneTransaction luceneTx = null;
+        if ( con != null )
+        {
+            luceneTx = getReadOnlyConnection().getLuceneTx();
+        }
         Set<Long> addedNodes = Collections.emptySet();
         Set<Long> deletedNodes = Collections.emptySet();
         boolean deleted = false;
@@ -449,6 +454,11 @@ public class LuceneIndexService extends GenericIndexService
         return broker.acquireResourceConnection();
     }
 
+    LuceneXaConnection getReadOnlyConnection()
+    {
+        return broker.acquireReadOnlyResourceConnection();
+    }
+    
     private static class ConnectionBroker
     {
         private final ArrayMap<Transaction, LuceneXaConnection> txConnectionMap = new ArrayMap<Transaction, LuceneXaConnection>(
@@ -467,6 +477,10 @@ public class LuceneIndexService extends GenericIndexService
         {
             LuceneXaConnection con = null;
             Transaction tx = this.getCurrentTransaction();
+            if ( tx == null )
+            {
+                throw new NotInTransactionException();
+            }
             con = txConnectionMap.get( tx );
             if ( con == null )
             {
@@ -496,6 +510,43 @@ public class LuceneIndexService extends GenericIndexService
             return con;
         }
 
+        LuceneXaConnection acquireReadOnlyResourceConnection()
+        {
+            LuceneXaConnection con = null;
+            Transaction tx = this.getCurrentTransaction();
+            if ( tx == null )
+            {
+                return null;
+            }
+            con = txConnectionMap.get( tx );
+            if ( con == null )
+            {
+                try
+                {
+                    con = (LuceneXaConnection) xaDs.getXaConnection();
+                    if ( !tx.enlistResource( con.getXaResource() ) )
+                    {
+                        throw new RuntimeException( "Unable to enlist '"
+                                                    + con.getXaResource()
+                                                    + "' in " + tx );
+                    }
+                    tx.registerSynchronization( new TxCommitHook( tx ) );
+                    txConnectionMap.put( tx, con );
+                }
+                catch ( javax.transaction.RollbackException re )
+                {
+                    String msg = "The transaction is marked for rollback only.";
+                    throw new RuntimeException( msg, re );
+                }
+                catch ( javax.transaction.SystemException se )
+                {
+                    String msg = "TM encountered an unexpected error condition.";
+                    throw new RuntimeException( msg, se );
+                }
+            }
+            return con;
+        }
+        
         void releaseResourceConnectionsForTransaction( Transaction tx )
                 throws NotInTransactionException
         {
@@ -509,6 +560,10 @@ public class LuceneIndexService extends GenericIndexService
         void delistResourcesForTransaction() throws NotInTransactionException
         {
             Transaction tx = this.getCurrentTransaction();
+            if ( tx == null )
+            {
+                throw new NotInTransactionException();
+            }
             LuceneXaConnection con = txConnectionMap.get( tx );
             if ( con != null )
             {
@@ -535,13 +590,7 @@ public class LuceneIndexService extends GenericIndexService
         {
             try
             {
-                Transaction tx = transactionManager.getTransaction();
-                if ( tx == null )
-                {
-                    throw new NotInTransactionException(
-                            "No transaction found for current thread" );
-                }
-                return tx;
+                return transactionManager.getTransaction();
             }
             catch ( SystemException se )
             {
