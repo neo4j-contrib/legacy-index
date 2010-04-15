@@ -6,17 +6,17 @@ import org.junit.Test;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
 import org.neo4j.index.IndexService;
+import org.neo4j.index.Neo4jTestCase;
 import org.neo4j.index.lucene.LuceneIndexService;
 import org.neo4j.index.timeline.Timeline;
-import org.neo4j.kernel.EmbeddedGraphDatabase;
 
-public class SiteExamples
+public class SiteExamples extends Neo4jTestCase
 {
     @Test
     // START SNIPPET: basicIndexing
     public void basicIndexing()
     {
-        GraphDatabaseService graphDb = new EmbeddedGraphDatabase( "my/path" );
+        GraphDatabaseService graphDb = graphDb();
         IndexService index = new LuceneIndexService( graphDb );
 
         // Create a node with a "name" property and index it in the
@@ -36,13 +36,13 @@ public class SiteExamples
     // START SNIPPET: basicTimelineUsage
     public void basicTimelineUsage() throws Exception
     {
-        GraphDatabaseService graphDb = new EmbeddedGraphDatabase( "my/path" );
+        GraphDatabaseService graphDb = graphDb();
         Node rootNode = graphDb.createNode();
         Timeline timeline = new Timeline( "my_timeline", rootNode, graphDb );
 
         // Add nodes to your timeline
         long startTime = System.currentTimeMillis();
-        for ( int i = 0; i < 50000; i++ )
+        for ( int i = 0; i < 500; i++ )
         {
             timeline.addNode( graphDb.createNode(), System.currentTimeMillis() );
             Thread.sleep( new Random().nextInt( 30 ) );
