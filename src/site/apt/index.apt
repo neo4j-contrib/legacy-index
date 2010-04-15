@@ -16,20 +16,7 @@ IndexService
 	{{{http://components.neo4j.org/index/apidocs/org/neo4j/index/lucene/LuceneIndexService.html}LuceneIndexService}}.
 	Look at a quick example:
 
----
-GraphDatabaseService graphDb = // An arbitrary GraphDatabaseService instance
-IndexService index = new LuceneIndexService( graphDb );
-
-// Create a node with a "name" property and index it in the IndexService.
-Node personNode = graphDb.createNode();
-personNode.setProperty( "name", "Mattias Persson" );
-index.index( personNode, "name", personNode.getProperty( "name" ) );
-
-// Get the node with the name "Mattias Persson"
-Node node = index.getSingleNode( "name", "Mattias Persson" );
-// also see index.getNodes method.
-assert personNode.equals( node );
----
+%{source-code|snippet=basicIndexing|file=src/test/java/examples/SiteExamples.java}
 
 	<<LuceneIndexService>> uses {{{http://lucene.apache.org/java/}Lucene}} as
 	backend. Read more at our {{{http://wiki.neo4j.org/content/Indexing_with_IndexService}wiki}}
@@ -62,27 +49,7 @@ Timeline
 	you use the right timeline, since the name is checked upon instantiation
 	so that it is the same as the name as you pass in (except the first time).
 
----
-Node rootNode = // Some node which you dedicate as the timeline root.
-Timeline timeline = new Timeline( "my_timeline", rootNode, neo );
-
-// Add nodes to your timeline
-long startTime = System.currentTimeMillis();
-for ( int i = 0; i < 50000; i++ )
-{
-    timeline.addNode( neo.createNode(), System.currentTimeMillis() );
-    Thread.sleep( new Random().nextInt( 30 ) );
-}
-
-// Get all the nodes in the timeline
-Iterable<Node> nodes = timeline.getAllNodes();
-// All nodes after timestamp (3 seconds after the start time)
-nodes = timeline.getAllNodesAfter( startTime + 3000 );
-// All nodes before timestamp
-nodes = timeline.getAllNodesBefore( System.currentTimeMillis() );
-// All nodes between these timestamps
-nodes = timeline.getAllNodesBetween( startTime, System.currentTimeMillis() - 5000 );
----
+%{source-code|snippet=basicTimelineUsage|file=src/test/java/examples/SiteExamples.java}
 
 	Although values from System.currentTimeMillis() is used in this example
 	you can use any value system (of type long) for your timestamps.
