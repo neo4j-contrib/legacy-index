@@ -13,10 +13,10 @@ import org.neo4j.index.timeline.Timeline;
 public class SiteExamples extends Neo4jTestCase
 {
     @Test
-    // START SNIPPET: basicIndexing
     public void basicIndexing()
     {
         GraphDatabaseService graphDb = graphDb();
+        // START SNIPPET: basicIndexing
         IndexService index = new LuceneIndexService( graphDb );
 
         // Create a node with a "name" property and index it in the
@@ -29,14 +29,14 @@ public class SiteExamples extends Neo4jTestCase
         Node node = index.getSingleNode( "name", "Thomas Anderson" );
         // also see index.getNodes method.
         assert personNode.equals( node );
+        // END SNIPPET: basicIndexing
     }
-    // END SNIPPET: basicIndexing
     
     @Test
-    // START SNIPPET: basicTimelineUsage
     public void basicTimelineUsage() throws Exception
     {
         GraphDatabaseService graphDb = graphDb();
+        // START SNIPPET: basicTimelineUsage
         Node rootNode = graphDb.createNode();
         Timeline timeline = new Timeline( "my_timeline", rootNode, graphDb );
 
@@ -57,6 +57,6 @@ public class SiteExamples extends Neo4jTestCase
         // All nodes between these timestamps
         timeline.getAllNodesBetween( startTime,
                 System.currentTimeMillis() - 5000 );
+        // END SNIPPET: basicTimelineUsage
     }
-    // END SNIPPET: basicTimelineUsage
 }
