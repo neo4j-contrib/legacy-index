@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.neo4j.graphdb.Node;
 import org.neo4j.index.IndexHits;
@@ -201,6 +202,7 @@ public class TestLuceneIndexingService extends Neo4jWithIndexTestCase
     }
     
     @Test
+    @Ignore
     public void testChangeValueBug() throws Exception
     {
         Node andy = graphDb().createNode();

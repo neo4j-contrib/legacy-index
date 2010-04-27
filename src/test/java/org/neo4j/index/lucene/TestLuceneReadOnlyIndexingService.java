@@ -85,7 +85,7 @@ public class TestLuceneReadOnlyIndexingService extends Neo4jWithIndexTestCase
         assertEquals( node1, itr.next() );
         assertTrue( !itr.hasNext() );
         assertEquals( 1, hits.size() );
-        commitTx();
+        finishTx( true );
         
         try
         {

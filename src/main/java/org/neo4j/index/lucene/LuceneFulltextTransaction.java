@@ -163,27 +163,27 @@ class LuceneFulltextTransaction extends LuceneTransaction
     }
     
     @Override
-    Set<Long> getDeletedNodesFor( String key, Object value )
+    Set<Long> getDeletedNodesFor( String key, Object value, Object matching )
     {
-        return getNodes( getDirectory( fulltextRemoved, key ), key, value,
+        return getNodes( getDirectory( fulltextRemoved, key ), key, value, matching,
             true );
     }
 
     @Override
-    Set<Long> getNodesFor( String key, Object value )
+    Set<Long> getNodesFor( String key, Object value, Object matching )
     {
-        return getNodes( getDirectory( fulltextIndexed, key ), key, value,
+        return getNodes( getDirectory( fulltextIndexed, key ), key, value, matching,
             false );
     }
     
     private Set<Long> getNodes( DirectoryAndWorkers directory, String key,
-        Object value, boolean includeAlwaysHit )
+        Object value, Object matching, boolean includeAlwaysHit )
     {
         try
         {
             IndexSearcher searcher = directory.getSearcher();
             Query query =
-                getDataSource().getIndexService().formQuery( key, value );
+                getDataSource().getIndexService().formQuery( key, value, matching );
             if ( includeAlwaysHit )
             {
                 BooleanQuery booleanQuery = new BooleanQuery();

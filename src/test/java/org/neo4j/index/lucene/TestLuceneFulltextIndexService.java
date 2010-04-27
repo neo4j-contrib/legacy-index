@@ -20,6 +20,7 @@
 package org.neo4j.index.lucene;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
@@ -133,6 +134,7 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
         node2.delete();
     }
     
+    @Test
     public void testSpecific() throws Exception
     {
         Node andy = graphDb().createNode();
@@ -163,6 +165,7 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
         larry.delete();
     }
     
+    @Test
     public void testAnotherChangeValueBug() throws Exception
     {
         Node andy = graphDb().createNode();
@@ -187,6 +190,7 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
             "name", "wachowski" ) ), andy, larry );
     }    
     
+    @Test
     public void testBreakLazyIteratorAfterRemove() throws Exception
     {
         int oldLazyThreshold = ( ( LuceneFulltextIndexService )
@@ -237,6 +241,7 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
             oldLazyThreshold );
     }
     
+    @Test
     public void testFulltextRemoveAll() throws Exception
     {
         Node node1 = graphDb().createNode();
@@ -256,6 +261,36 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
             index().getNodes( key, "value2" ) ), node2 );
         
         index().removeIndex( node2, key );
+        node2.delete();
+        node1.delete();
+    }
+    
+    private LuceneFulltextIndexService fulltextIndex()
+    {
+        return (LuceneFulltextIndexService) index();
+    }
+    
+    @Test
+    public void testExactMatching()
+    {
+        Node node1 = graphDb().createNode();
+        Node node2 = graphDb().createNode();
+        String key = "exact";
+        index().index( node1, key, "neo4j is great" );
+        index().index( node2, key, "lucene is great" );
+        assertCollection( index().getNodes( key, "great" ), node1, node2 );
+        assertCollection( fulltextIndex().getNodesExactMatch( key, "great" ) );
+        assertCollection( fulltextIndex().getNodesExactMatch( key, "neo4j is great" ), node1 );
+        assertCollection( fulltextIndex().getNodesExactMatch( key, "lucene is great" ), node2 );
+        restartTx();
+        assertCollection( index().getNodes( key, "great" ), node1, node2 );
+        assertCollection( fulltextIndex().getNodesExactMatch( key, "great" ) );
+        assertCollection( fulltextIndex().getNodesExactMatch( key, "neo4j is great" ), node1 );
+        assertCollection( fulltextIndex().getNodesExactMatch( key, "lucene is great" ), node2 );
+        assertNull( fulltextIndex().getSingleNodeExactMatch( key, "great" ) );
+        assertEquals( node1, fulltextIndex().getSingleNodeExactMatch( key, "neo4j is great" ) );
+        assertEquals( node2, fulltextIndex().getSingleNodeExactMatch( key, "lucene is great" ) );
+        index().removeIndex( key );
         node2.delete();
         node1.delete();
     }

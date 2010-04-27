@@ -122,7 +122,7 @@ class LuceneTransaction extends XaTransaction
         return modified;
     }
 
-    Set<Long> getDeletedNodesFor( String key, Object value )
+    Set<Long> getDeletedNodesFor( String key, Object value, Object matching )
     {
         TxCache keyIndex = txRemoved.get( key );
         LazyMergedSet<Long> result = null;
@@ -144,7 +144,7 @@ class LuceneTransaction extends XaTransaction
         return keyIndex != null ? keyIndex.all : false;
     }
     
-    Set<Long> getNodesFor( String key, Object value )
+    Set<Long> getNodesFor( String key, Object value, Object matching )
     {
         TxCache keyIndex = txIndexed.get( key );
         if ( keyIndex != null )

@@ -227,7 +227,27 @@ public class LuceneIndexService extends GenericIndexService
     {
         return getNodes( key, value, null );
     }
-
+    
+    public IndexHits<Node> getNodes( String key, Object value, Sort sortingOrNull )
+    {
+        return getNodes( key, value, null, sortingOrNull );
+    }
+    
+    /**
+     * A method for calling {@link #getNodes(String, Object)} using exact
+     * matching. For this class it's equivalent to calling
+     * {@link #getNodes(String, Object)}, but for subclasses, such as
+     * {@link LuceneFulltextIndexService} it is useful for it to be able to
+     * do queries with exact matching, although it's a fulltext index.
+     * @param key
+     * @param value
+     * @return
+     */
+    public IndexHits<Node> getNodesExactMatch( String key, Object value )
+    {
+        return getNodes( key, value, null );
+    }
+    
     /**
      * Just like {@link #getNodes(String, Object)}, but with sorted result.
      * 
@@ -238,7 +258,7 @@ public class LuceneIndexService extends GenericIndexService
      * @return nodes that has been indexed with key and value, optionally sorted
      *         with {@code sortingOrNull}.
      */
-    public IndexHits<Node> getNodes( String key, Object value,
+    protected IndexHits<Node> getNodes( String key, Object value, Object matching,
             Sort sortingOrNull )
     {
         List<Long> nodeIds = new ArrayList<Long>();
@@ -253,9 +273,9 @@ public class LuceneIndexService extends GenericIndexService
         boolean deleted = false;
         if ( luceneTx != null )
         {
-            addedNodes = luceneTx.getNodesFor( key, value );
+            addedNodes = luceneTx.getNodesFor( key, value, matching );
             nodeIds.addAll( addedNodes );
-            deletedNodes = luceneTx.getDeletedNodesFor( key, value );
+            deletedNodes = luceneTx.getDeletedNodesFor( key, value, matching );
             deleted = luceneTx.getIndexDeleted( key );
         }
         xaDs.getReadLock();
@@ -275,7 +295,7 @@ public class LuceneIndexService extends GenericIndexService
                 if ( !foundInCache )
                 {
                     DocToIdIterator searchedNodeIds = searchForNodes( searcher,
-                            key, value, sortingOrNull, deletedNodes );
+                            key, value, matching, sortingOrNull, deletedNodes );
                     if ( searchedNodeIds.size() >= this.lazynessThreshold )
                     {
                         // Instantiate a lazy iterator
@@ -374,7 +394,15 @@ public class LuceneIndexService extends GenericIndexService
         return new IdToNodeIterator( ids, getGraphDb() );
     }
 
-    protected Query formQuery( String key, Object value )
+    /**
+     * 
+     * @param key the key
+     * @param value the value
+     * @param matching an object describing what kind of matching to do.
+     * The type this object is is solely up to the implementation.
+     * @return the {@link Query} formed from key/value.
+     */
+    protected Query formQuery( String key, Object value, Object matching )
     {
         return new TermQuery( new Term( DOC_INDEX_KEY, value.toString() ) );
     }
@@ -383,9 +411,9 @@ public class LuceneIndexService extends GenericIndexService
      * Returns a lazy iterator with the node ids.
      */
     private DocToIdIterator searchForNodes( IndexSearcherRef searcher,
-            String key, Object value, Sort sortingOrNull, Set<Long> deletedNodes )
+            String key, Object value, Object matching, Sort sortingOrNull, Set<Long> deletedNodes )
     {
-        Query query = formQuery( key, value );
+        Query query = formQuery( key, value, matching );
         try
         {
             searcher.incRef();
@@ -401,13 +429,23 @@ public class LuceneIndexService extends GenericIndexService
                                         + value, e );
         }
     }
-
+    
+    public Node getSingleNodeExactMatch( String key, Object value )
+    {
+        return getSingleNode( key, value, null );
+    }
+    
     public Node getSingleNode( String key, Object value )
+    {
+        return getSingleNode( key, value, null );
+    }
+
+    protected Node getSingleNode( String key, Object value, Object matching )
     {
         IndexHits<Node> hits = null;
         try
         {
-            hits = getNodes( key, value );
+            hits = getNodes( key, value, matching, null );
             Iterator<Node> nodes = hits.iterator();
             Node node = nodes.hasNext() ? nodes.next() : null;
             if ( nodes.hasNext() )

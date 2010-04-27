@@ -72,11 +72,26 @@ public abstract class Neo4jTestCase
     
     protected void finishTx( boolean commit )
     {
+        if ( tx == null )
+        {
+            return;
+        }
+        
         if ( commit )
         {
             tx.success();
         }
         tx.finish();
+        tx = null;
+    }
+    
+    protected Transaction beginTx()
+    {
+        if ( tx == null )
+        {
+            tx = graphDb.beginTx();
+        }
+        return tx;
     }
     
     @AfterClass
@@ -138,12 +153,6 @@ public abstract class Neo4jTestCase
         tx = graphDb.beginTx();
     }
     
-    protected void commitTx()
-    {
-        tx.success();
-        tx.finish();
-    }
-
     protected static GraphDatabaseService graphDb()
     {
         return graphDb;

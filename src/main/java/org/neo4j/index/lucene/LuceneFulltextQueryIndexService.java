@@ -19,8 +19,6 @@
  */
 package org.neo4j.index.lucene;
 
-import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.WhitespaceAnalyzer;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.queryParser.QueryParser;
 import org.apache.lucene.queryParser.QueryParser.Operator;
@@ -39,9 +37,6 @@ import org.neo4j.index.IndexHits;
  */
 public class LuceneFulltextQueryIndexService extends LuceneFulltextIndexService
 {
-    private static final Analyzer WHITESPACE_ANALYZER =
-        new WhitespaceAnalyzer();
-    
     /**
      * @param graphDb the {@link GraphDatabaseService} to use.
      */
@@ -51,8 +46,13 @@ public class LuceneFulltextQueryIndexService extends LuceneFulltextIndexService
     }
 
     @Override
-    protected Query formQuery( String key, Object value )
+    protected Query formQuery( String key, Object value, Object matching )
     {
+        if ( matching == MatchingType.EXACT )
+        {
+            return super.formQuery( key, value, matching );
+        }
+        
         try
         {
             QueryParser parser = new QueryParser( Version.LUCENE_CURRENT,

@@ -100,10 +100,34 @@ public class LuceneFulltextIndexService extends LuceneIndexService
     {
         return super.getNodes( key, value );
     }
+    
+    /**
+     * Does a {@link #getNodes(String, Object)} using exact matching, so that
+     * it for this call behaves like {@link LuceneIndexService}.
+     * @param key the key.
+     * @param value the query.
+     * @return the result of the query.
+     */
+    @Override
+    public IndexHits<Node> getNodesExactMatch( String key, Object value )
+    {
+        return getNodes( key, value, MatchingType.EXACT, null );
+    }
+    
+    @Override
+    public Node getSingleNodeExactMatch( String key, Object value )
+    {
+        return getSingleNode( key, value, MatchingType.EXACT );
+    }
 
     @Override
-    protected Query formQuery( String key, Object value )
+    protected Query formQuery( String key, Object value, Object matching )
     {
+        if ( matching == MatchingType.EXACT )
+        {
+            return new TermQuery( new Term( DOC_INDEX_SOURCE_KEY, value.toString() ) );
+        }
+        
         TokenStream stream = LuceneFulltextDataSource.LOWER_CASE_WHITESPACE_ANALYZER.tokenStream(
                 DOC_INDEX_KEY,
                 new StringReader( value.toString().toLowerCase() ) );
@@ -131,5 +155,11 @@ public class LuceneFulltextIndexService extends LuceneIndexService
     {
         // For now, or is it just not feasable
         throw new UnsupportedOperationException();
+    }
+    
+    static enum MatchingType
+    {
+        DEFAULT,
+        EXACT
     }
 }
