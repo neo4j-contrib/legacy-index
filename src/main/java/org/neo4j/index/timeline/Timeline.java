@@ -592,8 +592,8 @@ public class Timeline implements TimelineIndex
                         }
                         return false;
                     }
-                }, RelTypes.TIMELINE_NEXT_ENTRY, Direction.OUTGOING,
-                RelTypes.TIMELINE_INSTANCE, Direction.OUTGOING );
+                }, RelTypes.TIMELINE_INSTANCE, Direction.OUTGOING,
+                RelTypes.TIMELINE_NEXT_ENTRY, Direction.OUTGOING );
     }
 
     Iterable<Node> getAllTimeNodes()
