@@ -113,14 +113,14 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
     }
     
     private IndexWriterContext getWriter( String key, boolean allowCreate )
+            throws IOException
     {
         IndexWriterContext writer = indexWriters.get( key );
-        File indexDir = new File( storeDir + "/" + key );
-        if ( writer == null && (allowCreate || indexDir.exists() ) )
+        Directory dir = instantiateDirectory( key );
+        if ( writer == null && (allowCreate || IndexReader.indexExists( dir ) ) )
         {
             try
             {
-                Directory dir = instantiateDirectory( key );
                 IndexWriter indexWriter = new IndexWriter( dir, fieldAnalyzer,
                     MaxFieldLength.UNLIMITED );
                 
@@ -141,14 +141,14 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
     
     private IndexSearcher getSearcher( String key )
     {
-        IndexWriterContext writer = getWriter( key, false );
-        if ( writer == null )
-        {
-            return null;
-        }
-        
         try
         {
+            IndexWriterContext writer = getWriter( key, false );
+            if ( writer == null )
+            {
+                return null;
+            }
+            
             IndexSearcher oldSearcher = indexSearchers.get( key );
             IndexSearcher result = oldSearcher;
             if ( oldSearcher == null || writer.modifiedFlag )
@@ -173,11 +173,12 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
     
     public void index( long node, String key, Object value )
     {
-        IndexWriterContext writer = getWriter( key, true );
-        Document document = new Document();
-        fillDocument( document, node, key, value );
         try
         {
+            IndexWriterContext writer = getWriter( key, true );
+            Document document = new Document();
+            fillDocument( document, node, key, value );
+            
             writer.writer.addDocument( document );
             writer.modifiedFlag = true;
         }
