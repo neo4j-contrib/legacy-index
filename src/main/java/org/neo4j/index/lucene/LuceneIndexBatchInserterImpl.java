@@ -115,7 +115,8 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
     private IndexWriterContext getWriter( String key, boolean allowCreate )
     {
         IndexWriterContext writer = indexWriters.get( key );
-        if ( writer == null && allowCreate )
+        File indexDir = new File( storeDir + "/" + key );
+        if ( writer == null && (allowCreate || indexDir.exists() ) )
         {
             try
             {

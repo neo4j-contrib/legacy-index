@@ -153,4 +153,18 @@ public class TestBatchInsert
             assertTrue( "head -1", head != -1 );
         }
     }
+
+    @Test
+    public void testShutdownStartup()
+    {
+        index = new LuceneIndexBatchInserterImpl( inserter );
+        long node = inserter.createNode( null );
+        assertTrue( index.getSingleNode( "test-key", "test-value" ) == -1 ); 
+        index.index( node, "test-key", "test-value" );
+        index.shutdown();
+        inserter.shutdown();
+        inserter = new BatchInserterImpl( getDbPath() );
+        index = new LuceneIndexBatchInserterImpl( inserter );
+        assertTrue( index.getSingleNode( "test-key", "test-value" ) == node );
+    }
 }
