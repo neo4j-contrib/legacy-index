@@ -158,7 +158,7 @@ public abstract class Neo4jTestCase
         return graphDb;
     }
     
-    protected <T> void assertCollection( Collection<T> collection,
+    public static <T> void assertCollection( Collection<T> collection,
         T... expectedItems )
     {
         String collectionString = join( ", ", collection.toArray() );
@@ -170,12 +170,12 @@ public abstract class Neo4jTestCase
         }
     }
 
-    protected <T> void assertCollection( Iterable<T> items, T... expectedItems )
+    public static <T> void assertCollection( Iterable<T> items, T... expectedItems )
     {
         assertCollection( asCollection( items ), expectedItems );
     }
     
-    protected <T> Collection<T> asCollection( Iterable<T> iterable )
+    public static <T> Collection<T> asCollection( Iterable<T> iterable )
     {
         List<T> list = new ArrayList<T>();
         for ( T item : iterable )
@@ -185,7 +185,7 @@ public abstract class Neo4jTestCase
         return list;
     }
 
-    protected <T> String join( String delimiter, T... items )
+    public static <T> String join( String delimiter, T... items )
     {
         StringBuffer buffer = new StringBuffer();
         for ( T item : items )
