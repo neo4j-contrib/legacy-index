@@ -47,7 +47,6 @@ import org.neo4j.commons.iterator.IterableWrapper;
 import org.neo4j.graphdb.Node;
 import org.neo4j.index.IndexHits;
 import org.neo4j.index.IndexService;
-import org.neo4j.index.Isolation;
 import org.neo4j.index.impl.SimpleIndexHits;
 import org.neo4j.kernel.impl.batchinsert.BatchInserter;
 import org.neo4j.kernel.impl.util.ArrayMap;
@@ -336,11 +335,6 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
             throw new UnsupportedOperationException();
         }
         
-        public void setIsolation( Isolation level )
-        {
-            throw new UnsupportedOperationException();
-        }
-
         public void shutdown()
         {
             LuceneIndexBatchInserterImpl.this.shutdown();

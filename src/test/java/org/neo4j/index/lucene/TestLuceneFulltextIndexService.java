@@ -32,7 +32,6 @@ import org.junit.Test;
 import org.neo4j.graphdb.Node;
 import org.neo4j.index.IndexHits;
 import org.neo4j.index.IndexService;
-import org.neo4j.index.Isolation;
 
 public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
 {
@@ -108,28 +107,6 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
         itr = index().getNodes( key, value1 ).iterator();
         assertTrue( !itr.hasNext() );
         restartTx();
-        
-        index().setIsolation( Isolation.ASYNC_OTHER_TX );
-        itr = index().getNodes( key, value1 ).iterator();
-        
-        assertTrue( !itr.hasNext() );
-        index().index( node1, key, value1 );
-        itr = index().getNodes( key, "tokenize" ).iterator();
-        assertTrue( !itr.hasNext() );
-        try
-        {
-            Thread.sleep( 1000 );
-        }
-        catch ( InterruptedException e )
-        {
-            Thread.interrupted();
-        }
-        itr = index().getNodes( key, "tokenize" ).iterator();
-        assertTrue( itr.hasNext() );
-        index().setIsolation( Isolation.SYNC_OTHER_TX );
-        index().removeIndex( node1, key, value1 );
-        itr = index().getNodes( key, value1 ).iterator();
-        assertTrue( !itr.hasNext() );
         node1.delete();
         node2.delete();
     }

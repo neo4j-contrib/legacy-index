@@ -30,7 +30,6 @@ import org.neo4j.graphdb.DynamicRelationshipType;
 import org.neo4j.graphdb.Node;
 import org.neo4j.index.IndexHits;
 import org.neo4j.index.IndexService;
-import org.neo4j.index.Isolation;
 import org.neo4j.index.Neo4jWithIndexTestCase;
 
 public class TestNeoIndexingService extends Neo4jWithIndexTestCase
@@ -79,25 +78,6 @@ public class TestNeoIndexingService extends Neo4jWithIndexTestCase
         itr = index().getNodes( "a_property", 1 ).iterator();
         assertTrue( !itr.hasNext() );
         restartTx();
-        
-        index().setIsolation( Isolation.ASYNC_OTHER_TX );
-        index().index( node1, "a_property", 1 );
-        itr = index().getNodes( "a_property", 1 ).iterator();
-        assertTrue( !itr.hasNext() );
-        try
-        {
-            Thread.sleep( 1000 );
-        }
-        catch ( InterruptedException e )
-        {
-            Thread.interrupted();
-        }
-        itr = index().getNodes( "a_property", 1 ).iterator();
-        assertTrue( itr.hasNext() );
-        index().setIsolation( Isolation.SYNC_OTHER_TX );
-        index().removeIndex( node1, "a_property", 1 );
-        itr = index().getNodes( "a_property", 1 ).iterator();
-        assertTrue( !itr.hasNext() );
         node1.delete();
         node2.delete();
     }

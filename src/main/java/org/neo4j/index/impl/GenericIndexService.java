@@ -23,7 +23,6 @@ import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Transaction;
 import org.neo4j.index.IndexService;
-import org.neo4j.index.Isolation;
 
 /**
  * Basic implementation of an {@link IndexService} which implements the
@@ -32,17 +31,6 @@ import org.neo4j.index.Isolation;
 public abstract class GenericIndexService implements IndexService
 {
     private final GraphDatabaseService graphDb;
-    private final IndexServiceQueue queue;
-    
-    private ThreadLocal<Isolation> threadIsolation =
-        new ThreadLocal<Isolation>()
-        {
-            @Override
-            protected Isolation initialValue()
-            {
-                return Isolation.SAME_TX;
-            }
-        };
     
     protected abstract void removeIndexThisTx( Node node, String key, 
         Object value );
@@ -60,44 +48,21 @@ public abstract class GenericIndexService implements IndexService
             throw new IllegalArgumentException( "Null graph database service" );
         }
         this.graphDb = graphDb;
-        queue = new IndexServiceQueue( this );
-        queue.start();
     }
     
     public void index( Node node, String key, Object value )
     {
-        Isolation level = threadIsolation.get();
-        if ( level == Isolation.SAME_TX )
-        {
-            indexThisTx( node, key, value );
-        }
-        else
-        {
-            queue.queueIndex( level, node, key, value );
-        }
+        indexThisTx( node, key, value );
     }
     
     public void removeIndex( Node node, String key, Object value )
     {
-        Isolation level = threadIsolation.get();
-        if ( level == Isolation.SAME_TX )
-        {
-            removeIndexThisTx( node, key, value );
-        }
-        else
-        {
-            queue.queueRemove( level, node, key, value );
-        }
+        removeIndexThisTx( node, key, value );
     }
     
     protected GraphDatabaseService getGraphDb()
     {
         return graphDb;
-    }
-    
-    public void setIsolation( Isolation level )
-    {
-        threadIsolation.set( level );
     }
     
     protected Transaction beginTx()
@@ -107,11 +72,5 @@ public abstract class GenericIndexService implements IndexService
     
     public void shutdown()
     {
-        queue.stopRunning();
-    }
-    
-    protected IndexServiceQueue getQueue()
-    {
-        return queue;
     }
 }

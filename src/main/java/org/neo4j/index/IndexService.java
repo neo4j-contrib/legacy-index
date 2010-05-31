@@ -109,17 +109,6 @@ public interface IndexService
     void removeIndex( String key );
     
     /**
-     * Changes isolation level for the running transaction. This method must be
-     * invoked before any index ({@link #index(Node, String, Object)},
-     * {@link #removeIndex(Node, String, Object)}) has been performed in the
-     * current transaction. The default isolation level is
-     * {@link Isolation#SAME_TX} . The isolation level is thread confined.
-     * 
-     * @param level new isolation level
-     */
-    void setIsolation( Isolation level );
-
-    /**
      * Stops this indexing service committing any asynchronous requests that are
      * currently queued (see {@link Isolation}). After this method has been
      * invoked any following method invocation on this instance is invalid.
