@@ -34,7 +34,7 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.TermQuery;
 import org.neo4j.commons.iterator.CombiningIterator;
-import org.neo4j.commons.iterator.IteratorAsIterable;
+import org.neo4j.commons.iterator.IteratorUtil;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
 import org.neo4j.index.IndexHits;
@@ -230,7 +230,7 @@ public class LuceneReadOnlyIndexService extends GenericIndexService
             nodeIdIterator = nodeIds.iterator();
             nodeIdIteratorSize = nodeIds.size();
         }
-        return new SimpleIndexHits<Node>( new IteratorAsIterable<Node>(
+        return new SimpleIndexHits<Node>( IteratorUtil.asIterable(
                 instantiateIdToNodeIterator( nodeIdIterator ) ),
                 nodeIdIteratorSize );
     }
