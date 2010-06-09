@@ -132,6 +132,24 @@ public class LuceneDataSource extends XaDataSource
             throw new RuntimeException( "Unable to open lucene log in " + dir,
                 e );
         }
+        configureLog( params );
+    }
+    
+    protected XaLogicalLog getLogicalLog()
+    {
+        return xaContainer.getLogicalLog();
+    }
+    
+    protected void configureLog( Map<?,?> config )
+    {
+        String keepLogs = (String) config.get( "keep_logical_logs" );
+        if ( keepLogs != null )
+        {
+            if ( shouldKeepLog( keepLogs, "lucene" ) )
+            {
+                getLogicalLog().setKeepLogs( true );
+            }
+        }
     }
     
     /**
@@ -557,13 +575,21 @@ public class LuceneDataSource extends XaDataSource
         xaContainer.getLogicalLog().makeBackupSlave();
     }
 
+    @Override
     public String getFileName( long version )
     {
         return xaContainer.getLogicalLog().getFileName( version );
     }
 
+    @Override
     public long getLogicalLogLength( long version )
     {
         return xaContainer.getLogicalLog().getLogicalLogLength( version );
+    }
+
+    @Override
+    public boolean isLogicalLogKept()
+    {
+        return xaContainer.getLogicalLog().isLogsKept();
     }
 }

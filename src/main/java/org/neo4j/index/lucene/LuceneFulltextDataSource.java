@@ -54,6 +54,19 @@ public class LuceneFulltextDataSource extends LuceneDataSource
     }
 
     @Override
+    protected void configureLog( Map<?,?> config )
+    {
+        String keepLogs = (String) config.get( "keep_logical_logs" );
+        if ( keepLogs != null )
+        {
+            if ( shouldKeepLog( keepLogs, "lucene-fulltext" ) )
+            {
+                getLogicalLog().setKeepLogs( true );
+            }
+        }
+    }
+
+    @Override
     protected Index getIndexStrategy( String key, Object value )
     {
         return Index.ANALYZED;
