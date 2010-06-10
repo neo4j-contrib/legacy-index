@@ -83,8 +83,7 @@ public class TestBothLuceneAndFulltext extends Neo4jWithIndexTestCase
     public void testKeepLogsConfig()
     {
         Map<String,String> config = new HashMap<String,String>();
-        config.put( "keep_logical_logs", 
-                "nioneodb=true,lucene=true,lucene-fulltext=true" );
+        config.put( "keep_logical_logs", "nioneodb,lucene,lucene-fulltext" );
         EmbeddedGraphDatabase db = new EmbeddedGraphDatabase( 
                 "target/configdb", config );
         IndexService index = new LuceneIndexService( db );
@@ -98,8 +97,7 @@ public class TestBothLuceneAndFulltext extends Neo4jWithIndexTestCase
         db.shutdown();
         index.shutdown();
         fulltext.shutdown();
-        config.put( "keep_logical_logs", 
-                "nioneodb=false,lucene=false,lucene-fulltext=false" );
+        config.remove( "keep_logical_logs" ); 
         db = new EmbeddedGraphDatabase( "target/configdb", config );
         index = new LuceneIndexService( db );
         fulltext = new LuceneFulltextIndexService( db );
