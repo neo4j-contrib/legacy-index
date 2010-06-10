@@ -278,9 +278,9 @@ class LuceneFulltextTransaction extends LuceneTransaction
         {
             try
             {
-                this.writer.commit();
                 if ( this.searcher == null )
                 {
+                    this.writer.commit();
                     this.searcher = new IndexSearcher( directory, true );
                 }
             }
