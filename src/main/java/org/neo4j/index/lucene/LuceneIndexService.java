@@ -271,7 +271,7 @@ public class LuceneIndexService extends GenericIndexService
         Set<Long> addedNodes = Collections.emptySet();
         Set<Long> deletedNodes = Collections.emptySet();
         boolean deleted = false;
-        if ( luceneTx != null )
+        if ( luceneTx != null && luceneTx.hasModifications( key ) )
         {
             addedNodes = luceneTx.getNodesFor( key, value, matching );
             nodeIds.addAll( addedNodes );

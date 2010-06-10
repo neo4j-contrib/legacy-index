@@ -121,6 +121,11 @@ class LuceneTransaction extends XaTransaction
         }
         return modified;
     }
+    
+    boolean hasModifications( String key )
+    {
+        return txRemoved.containsKey( key ) || txIndexed.containsKey( key );
+    }
 
     Set<Long> getDeletedNodesFor( String key, Object value, Object matching )
     {

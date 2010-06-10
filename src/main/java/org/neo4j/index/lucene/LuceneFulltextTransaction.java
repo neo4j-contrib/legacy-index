@@ -149,6 +149,12 @@ class LuceneFulltextTransaction extends LuceneTransaction
     }
     
     @Override
+    boolean hasModifications( String key )
+    {
+        return fulltextIndexed.containsKey( key ) || fulltextRemoved.containsKey( key );
+    }
+    
+    @Override
     boolean getIndexDeleted( String key )
     {
         return getDirectory( fulltextRemoved, key ).all;
