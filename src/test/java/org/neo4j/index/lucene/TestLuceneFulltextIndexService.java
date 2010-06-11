@@ -271,4 +271,65 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
         node2.delete();
         node1.delete();
     }
+    
+    /*
+     * This test is just here to get performance numbers on different scenarios:
+     * o Do many gets where the transaction is restarted between each get
+     * o Do many gets, all in the same transaction
+     * o Do many gets, none of them in a transaction
+     */
+    @Ignore
+    @Test
+    public void testKjsdk()
+    {
+        Node node = graphDb().createNode();
+        String key = "perf";
+        for ( int i = 0; i < 100000; i++ )
+        {
+            index().index( node, key, i );
+            if ( i % 10000 == 0 )
+            {
+                restartTx();
+            }
+        }
+        restartTx();
+        
+        int times = 20;
+        int count = 10000;
+        
+        for ( int i = 0; i < times; i++ )
+        {
+            long t = System.currentTimeMillis();
+            for ( int ii = 0; ii < count; ii++ )
+            {
+                index().getSingleNode( key, 1000 );
+                restartTx();
+            }
+            long total = System.currentTimeMillis() - t;
+            System.out.println( "total:" + total );
+        }
+        
+        for ( int i = 0; i < times; i++ )
+        {
+            long t = System.currentTimeMillis();
+            for ( int ii = 0; ii < count; ii++ )
+            {
+                index().getSingleNode( key, 1000 );
+            }
+            long totalSameTx = System.currentTimeMillis() - t;
+            System.out.println( "total same tx:" + totalSameTx );
+        }
+        
+        finishTx( true );
+        for ( int i = 0; i < times; i++ )
+        {
+            long t = System.currentTimeMillis();
+            for ( int ii = 0; ii < count; ii++ )
+            {
+                index().getSingleNode( key, 1000 );
+            }
+            long totalNoTx = System.currentTimeMillis() - t;
+            System.out.println( "total no tx:" + totalNoTx );
+        }
+    }
 }

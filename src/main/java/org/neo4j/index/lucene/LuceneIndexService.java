@@ -548,39 +548,8 @@ public class LuceneIndexService extends GenericIndexService
 
         LuceneXaConnection acquireReadOnlyResourceConnection()
         {
-            LuceneXaConnection con = null;
             Transaction tx = this.getCurrentTransaction();
-            if ( tx == null )
-            {
-                return null;
-            }
-            con = txConnectionMap.get( tx );
-            if ( con == null )
-            {
-                try
-                {
-                    con = (LuceneXaConnection) xaDs.getXaConnection();
-                    if ( !tx.enlistResource( con.getXaResource() ) )
-                    {
-                        throw new RuntimeException( "Unable to enlist '"
-                                                    + con.getXaResource()
-                                                    + "' in " + tx );
-                    }
-                    tx.registerSynchronization( new TxCommitHook( tx ) );
-                    txConnectionMap.put( tx, con );
-                }
-                catch ( javax.transaction.RollbackException re )
-                {
-                    String msg = "The transaction is marked for rollback only.";
-                    throw new RuntimeException( msg, re );
-                }
-                catch ( javax.transaction.SystemException se )
-                {
-                    String msg = "TM encountered an unexpected error condition.";
-                    throw new RuntimeException( msg, se );
-                }
-            }
-            return con;
+            return tx != null ? txConnectionMap.get( tx ) : null;
         }
         
         void releaseResourceConnectionsForTransaction( Transaction tx )
