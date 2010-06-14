@@ -268,7 +268,7 @@ class LuceneTransaction extends XaTransaction
     @Override
     public boolean isReadOnly()
     {
-        return false;
+        return commandMap.isEmpty();
     }
     
     static class LazyMergedSet<T>

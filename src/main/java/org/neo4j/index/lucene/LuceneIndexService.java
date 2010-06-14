@@ -309,8 +309,7 @@ public class LuceneIndexService extends GenericIndexService
                         iterators.add( nodeIds.iterator() );
                         iterators.add( searchedNodeIds );
                         nodeIdIterator = new CombiningIterator<Long>( iterators );
-                        nodeIdIteratorSize = nodeIds.size()
-                                             + searchedNodeIds.size();
+                        nodeIdIteratorSize = nodeIds.size() + searchedNodeIds.size();
                     }
                     else
                     {
