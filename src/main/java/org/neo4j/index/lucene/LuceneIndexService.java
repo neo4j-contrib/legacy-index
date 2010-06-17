@@ -20,6 +20,7 @@
 package org.neo4j.index.lucene;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -214,7 +215,10 @@ public class LuceneIndexService extends GenericIndexService
         assertArgumentNotNull( node, "node" );
         assertArgumentNotNull( key, "key" );
         assertArgumentNotNull( value, "value" );
-        getConnection().index( node, key, value );
+        for ( Object arrayItem : asArray( value ) )
+        {
+            getConnection().index( node, key, arrayItem );
+        }
     }
 
     /**
@@ -467,9 +471,30 @@ public class LuceneIndexService extends GenericIndexService
         assertArgumentNotNull( node, "node" );
         assertArgumentNotNull( key, "key" );
         assertArgumentNotNull( value, "value" );
-        getConnection().removeIndex( node, key, value );
+        for ( Object arrayItem : asArray( value ) )
+        {
+            getConnection().removeIndex( node, key, arrayItem );
+        }
     }
 
+    private Object[] asArray( Object propertyValue )
+    {
+        if ( propertyValue.getClass().isArray() )
+        {
+            int length = Array.getLength( propertyValue );
+            Object[] result = new Object[ length ];
+            for ( int i = 0; i < length; i++ )
+            {
+                result[ i ] = Array.get( propertyValue, i );
+            }
+            return result;
+        }
+        else
+        {
+            return new Object[] { propertyValue };
+        }
+    }
+    
     @Override
     public synchronized void shutdown()
     {

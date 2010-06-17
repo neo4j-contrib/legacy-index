@@ -353,4 +353,36 @@ public class TestLuceneIndexingService extends Neo4jWithIndexTestCase
         }
         System.out.println( "get:" + (System.currentTimeMillis() - t) );
     }
+    
+    @Test
+    public void testArrayProperties()
+    {
+        Node node = graphDb().createNode();
+        int[] integers = new int[] { 10, 1034, 4321 };
+        String[] strings = new String[] { "Array strings can be indexed",
+                "It is a more expected behaviour",
+                "Than not to" };
+        index().index( node, "integer", integers );
+        index().index( node, "string", strings );
+        
+        assertEquals( node, index().getSingleNode( "integer", 1034 ) );
+        assertNull( index().getSingleNode( "integer", 111111 ) );
+        assertEquals( node, index().getSingleNode( "string", strings[0] ) );
+        assertEquals( node, index().getSingleNode( "string", strings[1] ) );
+        assertEquals( node, index().getSingleNode( "string", strings[2] ) );
+        assertNull( index().getSingleNode( "string", "Something else" ) );
+        restartTx();
+        assertEquals( node, index().getSingleNode( "integer", 1034 ) );
+        assertNull( index().getSingleNode( "integer", 111111 ) );
+        assertEquals( node, index().getSingleNode( "string", strings[0] ) );
+        assertEquals( node, index().getSingleNode( "string", strings[1] ) );
+        assertEquals( node, index().getSingleNode( "string", strings[2] ) );
+        assertNull( index().getSingleNode( "string", "Something else" ) );
+        
+        index().removeIndex( node, "integer", integers );
+        index().removeIndex( node, "string", strings );
+        assertNull( index().getSingleNode( "integer", 1034 ) );
+        assertNull( index().getSingleNode( "string", strings[1] ) );
+        node.delete();
+    }
 }
