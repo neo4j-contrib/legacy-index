@@ -30,6 +30,7 @@ import org.junit.Test;
 import org.neo4j.graphdb.Node;
 import org.neo4j.index.IndexService;
 import org.neo4j.index.Neo4jWithIndexTestCase;
+import org.neo4j.kernel.Config;
 import org.neo4j.kernel.EmbeddedGraphDatabase;
 import org.neo4j.kernel.impl.transaction.XaDataSourceManager;
 
@@ -78,12 +79,11 @@ public class TestBothLuceneAndFulltext extends Neo4jWithIndexTestCase
         node.delete();
     }
 
-
     @Test
     public void testKeepLogsConfig()
     {
         Map<String,String> config = new HashMap<String,String>();
-        config.put( "keep_logical_logs", "nioneodb,lucene,lucene-fulltext" );
+        config.put( Config.KEEP_LOGICAL_LOGS, "nioneodb,lucene,lucene-fulltext" );
         EmbeddedGraphDatabase db = new EmbeddedGraphDatabase( 
                 "target/configdb", config );
         IndexService index = new LuceneIndexService( db );
@@ -97,7 +97,8 @@ public class TestBothLuceneAndFulltext extends Neo4jWithIndexTestCase
         db.shutdown();
         index.shutdown();
         fulltext.shutdown();
-        config.remove( "keep_logical_logs" ); 
+        
+        config.remove( Config.KEEP_LOGICAL_LOGS ); 
         db = new EmbeddedGraphDatabase( "target/configdb", config );
         index = new LuceneIndexService( db );
         fulltext = new LuceneFulltextIndexService( db );
@@ -106,6 +107,18 @@ public class TestBothLuceneAndFulltext extends Neo4jWithIndexTestCase
         assertTrue( !xaDsMgr.getXaDataSource( "lucene" ).isLogicalLogKept() );
         assertTrue( !xaDsMgr.getXaDataSource( 
                 "lucene-fulltext" ).isLogicalLogKept() );
+        db.shutdown();
+        index.shutdown();
+        fulltext.shutdown();
+
+        config.put( Config.KEEP_LOGICAL_LOGS, Boolean.TRUE.toString() ); 
+        db = new EmbeddedGraphDatabase( "target/configdb", config );
+        index = new LuceneIndexService( db );
+        fulltext = new LuceneFulltextIndexService( db );
+        xaDsMgr = db.getConfig().getTxModule().getXaDataSourceManager();
+        assertTrue( xaDsMgr.getXaDataSource( "nioneodb" ).isLogicalLogKept() );
+        assertTrue( xaDsMgr.getXaDataSource( "lucene" ).isLogicalLogKept() );
+        assertTrue( xaDsMgr.getXaDataSource( "lucene-fulltext" ).isLogicalLogKept() );
         db.shutdown();
         index.shutdown();
         fulltext.shutdown();

@@ -47,6 +47,7 @@ import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
+import org.neo4j.kernel.Config;
 import org.neo4j.kernel.impl.cache.LruCache;
 import org.neo4j.kernel.impl.transaction.xaframework.XaCommand;
 import org.neo4j.kernel.impl.transaction.xaframework.XaCommandFactory;
@@ -142,13 +143,9 @@ public class LuceneDataSource extends XaDataSource
     
     protected void configureLog( Map<?,?> config )
     {
-        String keepLogs = (String) config.get( "keep_logical_logs" );
-        if ( keepLogs != null )
+        if ( shouldKeepLog( (String) config.get( Config.KEEP_LOGICAL_LOGS ), "lucene" ) )
         {
-            if ( shouldKeepLog( keepLogs, "lucene" ) )
-            {
-                getLogicalLog().setKeepLogs( true );
-            }
+            getLogicalLog().setKeepLogs( true );
         }
     }
     

@@ -24,6 +24,7 @@ import java.util.Map;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Index;
+import org.neo4j.kernel.Config;
 import org.neo4j.kernel.impl.transaction.xaframework.XaLogicalLog;
 import org.neo4j.kernel.impl.transaction.xaframework.XaTransaction;
 
@@ -54,19 +55,6 @@ public class LuceneFulltextDataSource extends LuceneDataSource
     }
 
     @Override
-    protected void configureLog( Map<?,?> config )
-    {
-        String keepLogs = (String) config.get( "keep_logical_logs" );
-        if ( keepLogs != null )
-        {
-            if ( shouldKeepLog( keepLogs, "lucene-fulltext" ) )
-            {
-                getLogicalLog().setKeepLogs( true );
-            }
-        }
-    }
-
-    @Override
     protected Index getIndexStrategy( String key, Object value )
     {
         return Index.ANALYZED;
@@ -86,5 +74,14 @@ public class LuceneFulltextDataSource extends LuceneDataSource
         document.add( new Field(
             LuceneFulltextIndexService.DOC_INDEX_SOURCE_KEY, value.toString(),
             Field.Store.NO, Field.Index.NOT_ANALYZED ) );
+    }
+    
+    @Override
+    protected void configureLog( Map<?,?> config )
+    {
+        if ( shouldKeepLog( (String) config.get( Config.KEEP_LOGICAL_LOGS ), "lucene-fulltext" ) )
+        {
+            getLogicalLog().setKeepLogs( true );
+        }
     }
 }
