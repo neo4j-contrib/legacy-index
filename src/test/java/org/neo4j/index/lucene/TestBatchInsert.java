@@ -163,8 +163,20 @@ public class TestBatchInsert
         index.index( node, "test-key", "test-value" );
         index.shutdown();
         inserter.shutdown();
+        
         inserter = new BatchInserterImpl( getDbPath() );
         index = new LuceneIndexBatchInserterImpl( inserter );
         assertTrue( index.getSingleNode( "test-key", "test-value" ) == node );
+        long node2 = inserter.createNode( null );
+        index.index( node2, "test-key", "the other value" );
+        assertTrue( index.getSingleNode( "test-key", "test-value" ) == node );
+        assertTrue( index.getSingleNode( "test-key", "the other value" ) == node2 );
+        index.shutdown();
+        inserter.shutdown();
+        
+        inserter = new BatchInserterImpl( getDbPath() );
+        index = new LuceneIndexBatchInserterImpl( inserter );
+        assertTrue( index.getSingleNode( "test-key", "test-value" ) == node );
+        assertTrue( index.getSingleNode( "test-key", "the other value" ) == node2 );
     }
 }

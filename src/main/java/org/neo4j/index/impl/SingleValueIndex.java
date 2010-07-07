@@ -21,6 +21,7 @@ package org.neo4j.index.impl;
 
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
+import org.neo4j.index.IndexService;
 import org.neo4j.index.impl.btree.KeyEntry;
 
 /**
@@ -31,7 +32,7 @@ import org.neo4j.index.impl.btree.KeyEntry;
  * 
  * This class isn't ready for general usage yet and use of it is discouraged.
  * 
- * @deprecated
+ * @deprecated Not used anymore. Replaced by f.ex {@link IndexService}.
  */
 public class SingleValueIndex extends AbstractIndex
 {

@@ -28,13 +28,14 @@ import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
 import org.neo4j.graphdb.RelationshipType;
+import org.neo4j.index.impl.btree.BTree;
 
 /**
  * A sorted list of nodes (structured as a tree in neo4j).
  * 
  * This class isn't ready for general usage yet and use of it is discouraged.
  * 
- * @deprecated
+ * @deprecated Builds in {@link BTree}, which also is deprecated.
  */
 public class SortedTree
 {

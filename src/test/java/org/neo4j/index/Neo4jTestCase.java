@@ -116,20 +116,15 @@ public abstract class Neo4jTestCase
     
     public static void deleteFileOrDirectory( File file )
     {
-        if ( !file.exists() )
+        if ( file.exists() )
         {
-            return;
-        }
-        
-        if ( file.isDirectory() )
-        {
-            for ( File child : file.listFiles() )
+            if ( file.isDirectory() )
             {
-                deleteFileOrDirectory( child );
+                for ( File child : file.listFiles() )
+                {
+                    deleteFileOrDirectory( child );
+                }
             }
-        }
-        else
-        {
             file.delete();
         }
     }

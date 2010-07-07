@@ -40,7 +40,7 @@ import org.neo4j.graphdb.Traverser.Order;
  * 
  * This class isn't ready for general usage yet and use of it is discouraged.
  * 
- * @deprecated
+ * @deprecated The implementation isn't thread safe.
  */
 public class BTree
 {

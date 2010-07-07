@@ -25,8 +25,7 @@ import org.neo4j.graphdb.Transaction;
 import org.neo4j.index.IndexService;
 
 /**
- * Basic implementation of an {@link IndexService} which implements the
- * {@link Isolation} aspects.
+ * Basic implementation of an {@link IndexService} with common functionality.
  */
 public abstract class GenericIndexService implements IndexService
 {

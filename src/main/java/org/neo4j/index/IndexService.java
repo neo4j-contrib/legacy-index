@@ -109,9 +109,8 @@ public interface IndexService
     void removeIndex( String key );
     
     /**
-     * Stops this indexing service committing any asynchronous requests that are
-     * currently queued (see {@link Isolation}). After this method has been
-     * invoked any following method invocation on this instance is invalid.
+     * Shuts down the index service. After this method has been invoked any
+     * following method invocation on this instance is invalid.
      */
     void shutdown();
 }

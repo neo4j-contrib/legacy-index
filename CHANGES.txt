@@ -1,3 +1,20 @@
+1.1 (2010-06)
+----------------
+
+o Added more methods to remove indexing from an IndexService:
+  removeIndex(Node node, String key) and removeIndex(String key).
+o Bugfixes regarding closing of underlying Lucene index readers.
+o Bugfixes regarding null values.
+o Bugfixes regarding recovery.
+o Index lookups can be done without being in a transaction.
+o Added method for doing exact lookups (even when using a fulltext service).
+o Bugfixes regarding doing batch insertion into an existing index.
+o Removed isolation levels, the implementation wasn't good enough and the
+  different levels wasn't really usable.
+o Performance optimizations regarding index lookups when inside a transaction.
+o Indexing of array values. If a value is an array it's split up and each value
+  in that array is indexed separately.
+
 1.0 (2010-02-16)
 ----------------
 

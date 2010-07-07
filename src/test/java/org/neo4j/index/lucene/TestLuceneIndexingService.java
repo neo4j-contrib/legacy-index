@@ -385,4 +385,24 @@ public class TestLuceneIndexingService extends Neo4jWithIndexTestCase
         assertNull( index().getSingleNode( "string", strings[1] ) );
         node.delete();
     }
+    
+    @Test
+    public void testReadWithoutTx()
+    {
+        Node node1 = graphDb().createNode();
+        Node node2 = graphDb().createNode();
+        index().index( node1, "wo-tx", "value1" );
+        index().index( node2, "wo-tx", "value2" );
+        finishTx( true );
+        
+        assertEquals( node1, index().getSingleNode( "wo-tx", "value1" ) );
+        assertEquals( node2, index().getSingleNode( "wo-tx", "value2" ) );
+        assertCollection( index().getNodes( "wo-tx", "value1" ), node1 );
+        assertCollection( index().getNodes( "wo-tx", "value2" ), node2 );
+        
+        beginTx();
+        index().removeIndex( "wo-tx" );
+        node1.delete();
+        node2.delete();
+    }
 }

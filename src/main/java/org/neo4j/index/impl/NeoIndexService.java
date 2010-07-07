@@ -30,6 +30,7 @@ import org.neo4j.graphdb.Transaction;
 import org.neo4j.index.Index;
 import org.neo4j.index.IndexHits;
 import org.neo4j.index.IndexService;
+import org.neo4j.index.lucene.LuceneIndexService;
 import org.neo4j.kernel.impl.util.ArrayMap;
 
 /**
@@ -38,7 +39,8 @@ import org.neo4j.kernel.impl.util.ArrayMap;
  * 
  * This class isn't ready for general usage yet and use of it is discouraged.
  * 
- * @deprecated
+ * @deprecated The implementation isn't thread safe and there are better
+ * implementations, like {@link LuceneIndexService}.
  */
 public class NeoIndexService extends GenericIndexService
 {

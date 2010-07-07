@@ -232,6 +232,15 @@ public class LuceneIndexService extends GenericIndexService
         return getNodes( key, value, null );
     }
     
+    /**
+     * Returns hits from the index (see {@link #getNodes(String, Object)}).
+     * The result is sorted using {@code sortingOrNull}.
+     * 
+     * @param key the index to search in.
+     * @param value the value to match hits for.
+     * @param sortingOrNull how the result should be sorted.
+     * @return the (sorted) results from this index lookup.
+     */
     public IndexHits<Node> getNodes( String key, Object value, Sort sortingOrNull )
     {
         return getNodes( key, value, null, sortingOrNull );
@@ -242,10 +251,10 @@ public class LuceneIndexService extends GenericIndexService
      * matching. For this class it's equivalent to calling
      * {@link #getNodes(String, Object)}, but for subclasses, such as
      * {@link LuceneFulltextIndexService} it is useful for it to be able to
-     * do queries with exact matching, although it's a fulltext index.
-     * @param key
-     * @param value
-     * @return
+     * do queries with exact matching, even though it's a fulltext index.
+     * @param key the index to search in.
+     * @param value the value to match hits for.
+     * @return nodes that have been indexed with key and value
      */
     public IndexHits<Node> getNodesExactMatch( String key, Object value )
     {
@@ -431,6 +440,17 @@ public class LuceneIndexService extends GenericIndexService
         }
     }
     
+    /**
+     * A method for calling {@link #getSingleNode(String, Object)} using exact
+     * matching. For this class it's equivalent to calling
+     * {@link #getSingleNode(String, Object)}, but for subclasses, such as
+     * {@link LuceneFulltextIndexService} it is useful for it to be able to
+     * do queries with exact matching, even though it's a fulltext index.
+     * @param key the index to search in.
+     * @param value the value to match hits for.
+     * @return the single node for the query, or {@code null} if no hit found.
+     * If more than one hit was found a {@link RuntimeException} is thrown.
+     */
     public Node getSingleNodeExactMatch( String key, Object value )
     {
         return getSingleNode( key, value, null );

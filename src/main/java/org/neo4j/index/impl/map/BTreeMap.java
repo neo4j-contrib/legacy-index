@@ -41,7 +41,7 @@ import org.neo4j.index.impl.btree.KeyEntry;
  * 
  * This class isn't ready for general usage yet and use of it is discouraged.
  * 
- * @deprecated
+ * @deprecated Builds on {@link BTree}, which also is deprecated.
  */
 public class BTreeMap<K,V> implements Map<K,V>
 {

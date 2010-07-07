@@ -26,7 +26,7 @@ import org.neo4j.graphdb.Node;
  * 
  * This class isn't ready for general usage yet and use of it is discouraged.
  * 
- * @deprecated
+ * @deprecated Not used anymore. Replaced by f.ex {@link IndexService}.
  */
 @Deprecated
 public interface Index
