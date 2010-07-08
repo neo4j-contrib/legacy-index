@@ -352,4 +352,9 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
             this.modifiedFlag = true;
         }
     }
+    
+    public BatchInserter getBatchInserter()
+    {
+        return this.inserter;
+    }
 }

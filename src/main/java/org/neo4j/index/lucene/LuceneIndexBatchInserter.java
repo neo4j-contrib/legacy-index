@@ -97,4 +97,10 @@ public interface LuceneIndexBatchInserter
      *         {@link BatchInserter#getGraphDbService()}.
      */
     IndexService getIndexService();
+    
+    /**
+     * @return the {@link BatchInserter} used in conjunction with this index
+     * batch inserter.
+     */
+    BatchInserter getBatchInserter();
 }

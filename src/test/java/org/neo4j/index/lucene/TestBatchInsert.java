@@ -64,6 +64,7 @@ public class TestBatchInsert
     public void testSimpleBatchInsert()
     {
         index = new LuceneIndexBatchInserterImpl( inserter );
+        assertEquals( inserter, index.getBatchInserter() );
         long node = inserter.createNode( null );
         assertTrue( !index.getNodes( "test-key", 
             "test-value" ).iterator().hasNext() );
