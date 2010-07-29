@@ -1,4 +1,4 @@
-1.1 (2010-06)
+1.1 (2010-07-29)
 ----------------
 
 o Added more methods to remove indexing from an IndexService:
