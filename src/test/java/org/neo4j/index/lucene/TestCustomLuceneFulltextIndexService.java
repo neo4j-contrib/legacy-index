@@ -137,4 +137,10 @@ public class TestCustomLuceneFulltextIndexService
         assertCollection( asCollection( index().getNodes(
             "name", "Larry AND Wachowski" ) ), larry );
     }
+    
+    @Override
+    protected String dirName()
+    {
+        return "lucene-fulltext";
+    }
 }

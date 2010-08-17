@@ -161,9 +161,7 @@ public class LuceneDataSource extends XaDataSource
     }
     
     /**
-     * Returns the {@link LuceneIndexService} instance which created this
-     * data source.
-     * @return the {@link LuceneIndexService} instance which created this
+     * @return the {@link LuceneIndexService} instance associated with this
      * data source.
      */
     public LuceneIndexService getIndexService()
@@ -323,7 +321,12 @@ public class LuceneDataSource extends XaDataSource
     
     private Directory getDirectory( String key ) throws IOException
     {
-        return FSDirectory.open( new File( storeDir, key ) );
+        return FSDirectory.open( getIndexDir( key ) );
+    }
+    
+    private File getIndexDir( String key )
+    {
+        return new File( storeDir, key );
     }
     
     IndexSearcherRef getIndexSearcher( String key )
@@ -377,6 +380,21 @@ public class LuceneDataSource extends XaDataSource
             }
         }
     }
+    
+    void closeIndexSearcher( String key )
+    {
+        try
+        {
+            IndexSearcherRef searcher = indexSearchers.remove( key );
+            if ( searcher != null )
+            {
+                searcher.dispose();
+            }
+        }
+        catch ( IOException e )
+        { // OK
+        }
+    }
 
     synchronized IndexWriter getIndexWriter( String key )
     {
@@ -399,14 +417,19 @@ public class LuceneDataSource extends XaDataSource
         }
     }
     
-    protected void deleteDocumentsUsingWriter( IndexWriter writer,
-        Long nodeId, Object value )
+    /*
+     * Returns true if the entire index was deleted (even on disk)
+     */
+    protected boolean deleteDocumentsUsingWriter( IndexWriter writer,
+        Long nodeId, String key, Object value )
     {
         try
         {
             if ( nodeId == null && value == null )
             {
-                writer.deleteAll();
+                writer.close();
+                deleteIndex( key );
+                return true;
             }
             else
             {
@@ -420,12 +443,33 @@ public class LuceneDataSource extends XaDataSource
                     LuceneIndexService.DOC_ID_KEY, "" + nodeId ) ),
                     Occur.MUST );
                 writer.deleteDocuments( query );
+                return false;
             }
         }
         catch ( IOException e )
         {
             throw new RuntimeException( "Unable to delete for " + nodeId + ","
                 + "," + value + " using" + writer, e );
+        }
+    }
+    
+    private void deleteIndex( String key )
+    {
+        deleteFileOrDirectory( getIndexDir( key ) );
+    }
+
+    private static void deleteFileOrDirectory( File file )
+    {
+        if ( file.exists() )
+        {
+            if ( file.isDirectory() )
+            {
+                for ( File child : file.listFiles() )
+                {
+                    deleteFileOrDirectory( child );
+                }
+            }
+            file.delete();
         }
     }
     

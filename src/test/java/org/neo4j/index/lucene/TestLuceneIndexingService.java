@@ -20,9 +20,11 @@
 package org.neo4j.index.lucene;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.io.File;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -33,6 +35,7 @@ import org.neo4j.graphdb.Node;
 import org.neo4j.index.IndexHits;
 import org.neo4j.index.IndexService;
 import org.neo4j.index.Neo4jWithIndexTestCase;
+import org.neo4j.kernel.EmbeddedGraphDatabase;
 
 public class TestLuceneIndexingService extends Neo4jWithIndexTestCase
 {
@@ -404,5 +407,25 @@ public class TestLuceneIndexingService extends Neo4jWithIndexTestCase
         index().removeIndex( "wo-tx" );
         node1.delete();
         node2.delete();
+    }
+    
+    protected String dirName()
+    {
+        return "lucene";
+    }
+
+    @Test
+    public void makeSureDirectoryIsRemovedInRemoveAll()
+    {
+        Node node = graphDb().createNode();
+        String key = "delall";
+        index().index( node, key, "value" );
+        restartTx();
+        File dir = new File( new File( new File(
+                ( (EmbeddedGraphDatabase) graphDb() ).getStoreDir() ), dirName() ), key );
+        assertTrue( dir.exists() );
+        index().removeIndex( key );
+        restartTx();
+        assertFalse( dir.exists() );
     }
 }

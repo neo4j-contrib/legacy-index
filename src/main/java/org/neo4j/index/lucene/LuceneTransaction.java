@@ -209,14 +209,23 @@ class LuceneTransaction extends XaTransaction
                 {
                     Long nodeId = command.getNodeId();
                     String value = command.getValue();
+                    if ( writer == null )
+                    {
+                        writer = luceneDs.getIndexWriter( key );
+                    }
+                    
                     if ( command instanceof AddCommand )
                     {
                         indexWriter( writer, nodeId, key, value );
                     }
                     else if ( command instanceof RemoveCommand )
                     {
-                        luceneDs.deleteDocumentsUsingWriter(
-                            writer, nodeId, value );
+                        if ( luceneDs.deleteDocumentsUsingWriter(
+                            writer, nodeId, key, value ) )
+                        {
+                            luceneDs.closeIndexSearcher( key );
+                            writer = null;
+                        }
                     }
                     else
                     {
@@ -233,7 +242,11 @@ class LuceneTransaction extends XaTransaction
                         luceneDs.invalidateCache( key );
                     }
                 }
-                luceneDs.removeWriter( key, writer );
+                
+                if ( writer != null )
+                {
+                    luceneDs.removeWriter( key, writer );
+                }
                 luceneDs.invalidateIndexSearcher( key );
             }
         }

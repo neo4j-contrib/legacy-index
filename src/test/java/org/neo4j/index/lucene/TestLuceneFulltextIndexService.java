@@ -332,4 +332,10 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
             System.out.println( "total no tx:" + totalNoTx );
         }
     }
+    
+    @Override
+    protected String dirName()
+    {
+        return "lucene-fulltext";
+    }
 }
