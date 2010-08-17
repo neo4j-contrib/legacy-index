@@ -49,6 +49,7 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.neo4j.kernel.Config;
 import org.neo4j.kernel.impl.cache.LruCache;
+import org.neo4j.kernel.impl.transaction.xaframework.LogBackedXaDataSource;
 import org.neo4j.kernel.impl.transaction.xaframework.XaCommand;
 import org.neo4j.kernel.impl.transaction.xaframework.XaCommandFactory;
 import org.neo4j.kernel.impl.transaction.xaframework.XaConnection;
@@ -63,7 +64,7 @@ import org.neo4j.kernel.impl.util.ArrayMap;
  * An {@link XaDataSource} optimized for the {@link LuceneIndexService}.
  * This class is public because the XA framework requires it.
  */
-public class LuceneDataSource extends XaDataSource
+public class LuceneDataSource extends LogBackedXaDataSource
 {
     /**
      * Default {@link Analyzer} for fulltext parsing.
@@ -124,6 +125,7 @@ public class LuceneDataSource extends XaDataSource
         XaCommandFactory cf = new LuceneCommandFactory();
         XaTransactionFactory tf = new LuceneTransactionFactory( store );
         xaContainer = XaContainer.create( this, dir + "/lucene.log", cf, tf, params );
+        setLogicalLogAtCreationTime( xaContainer.getLogicalLog() );
         try
         {
             xaContainer.openLogicalLog();
@@ -556,12 +558,6 @@ public class LuceneDataSource extends XaDataSource
     }
 
     @Override
-    public void keepLogicalLogs( boolean keep )
-    {
-        xaContainer.getLogicalLog().setKeepLogs( keep );
-    }
-    
-    @Override
     public long getCreationTime()
     {
         return store.getCreationTime();
@@ -580,75 +576,14 @@ public class LuceneDataSource extends XaDataSource
     }
     
     @Override
-    public void applyLog( ReadableByteChannel byteChannel ) throws IOException
-    {
-        xaContainer.getLogicalLog().applyLog( byteChannel );
-    }
-    
-    @Override
-    public void rotateLogicalLog() throws IOException
-    {
-        // flush done inside rotate
-        xaContainer.getLogicalLog().rotate();
-    }
-    
-    @Override
-    public ReadableByteChannel getLogicalLog( long version ) throws IOException
-    {
-        return xaContainer.getLogicalLog().getLogicalLog( version );
-    }
-    
-    @Override
-    public boolean hasLogicalLog( long version )
-    {
-        return xaContainer.getLogicalLog().hasLogicalLog( version );
-    }
-    
-    @Override
-    public boolean deleteLogicalLog( long version )
-    {
-        return xaContainer.getLogicalLog().deleteLogicalLog( version );
-    }
-    
-    @Override
-    public void setAutoRotate( boolean rotate )
-    {
-        xaContainer.getLogicalLog().setAutoRotateLogs( rotate );
-    }
-    
-    @Override
-    public void setLogicalLogTargetSize( long size )
-    {
-        xaContainer.getLogicalLog().setLogicalLogTargetSize( size );
-    }
-    
-    @Override
-    public void makeBackupSlave()
-    {
-        xaContainer.getLogicalLog().makeBackupSlave();
-    }
-
-    @Override
-    public String getFileName( long version )
-    {
-        return xaContainer.getLogicalLog().getFileName( version );
-    }
-
-    @Override
-    public long getLogicalLogLength( long version )
-    {
-        return xaContainer.getLogicalLog().getLogicalLogLength( version );
-    }
-
-    @Override
-    public boolean isLogicalLogKept()
-    {
-        return xaContainer.getLogicalLog().isLogsKept();
-    }
-    
-    @Override
     public long getLastCommittedTxId()
     {
         return store.getLastCommittedTx();
+    }
+    
+    @Override
+    public XaContainer getXaContainer()
+    {
+        return xaContainer;
     }
 }
