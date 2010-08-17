@@ -123,7 +123,7 @@ public class LuceneDataSource extends XaDataSource
         this.store = new LuceneIndexStore( storeDir + "/lucene-store.db" );
         XaCommandFactory cf = new LuceneCommandFactory();
         XaTransactionFactory tf = new LuceneTransactionFactory( store );
-        xaContainer = XaContainer.create( dir + "/lucene.log", cf, tf, params );
+        xaContainer = XaContainer.create( this, dir + "/lucene.log", cf, tf, params );
         try
         {
             xaContainer.openLogicalLog();
@@ -264,6 +264,12 @@ public class LuceneDataSource extends XaDataSource
         public long getAndSetNewVersion()
         {
             return store.incrementVersion();
+        }
+
+        @Override
+        public long getLastCommittedTx()
+        {
+            return store.getLastCommittedTx();
         }
     }
     
@@ -638,5 +644,11 @@ public class LuceneDataSource extends XaDataSource
     public boolean isLogicalLogKept()
     {
         return xaContainer.getLogicalLog().isLogsKept();
+    }
+    
+    @Override
+    public long getLastCommittedTxId()
+    {
+        return store.getLastCommittedTx();
     }
 }
