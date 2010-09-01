@@ -129,7 +129,7 @@ class LuceneIndexStore
     public synchronized void setLastCommittedTx( long txId )
     {
         this.lastCommittedTx = txId;
-        writeOut();
+//        writeOut();
     }
     
     public long getLastCommittedTx()
