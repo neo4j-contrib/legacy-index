@@ -581,6 +581,11 @@ public class LuceneDataSource extends LogBackedXaDataSource
         return store.getLastCommittedTx();
     }
     
+    public void setLastCommittedTxId( long txId )
+    {
+        store.setLastCommittedTx( txId );
+    }
+    
     @Override
     public XaContainer getXaContainer()
     {

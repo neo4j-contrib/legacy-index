@@ -249,6 +249,7 @@ class LuceneTransaction extends XaTransaction
                 }
                 luceneDs.invalidateIndexSearcher( key );
             }
+            luceneDs.setLastCommittedTxId( getCommitTxId() );
         }
         finally
         {

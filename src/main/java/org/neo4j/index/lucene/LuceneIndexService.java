@@ -51,6 +51,7 @@ import org.neo4j.index.IndexService;
 import org.neo4j.index.impl.GenericIndexService;
 import org.neo4j.index.impl.IdToNodeIterator;
 import org.neo4j.index.impl.SimpleIndexHits;
+import org.neo4j.kernel.AbstractGraphDatabase;
 import org.neo4j.kernel.Config;
 import org.neo4j.kernel.impl.cache.LruCache;
 import org.neo4j.kernel.impl.transaction.LockManager;
@@ -97,7 +98,7 @@ public class LuceneIndexService extends GenericIndexService
     public LuceneIndexService( GraphDatabaseService graphDb )
     {
         super( graphDb );
-        Config config = getConfig( graphDb );
+        Config config = ((AbstractGraphDatabase) graphDb).getConfig();
         String luceneDirectory = config.getTxModule().getTxLogDirectory()
                                  + "/" + getDirName();
         TxModule txModule = config.getTxModule();
@@ -113,18 +114,6 @@ public class LuceneIndexService extends GenericIndexService
                 getDataSourceClass().getName(), resourceId, params, true );
         broker = new ConnectionBroker( txManager, xaDs );
         xaDs.setIndexService( this );
-    }
-
-    private Config getConfig( GraphDatabaseService graphDb )
-    {
-        try
-        {
-            return (Config) graphDb.getClass().getDeclaredMethod( "getConfig" ).invoke( graphDb );
-        }
-        catch ( Exception e )
-        {
-            throw new RuntimeException( e );
-        }
     }
 
     protected Class<? extends LuceneDataSource> getDataSourceClass()
@@ -526,7 +515,7 @@ public class LuceneIndexService extends GenericIndexService
     public synchronized void shutdown()
     {
         super.shutdown();
-        TxModule txModule = getConfig( getGraphDb() ).getTxModule();
+        TxModule txModule = ((AbstractGraphDatabase) getGraphDb()).getConfig().getTxModule();
         if ( txModule.getXaDataSourceManager().hasDataSource( getDirName() ) )
         {
             txModule.getXaDataSourceManager().unregisterDataSource(
