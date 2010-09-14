@@ -22,13 +22,13 @@ package org.neo4j.index.lucene;
 import java.io.IOException;
 import java.io.StringReader;
 
-import org.apache.lucene.analysis.Token;
 import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.tokenattributes.TermAttribute;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
-import org.apache.lucene.search.BooleanClause.Occur;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
 import org.neo4j.index.IndexHits;
@@ -129,18 +129,14 @@ public class LuceneFulltextIndexService extends LuceneIndexService
         }
         
         TokenStream stream = LuceneFulltextDataSource.LOWER_CASE_WHITESPACE_ANALYZER.tokenStream(
-                DOC_INDEX_KEY,
-                new StringReader( value.toString().toLowerCase() ) );
-        Token token = new Token();
+                DOC_INDEX_KEY, new StringReader( value.toString().toLowerCase() ) );
         BooleanQuery booleanQuery = new BooleanQuery();
         try
         {
-            while ( ( token = stream.next( token ) ) != null )
+            while ( stream.incrementToken() )
             {
-                String term = token.term();
-                booleanQuery.add(
-                        new TermQuery( new Term( DOC_INDEX_KEY, term ) ),
-                        Occur.MUST );
+                String term = stream.getAttribute( TermAttribute.class ).term();
+                booleanQuery.add( new TermQuery( new Term( DOC_INDEX_KEY, term ) ), Occur.MUST );
             }
         }
         catch ( IOException e )

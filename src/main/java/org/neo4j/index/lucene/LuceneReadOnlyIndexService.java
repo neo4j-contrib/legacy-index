@@ -26,9 +26,9 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.lucene.Hits;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.search.Hits;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Sort;
@@ -253,8 +253,7 @@ public class LuceneReadOnlyIndexService extends GenericIndexService
         try
         {
             IndexSearcher searcher = xaDs.getIndexSearcher( key );
-            Hits hits = sortingOrNull != null ? searcher.search( query,
-                    sortingOrNull ) : searcher.search( query );
+            Hits hits = new Hits( searcher, query, null, sortingOrNull );
             return new DocToIdIterator( new HitsIterator( hits ),
                     Collections.<Long>emptyList(), null );
         }

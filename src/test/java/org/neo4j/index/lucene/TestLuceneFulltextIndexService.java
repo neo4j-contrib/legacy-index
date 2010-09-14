@@ -67,25 +67,20 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
     {
         Node node1 = graphDb().createNode();
         
-        String value1 = "A value with spaces in it which the fulltext " +
-            "index should tokenize";
+        String value1 = "A value with spaces in it which the fulltext index should tokenize";
         String value2 = "Another value with spaces in it";
         String key = "some_property";
-        assertTrue( !index().getNodes( key, 
-            value1 ).iterator().hasNext() );
-        assertTrue( !index().getNodes( key, 
-            value2 ).iterator().hasNext() );
+        assertTrue( !index().getNodes( key, value1 ).iterator().hasNext() );
+        assertTrue( !index().getNodes( key, value2 ).iterator().hasNext() );
 
         index().index( node1, key, value1 );
         
-        Iterator<Node> itr = index().getNodes( key, 
-            "fulltext" ).iterator();
+        Iterator<Node> itr = index().getNodes( key, "fulltext" ).iterator();
         assertEquals( node1, itr.next() );
         assertTrue( !itr.hasNext() );
         
         index().removeIndex( node1, key, value1 );
-        assertTrue( !index().getNodes( key, 
-            value1 ).iterator().hasNext() );
+        assertTrue( !index().getNodes( key, value1 ).iterator().hasNext() );
 
         index().index( node1, key, value1 );
         Node node2 = graphDb().createNode();
@@ -102,8 +97,7 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
         
         index().removeIndex( node1, key, value1 );
         index().removeIndex( node2, key, value1 );
-        assertTrue( !index().getNodes( key, 
-            value1 ).iterator().hasNext() );
+        assertTrue( !index().getNodes( key, value1 ).iterator().hasNext() );
         itr = index().getNodes( key, value1 ).iterator();
         assertTrue( !itr.hasNext() );
         restartTx();
