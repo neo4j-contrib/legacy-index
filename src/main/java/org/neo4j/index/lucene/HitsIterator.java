@@ -2,8 +2,8 @@ package org.neo4j.index.lucene;
 
 import java.io.IOException;
 
+import org.apache.lucene.Hits;
 import org.apache.lucene.document.Document;
-import org.apache.lucene.search.Hits;
 import org.neo4j.helpers.collection.PrefetchingIterator;
 
 class HitsIterator extends PrefetchingIterator<Document>
