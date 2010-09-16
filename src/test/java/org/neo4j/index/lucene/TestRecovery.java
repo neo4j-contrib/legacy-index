@@ -126,6 +126,7 @@ public class TestRecovery
         Map<Object,Object> params = new HashMap<Object,Object>();
         String luceneDir = getDbPath() + "/lucene";
         params.put( "dir", luceneDir );
+        params.put( "store_dir", getDbPath() );
         LuceneDataSource xaDs = new LuceneDataSource( params );
         LuceneXaConnection xaC = (LuceneXaConnection) xaDs.getXaConnection();
         XAResource xaR = xaC.getXaResource();

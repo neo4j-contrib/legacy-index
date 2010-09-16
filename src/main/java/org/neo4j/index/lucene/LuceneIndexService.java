@@ -50,6 +50,7 @@ import org.neo4j.index.IndexService;
 import org.neo4j.index.impl.GenericIndexService;
 import org.neo4j.index.impl.IdToNodeIterator;
 import org.neo4j.index.impl.SimpleIndexHits;
+import org.neo4j.kernel.AbstractGraphDatabase;
 import org.neo4j.kernel.EmbeddedGraphDatabase;
 import org.neo4j.kernel.impl.cache.LruCache;
 import org.neo4j.kernel.impl.transaction.LockManager;
@@ -102,7 +103,7 @@ public class LuceneIndexService extends GenericIndexService
         TxModule txModule = embeddedGraphDb.getConfig().getTxModule();
         txManager = txModule.getTxManager();
         byte resourceId[] = getXaResourceId();
-        Map<Object, Object> params = getDefaultParams();
+        Map<Object, Object> params = getDefaultParams( graphDb );
         params.put( "dir", luceneDirectory );
         params.put( LockManager.class,
                 embeddedGraphDb.getConfig().getLockManager() );
@@ -127,9 +128,10 @@ public class LuceneIndexService extends GenericIndexService
         return "162373".getBytes();
     }
 
-    private Map<Object, Object> getDefaultParams()
+    private Map<Object, Object> getDefaultParams( GraphDatabaseService graphDb )
     {
-        Map<Object, Object> params = new HashMap<Object, Object>();
+        Map<Object, Object> params = new HashMap<Object, Object>(
+                ((AbstractGraphDatabase) graphDb).getConfig().getParams() );
         params.put( LuceneIndexService.class, this );
         return params;
     }
