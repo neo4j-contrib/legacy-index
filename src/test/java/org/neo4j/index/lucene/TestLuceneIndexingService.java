@@ -21,6 +21,7 @@ package org.neo4j.index.lucene;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -427,5 +428,18 @@ public class TestLuceneIndexingService extends Neo4jWithIndexTestCase
         index().removeIndex( key );
         restartTx();
         assertFalse( dir.exists() );
+    }
+
+    @Test
+    public void testDuplicateEntries()
+    {
+        String key = "_names";
+        String name = "rodin";
+        Node node = graphDb().createNode();
+        index().index(node, key, name);
+        restartTx();
+        index().index(node, key, name );
+        Node t = index().getSingleNode(key, name);
+        assertNotNull(t);
     }
 }

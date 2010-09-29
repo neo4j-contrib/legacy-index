@@ -44,6 +44,7 @@ import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.NotInTransactionException;
 import org.neo4j.helpers.collection.CombiningIterator;
+import org.neo4j.helpers.collection.FilteringIterator;
 import org.neo4j.helpers.collection.IteratorUtil;
 import org.neo4j.index.IndexHits;
 import org.neo4j.index.IndexService;
@@ -348,7 +349,7 @@ public class LuceneIndexService extends GenericIndexService
         }
 
         IndexHits<Node> hits = new SimpleIndexHits<Node>( IteratorUtil.asIterable(
-                instantiateIdToNodeIterator( nodeIdIterator ) ), nodeIdIteratorSize );
+                FilteringIterator.noDuplicates( instantiateIdToNodeIterator( nodeIdIterator ) ) ), nodeIdIteratorSize );
         if ( isLazy )
         {
             hits = new LazyIndexHits<Node>( hits, searcher );
