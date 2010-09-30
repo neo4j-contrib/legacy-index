@@ -39,12 +39,12 @@ import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Index;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.Term;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.TermQuery;
-import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.neo4j.kernel.Config;
@@ -78,6 +78,7 @@ public class LuceneDataSource extends XaDataSource
         }
     };
 
+    private final Map<String, IndexWriter> recoveryWriters = new HashMap<String, IndexWriter>();
     
     private final ArrayMap<String,IndexSearcherRef> indexSearchers = 
         new ArrayMap<String,IndexSearcherRef>( 6, true, true );
@@ -265,6 +266,16 @@ public class LuceneDataSource extends XaDataSource
         {
             return store.incrementVersion();
         }
+        
+        @Override
+        public void recoveryComplete()
+        {
+            for ( Map.Entry<String, IndexWriter> entry : recoveryWriters.entrySet() )
+            {
+                removeWriter( entry.getKey(), entry.getValue() );
+            }
+            recoveryWriters.clear();
+        }
     }
     
     void getReadLock()
@@ -394,6 +405,22 @@ public class LuceneDataSource extends XaDataSource
         catch ( IOException e )
         { // OK
         }
+    }
+    
+    synchronized IndexWriter getRecoveryIndexWriter( String key )
+    {
+        IndexWriter writer = recoveryWriters.get( key );
+        if ( writer == null )
+        {
+            writer = getIndexWriter( key );
+            recoveryWriters.put( key, writer );
+        }
+        return writer;
+    }
+    
+    synchronized void removeRecoveryIndexWriter( String key )
+    {
+        recoveryWriters.remove( key );
     }
 
     synchronized IndexWriter getIndexWriter( String key )

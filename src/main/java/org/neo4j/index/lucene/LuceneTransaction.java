@@ -203,15 +203,20 @@ class LuceneTransaction extends XaTransaction
             for ( Map.Entry<String, List<LuceneCommand>> entry :
                 this.commandMap.entrySet() )
             {
+                if ( entry.getValue().isEmpty() )
+                {
+                    continue;
+                }
+                boolean isRecovery = entry.getValue().iterator().next().isRecovered();
                 String key = entry.getKey();
-                IndexWriter writer = luceneDs.getIndexWriter( key );
+                IndexWriter writer = isRecovery ? luceneDs.getRecoveryIndexWriter( key ) : luceneDs.getIndexWriter( key );
                 for ( LuceneCommand command : entry.getValue() )
                 {
                     Long nodeId = command.getNodeId();
                     String value = command.getValue();
                     if ( writer == null )
                     {
-                        writer = luceneDs.getIndexWriter( key );
+                        writer = isRecovery ? luceneDs.getRecoveryIndexWriter( key ) : luceneDs.getIndexWriter( key );
                     }
                     
                     if ( command instanceof AddCommand )
@@ -224,6 +229,10 @@ class LuceneTransaction extends XaTransaction
                             writer, nodeId, key, value ) )
                         {
                             luceneDs.closeIndexSearcher( key );
+                            if ( isRecovery )
+                            {
+                                luceneDs.removeRecoveryIndexWriter( key );
+                            }
                             writer = null;
                         }
                     }
@@ -243,7 +252,7 @@ class LuceneTransaction extends XaTransaction
                     }
                 }
                 
-                if ( writer != null )
+                if ( writer != null && !isRecovery )
                 {
                     luceneDs.removeWriter( key, writer );
                 }
