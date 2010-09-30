@@ -2,8 +2,8 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <parent>
     <groupId>org.neo4j</groupId>
-    <artifactId>parent-pom</artifactId>
-    <version>7</version>
+    <artifactId>parent-central</artifactId>
+    <version>1-SNAPSHOT</version>
   </parent>
 
   <modelVersion>4.0.0</modelVersion>
@@ -17,21 +17,28 @@
   <url>http://components.neo4j.org/${project.artifactId}/</url>
 
   <properties>
+    <lucene.groupId>org.apache.servicemix.bundles</lucene.groupId>
+    <lucene.artifactId>org.apache.servicemix.bundles.lucene</lucene.artifactId>
+    <lucene.version>3.0.1_2</lucene.version>
+    <lucene.main.version>3.0.1</lucene.main.version>
     <bundle.namespace>org.neo4j.index</bundle.namespace>
     <short-name>index</short-name>
-    <!-- thrid party library versions -->
-    <geronimo-jta.version>1.1.1</geronimo-jta.version>
   </properties>
 
   <packaging>bundle</packaging>
 
   <scm>
-    <connection>
-      scm:svn:https://svn.neo4j.org/components/index/trunk/
-        </connection>
-    <url>https://trac.neo4j.org/browser/components/index
-        </url>
+    <connection>scm:svn:https://svn.neo4j.org/components/index/trunk/</connection>
+    <developerConnection>${project.scm.connection}</developerConnection>
+    <url>https://trac.neo4j.org/browser/components/index</url>
   </scm>
+
+  <licenses>
+    <license>
+      <name>GNU Affero General Public License, Version 3</name>
+      <url>http://www.gnu.org/licenses/agpl-3.0-standalone.html</url>
+    </license>
+  </licenses>
 
   <issueManagement>
     <system>Trac</system>
@@ -73,9 +80,9 @@
     </dependency>
     -->
     <dependency>
-      <groupId>org.apache.servicemix.bundles</groupId>
-      <artifactId>org.apache.servicemix.bundles.lucene</artifactId>
-      <version>3.0.1_2</version>
+      <groupId>${lucene.groupId}</groupId>
+      <artifactId>${lucene.artifactId}</artifactId>
+      <version>${lucene.version}</version>
     </dependency>
     <dependency>
       <groupId>org.neo4j</groupId>
@@ -97,11 +104,10 @@
       <plugin>
         <groupId>org.ops4j</groupId>
         <artifactId>maven-pax-plugin</artifactId>
-        <version>1.4</version>
         <configuration>
           <framework>felix</framework>
           <provision>
-            <param>mvn:org.apache.geronimo.specs/geronimo-jta_1.1_spec/${geronimo-jta.version}</param>
+            <param>mvn:${jta.groupId}/${jta.artifactId}/${jta.version}</param>
           </provision>
         </configuration>
       </plugin>
