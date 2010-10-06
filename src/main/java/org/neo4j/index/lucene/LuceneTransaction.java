@@ -208,7 +208,7 @@ class LuceneTransaction extends XaTransaction
                 {
                     continue;
                 }
-                boolean isRecovery = entry.getValue().iterator().next().isRecovered();
+                boolean isRecovery = false; // entry.getValue().iterator().next().isRecovered();
                 String key = entry.getKey();
                 IndexWriter writer = isRecovery ? luceneDs.getRecoveryIndexWriter( key ) : luceneDs.getIndexWriter( key );
                 for ( LuceneCommand command : entry.getValue() )
