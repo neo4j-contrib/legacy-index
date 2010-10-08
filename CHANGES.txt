@@ -1,3 +1,10 @@
+1.2-1.2.M1 (2010-10-08)
+-----------------------
+
+o Index folder is deleted when clearing an index (IndexService#removeIndex(key)).
+o updated lucene version to 3.0.1.
+o Check so that duplicate nodes cannot be returned from a query.
+
 1.1 (2010-07-29)
 ----------------
 
