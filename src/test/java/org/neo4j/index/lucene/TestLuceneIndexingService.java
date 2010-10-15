@@ -1,26 +1,28 @@
-/*
- * Copyright (c) 2002-2009 "Neo Technology,"
- *     Network Engine for Objects in Lund AB [http://neotechnology.com]
+/**
+ * Copyright (c) 2002-2010 "Neo Technology,"
+ * Network Engine for Objects in Lund AB [http://neotechnology.com]
  *
  * This file is part of Neo4j.
- * 
+ *
  * Neo4j is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Affero General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.neo4j.index.lucene;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -427,5 +429,18 @@ public class TestLuceneIndexingService extends Neo4jWithIndexTestCase
         index().removeIndex( key );
         restartTx();
         assertFalse( dir.exists() );
+    }
+
+    @Test
+    public void testDuplicateEntries()
+    {
+        String key = "_names";
+        String name = "rodin";
+        Node node = graphDb().createNode();
+        index().index(node, key, name);
+        restartTx();
+        index().index(node, key, name );
+        Node t = index().getSingleNode(key, name);
+        assertNotNull(t);
     }
 }

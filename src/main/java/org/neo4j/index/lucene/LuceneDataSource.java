@@ -1,22 +1,23 @@
-/*
- * Copyright (c) 2002-2009 "Neo Technology,"
- *     Network Engine for Objects in Lund AB [http://neotechnology.com]
+/**
+ * Copyright (c) 2002-2010 "Neo Technology,"
+ * Network Engine for Objects in Lund AB [http://neotechnology.com]
  *
  * This file is part of Neo4j.
- * 
+ *
  * Neo4j is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Affero General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.neo4j.index.lucene;
 
 import java.io.File;
@@ -39,12 +40,12 @@ import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Index;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.Term;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.TermQuery;
-import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.neo4j.kernel.Config;
@@ -79,6 +80,7 @@ public class LuceneDataSource extends LogBackedXaDataSource
         }
     };
 
+    private final Map<String, IndexWriter> recoveryWriters = new HashMap<String, IndexWriter>();
     
     private final ArrayMap<String,IndexSearcherRef> indexSearchers = 
         new ArrayMap<String,IndexSearcherRef>( 6, true, true );
@@ -273,6 +275,16 @@ public class LuceneDataSource extends LogBackedXaDataSource
         {
             return store.getLastCommittedTx();
         }
+        
+        @Override
+        public void recoveryComplete()
+        {
+            for ( Map.Entry<String, IndexWriter> entry : recoveryWriters.entrySet() )
+            {
+                removeWriter( entry.getKey(), entry.getValue() );
+            }
+            recoveryWriters.clear();
+        }
     }
     
     void getReadLock()
@@ -402,6 +414,22 @@ public class LuceneDataSource extends LogBackedXaDataSource
         catch ( IOException e )
         { // OK
         }
+    }
+    
+    synchronized IndexWriter getRecoveryIndexWriter( String key )
+    {
+        IndexWriter writer = recoveryWriters.get( key );
+        if ( writer == null )
+        {
+            writer = getIndexWriter( key );
+            recoveryWriters.put( key, writer );
+        }
+        return writer;
+    }
+    
+    synchronized void removeRecoveryIndexWriter( String key )
+    {
+        recoveryWriters.remove( key );
     }
 
     synchronized IndexWriter getIndexWriter( String key )
