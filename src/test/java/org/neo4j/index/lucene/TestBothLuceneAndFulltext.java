@@ -23,6 +23,7 @@ package org.neo4j.index.lucene;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -83,10 +84,12 @@ public class TestBothLuceneAndFulltext extends Neo4jWithIndexTestCase
     @Test
     public void testKeepLogsConfig()
     {
+        File path = new File( "target/configdb" );
+        deleteFileOrDirectory( path );
         Map<String,String> config = new HashMap<String,String>();
         config.put( Config.KEEP_LOGICAL_LOGS, "nioneodb,lucene,lucene-fulltext" );
         EmbeddedGraphDatabase db = new EmbeddedGraphDatabase( 
-                "target/configdb", config );
+                path.getPath(), config );
         IndexService index = new LuceneIndexService( db );
         IndexService fulltext = new LuceneFulltextIndexService( db );
         XaDataSourceManager xaDsMgr = 
@@ -100,7 +103,7 @@ public class TestBothLuceneAndFulltext extends Neo4jWithIndexTestCase
         fulltext.shutdown();
         
         config.remove( Config.KEEP_LOGICAL_LOGS ); 
-        db = new EmbeddedGraphDatabase( "target/configdb", config );
+        db = new EmbeddedGraphDatabase( path.getPath(), config );
         index = new LuceneIndexService( db );
         fulltext = new LuceneFulltextIndexService( db );
         xaDsMgr = db.getConfig().getTxModule().getXaDataSourceManager();
@@ -113,7 +116,7 @@ public class TestBothLuceneAndFulltext extends Neo4jWithIndexTestCase
         fulltext.shutdown();
 
         config.put( Config.KEEP_LOGICAL_LOGS, Boolean.TRUE.toString() ); 
-        db = new EmbeddedGraphDatabase( "target/configdb", config );
+        db = new EmbeddedGraphDatabase( path.getPath(), config );
         index = new LuceneIndexService( db );
         fulltext = new LuceneFulltextIndexService( db );
         xaDsMgr = db.getConfig().getTxModule().getXaDataSourceManager();

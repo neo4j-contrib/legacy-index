@@ -29,12 +29,15 @@ import java.util.Random;
 
 class LuceneIndexStore
 {
+    private static final int FILE_LENGTH = 8*4;
+    
     private long creationTime;
     private long randomIdentifier;
     private long version;
     
     private final FileChannel fileChannel;
-    private final ByteBuffer buf = ByteBuffer.allocate( 24 );
+    private final ByteBuffer buf = ByteBuffer.allocate( FILE_LENGTH );
+    private long lastCommittedTx;
     
     public LuceneIndexStore( String store )
     {
@@ -45,14 +48,17 @@ class LuceneIndexStore
         try
         {
             fileChannel = new RandomAccessFile( store, "rw" ).getChannel();
-            if ( fileChannel.read( buf ) != 24 )
+            int bytesRead = fileChannel.read( buf );
+            if ( bytesRead != FILE_LENGTH && bytesRead != FILE_LENGTH-8 )
             {
-                throw new RuntimeException( "Expected to read 24 bytes" );
+                throw new RuntimeException( "Expected to read " + FILE_LENGTH +
+                        " or " + (FILE_LENGTH-8) + " bytes" );
             }
             buf.flip();
             creationTime = buf.getLong();
             randomIdentifier = buf.getLong();
             version = buf.getLong();
+            lastCommittedTx = bytesRead == FILE_LENGTH ? buf.getLong() : 1;
         }
         catch ( IOException e )
         {
@@ -70,20 +76,25 @@ class LuceneIndexStore
         {
             FileChannel fileChannel = 
                 new RandomAccessFile( store, "rw" ).getChannel();
-            ByteBuffer buf = ByteBuffer.allocate( 24 );
+            ByteBuffer buf = ByteBuffer.allocate( FILE_LENGTH );
             long time = System.currentTimeMillis();
             long identifier = new Random( time ).nextLong();
-            buf.putLong( time ).putLong( identifier ).putLong( 0 );
+            buf.putLong( time ).putLong( identifier ).putLong( 0 ).putLong( 1 );
             buf.flip();
-            if ( fileChannel.write( buf ) != 24 )
-            {
-                throw new RuntimeException( "Expected to write 24 bytes" );
-            }
+            writeBuffer( fileChannel, buf );
             fileChannel.close();
         }
         catch ( IOException e )
         {
             throw new RuntimeException( e );
+        }
+    }
+
+    private static void writeBuffer( FileChannel fileChannel, ByteBuffer buf ) throws IOException
+    {
+        if ( fileChannel.write( buf ) != FILE_LENGTH )
+        {
+            throw new RuntimeException( "Expected to write " + FILE_LENGTH + " bytes" );
         }
     }
 
@@ -116,18 +127,27 @@ class LuceneIndexStore
         writeOut();
     }
     
+    public synchronized void setLastCommittedTx( long txId )
+    {
+        this.lastCommittedTx = txId;
+//        writeOut();
+    }
+    
+    public long getLastCommittedTx()
+    {
+        return this.lastCommittedTx;
+    }
+    
     private void writeOut()
     {
         buf.clear();
         buf.putLong( creationTime ).putLong( randomIdentifier ).putLong( 
-            version );
+            version ).putLong( lastCommittedTx );
         buf.flip();
         try
         {
-            if ( fileChannel.write( buf, 0 ) != 24 )
-            {
-                throw new RuntimeException( "Expected to write 24 bytes" );
-            }
+            fileChannel.position( 0 );
+            writeBuffer( fileChannel, buf );
         }
         catch ( IOException e )
         {

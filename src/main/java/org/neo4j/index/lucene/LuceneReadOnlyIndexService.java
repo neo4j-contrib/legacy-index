@@ -43,7 +43,7 @@ import org.neo4j.index.ReadOnlyIndexException;
 import org.neo4j.index.impl.GenericIndexService;
 import org.neo4j.index.impl.IdToNodeIterator;
 import org.neo4j.index.impl.SimpleIndexHits;
-import org.neo4j.kernel.EmbeddedGraphDatabase;
+import org.neo4j.kernel.AbstractGraphDatabase;
 import org.neo4j.kernel.EmbeddedReadOnlyGraphDatabase;
 import org.neo4j.kernel.impl.cache.LruCache;
 
@@ -68,20 +68,8 @@ public class LuceneReadOnlyIndexService extends GenericIndexService
     public LuceneReadOnlyIndexService( GraphDatabaseService graphDb )
     {
         super( graphDb );
-        String luceneDirectory;
-        if ( graphDb instanceof EmbeddedReadOnlyGraphDatabase )
-        {
-            EmbeddedReadOnlyGraphDatabase embeddedGraphDb = ( (EmbeddedReadOnlyGraphDatabase) graphDb );
-            luceneDirectory = embeddedGraphDb.getStoreDir() + "/"
-                              + getDirName();
-        }
-        else
-        {
-            EmbeddedGraphDatabase embeddedGraphDb = ( (EmbeddedGraphDatabase) graphDb );
-            luceneDirectory = embeddedGraphDb.getStoreDir() + "/"
-                              + getDirName();
-        }
-        xaDs = new LuceneReadOnlyDataSource( luceneDirectory );
+        xaDs = new LuceneReadOnlyDataSource(
+                ((AbstractGraphDatabase) graphDb).getStoreDir() + "/" + getDirName() );
     }
 
     protected String getDirName()

@@ -36,7 +36,7 @@ import org.neo4j.index.Index;
 import org.neo4j.index.IndexHits;
 import org.neo4j.index.impl.btree.BTree;
 import org.neo4j.index.impl.btree.KeyEntry;
-import org.neo4j.kernel.EmbeddedGraphDatabase;
+import org.neo4j.kernel.AbstractGraphDatabase;
 
 /**
  * A "multi" index implementation using {@link org.neo4j.util.btree.BTree BTree}
@@ -528,7 +528,7 @@ abstract class AbstractIndex implements Index
             {
                 try
                 {
-                    ((EmbeddedGraphDatabase) graphDb).getConfig().getTxModule().
+                    ((AbstractGraphDatabase) graphDb).getConfig().getTxModule().
                         getTxManager().getTransaction().commit();
                 }
                 catch ( Exception e )

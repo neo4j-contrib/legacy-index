@@ -53,7 +53,7 @@ import org.neo4j.index.impl.GenericIndexService;
 import org.neo4j.index.impl.IdToNodeIterator;
 import org.neo4j.index.impl.SimpleIndexHits;
 import org.neo4j.kernel.AbstractGraphDatabase;
-import org.neo4j.kernel.EmbeddedGraphDatabase;
+import org.neo4j.kernel.Config;
 import org.neo4j.kernel.impl.cache.LruCache;
 import org.neo4j.kernel.impl.transaction.LockManager;
 import org.neo4j.kernel.impl.transaction.TxModule;
@@ -99,16 +99,18 @@ public class LuceneIndexService extends GenericIndexService
     public LuceneIndexService( GraphDatabaseService graphDb )
     {
         super( graphDb );
-        EmbeddedGraphDatabase embeddedGraphDb = ( (EmbeddedGraphDatabase) graphDb );
-        String luceneDirectory = embeddedGraphDb.getConfig().getTxModule().getTxLogDirectory()
+        Config config = ((AbstractGraphDatabase) graphDb).getConfig();
+        String luceneDirectory = config.getTxModule().getTxLogDirectory()
                                  + "/" + getDirName();
-        TxModule txModule = embeddedGraphDb.getConfig().getTxModule();
+        TxModule txModule = config.getTxModule();
         txManager = txModule.getTxManager();
         byte resourceId[] = getXaResourceId();
-        Map<Object, Object> params = getDefaultParams( graphDb );
+        Map<Object, Object> params = new HashMap<Object, Object>(
+                config.getParams() );
+        params.put( LuceneIndexService.class, this );
         params.put( "dir", luceneDirectory );
         params.put( LockManager.class,
-                embeddedGraphDb.getConfig().getLockManager() );
+                config.getLockManager() );
         xaDs = (LuceneDataSource) txModule.registerDataSource( getDirName(),
                 getDataSourceClass().getName(), resourceId, params, true );
         broker = new ConnectionBroker( txManager, xaDs );
@@ -128,14 +130,6 @@ public class LuceneIndexService extends GenericIndexService
     protected byte[] getXaResourceId()
     {
         return "162373".getBytes();
-    }
-
-    private Map<Object, Object> getDefaultParams( GraphDatabaseService graphDb )
-    {
-        Map<Object, Object> params = new HashMap<Object, Object>(
-                ((AbstractGraphDatabase) graphDb).getConfig().getParams() );
-        params.put( LuceneIndexService.class, this );
-        return params;
     }
 
     /**
@@ -520,8 +514,7 @@ public class LuceneIndexService extends GenericIndexService
     public synchronized void shutdown()
     {
         super.shutdown();
-        EmbeddedGraphDatabase embeddedGraphDb = ( (EmbeddedGraphDatabase) getGraphDb() );
-        TxModule txModule = embeddedGraphDb.getConfig().getTxModule();
+        TxModule txModule = ((AbstractGraphDatabase) getGraphDb()).getConfig().getTxModule();
         if ( txModule.getXaDataSourceManager().hasDataSource( getDirName() ) )
         {
             txModule.getXaDataSourceManager().unregisterDataSource(
