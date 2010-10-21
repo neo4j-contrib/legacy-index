@@ -9,7 +9,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.neo4j</groupId>
   <artifactId>neo4j-index</artifactId>
-  <version>1.2-1.2.M02</version>
+  <version>1.2-SNAPSHOT</version>
   <name>Neo4j - Index</name>
   <description>
     Utility classes to add various indexing functionality in Neo4j.
@@ -28,9 +28,9 @@
   <packaging>bundle</packaging>
 
   <scm>
-    <connection>scm:svn:https://svn.neo4j.org/components/index/tags/1.2-1.2.M02</connection>
-    <developerConnection>scm:svn:https://svn.neo4j.org/components/index/tags/1.2-1.2.M02</developerConnection>
-    <url>scm:svn:https://svn.neo4j.org/components/index/tags/1.2-1.2.M02</url>
+    <connection>scm:svn:https://svn.neo4j.org/components/index/trunk/</connection>
+    <developerConnection>scm:svn:https://svn.neo4j.org/components/index/trunk/</developerConnection>
+    <url>https://trac.neo4j.org/browser/components/index</url>
   </scm>
 
   <licenses>
