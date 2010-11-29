@@ -69,7 +69,7 @@ public class IndexServiceShellApp extends GraphDatabaseApp
     @Override
     public String getName()
     {
-        return "index";
+        return "index-service";
     }
 
     @Override
@@ -77,9 +77,9 @@ public class IndexServiceShellApp extends GraphDatabaseApp
     {
         return "Access the IndexService capabilities for your Neo4j graph database. " +
                 "Use -g for getting nodes, -i and -r to manipulate. Examples:\n" +
-                "index -i name  (will index property 'name' with its value for current node)\n" +
-                "index -g name \"Thomas A. Anderson\"  (will get nodes matching that name)\n" +
-                "index --cd name \"Agent Smith\"  (will 'cd' to the 'Agent Smith' node).";
+                "index-service -i name  (will index property 'name' with its value for current node)\n" +
+                "index-service -g name \"Thomas A. Anderson\"  (will get nodes matching that name)\n" +
+                "index-service --cd name \"Agent Smith\"  (will 'cd' to the 'Agent Smith' node).";
     }
 
     @Override
