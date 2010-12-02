@@ -70,7 +70,7 @@
     <dependency>
       <groupId>org.neo4j</groupId>
       <artifactId>neo4j-kernel</artifactId>
-      <version>1.2-1.2.M05</version>
+      <version>1.2-SNAPSHOT</version>
     </dependency>
     <!-- lucene has downgraded the simple patch for OSGi
     <dependency>
@@ -87,7 +87,7 @@
     <dependency>
       <groupId>org.neo4j</groupId>
       <artifactId>neo4j-shell</artifactId>
-      <version>1.2-1.2.M05</version>
+      <version>1.2-SNAPSHOT</version>
       <scope>provided</scope>
       <optional>true</optional>
     </dependency>
