@@ -10,6 +10,8 @@ Neo4j indexing
 
 IndexService
 
+	<<Consider using the {{{http://wiki.neo4j.org/content/Index_Framework}integrated index framework}} instead, which is set to replace IndexService>>
+
 	In the <<org.neo4j.index>> package you will find the <<IndexService>> 
 	interface which holds the most straight-forward way of indexing your neo4j
 	graph. Currently our main implementation is the
