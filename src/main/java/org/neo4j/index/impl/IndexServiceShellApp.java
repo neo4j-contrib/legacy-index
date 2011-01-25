@@ -37,6 +37,7 @@ import org.neo4j.shell.Output;
 import org.neo4j.shell.Session;
 import org.neo4j.shell.ShellException;
 import org.neo4j.shell.kernel.apps.GraphDatabaseApp;
+import org.neo4j.shell.kernel.apps.NodeOrRelationship;
 
 @Service.Implementation( App.class )
 public class IndexServiceShellApp extends GraphDatabaseApp
@@ -190,8 +191,8 @@ public class IndexServiceShellApp extends GraphDatabaseApp
 
         for ( Node node : result )
         {
-            printAndInterpretTemplateLines( commandsToRun, false, !specialCommand, node,
-                    getServer(), session, out );
+            printAndInterpretTemplateLines( commandsToRun, false, !specialCommand,
+                    NodeOrRelationship.wrap( node ), getServer(), session, out );
         }
     }
 
