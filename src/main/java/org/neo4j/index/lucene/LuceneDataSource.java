@@ -151,12 +151,14 @@ public class LuceneDataSource extends LogBackedXaDataSource
             getLogicalLog().setKeepLogs( true );
         }
     }
-    
+
     /**
-     * This is here so that {@link LuceneIndexService#formQuery(String, Object)}
-     * can be used when getting stuff from inside a transaction.
-     * @param indexService the {@link LuceneIndexService} instance which
-     * created it.
+     * This is here so that
+     * {@link LuceneIndexService#formQuery(String, Object, Object)} can be used
+     * when getting stuff from inside a transaction.
+     * 
+     * @param indexService the {@link LuceneIndexService} instance which created
+     *            it.
      */
     protected void setIndexService( LuceneIndexService indexService )
     {
