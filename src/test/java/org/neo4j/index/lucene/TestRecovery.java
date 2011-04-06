@@ -21,6 +21,8 @@ package org.neo4j.index.lucene;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.neo4j.helpers.collection.MapUtil.stringMap;
+import static org.neo4j.kernel.CommonFactories.defaultLogBufferFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -42,6 +44,7 @@ import org.neo4j.index.IndexService;
 import org.neo4j.index.Neo4jTestCase;
 import org.neo4j.kernel.EmbeddedGraphDatabase;
 import org.neo4j.kernel.impl.transaction.XidImpl;
+import org.neo4j.kernel.impl.transaction.xaframework.LogBufferFactory;
 
 /**
  * Don't extend Neo4jTestCase since these tests restarts the db in the tests. 
@@ -127,6 +130,7 @@ public class TestRecovery
         String luceneDir = getDbPath() + "/lucene";
         params.put( "dir", luceneDir );
         params.put( "store_dir", getDbPath() );
+        params.put( LogBufferFactory.class, defaultLogBufferFactory( stringMap() ) );
         LuceneDataSource xaDs = new LuceneDataSource( params );
         LuceneXaConnection xaC = (LuceneXaConnection) xaDs.getXaConnection();
         XAResource xaR = xaC.getXaResource();
