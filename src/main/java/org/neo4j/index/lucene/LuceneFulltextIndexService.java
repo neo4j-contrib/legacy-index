@@ -23,7 +23,7 @@ import java.io.IOException;
 import java.io.StringReader;
 
 import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.tokenattributes.TermAttribute;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
@@ -135,7 +135,7 @@ public class LuceneFulltextIndexService extends LuceneIndexService
         {
             while ( stream.incrementToken() )
             {
-                String term = stream.getAttribute( TermAttribute.class ).term();
+                String term = String.valueOf( stream.getAttribute( CharTermAttribute.class ) );
                 booleanQuery.add( new TermQuery( new Term( DOC_INDEX_KEY, term ) ), Occur.MUST );
             }
         }

@@ -23,7 +23,6 @@ import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.queryParser.QueryParser;
 import org.apache.lucene.queryParser.QueryParser.Operator;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.util.Version;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
 import org.neo4j.index.IndexHits;
@@ -55,8 +54,7 @@ public class LuceneFulltextQueryIndexService extends LuceneFulltextIndexService
         
         try
         {
-            QueryParser parser = new QueryParser( Version.LUCENE_CURRENT,
-                DOC_INDEX_KEY,
+            QueryParser parser = new QueryParser( LuceneDataSource.CURRENT_VERSION, DOC_INDEX_KEY,
                     LuceneDataSource.LOWER_CASE_WHITESPACE_ANALYZER );
             Operator operator = getDefaultQueryOperator( key, value );
             if ( operator != null )

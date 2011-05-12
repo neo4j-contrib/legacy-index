@@ -39,7 +39,7 @@ import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Index;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.IndexWriter.MaxFieldLength;
+import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
@@ -47,6 +47,7 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.util.Version;
 import org.neo4j.kernel.Config;
 import org.neo4j.kernel.impl.cache.LruCache;
 import org.neo4j.kernel.impl.transaction.xaframework.LogBackedXaDataSource;
@@ -66,6 +67,8 @@ import org.neo4j.kernel.impl.util.ArrayMap;
  */
 public class LuceneDataSource extends LogBackedXaDataSource
 {
+    public static final Version CURRENT_VERSION = Version.LUCENE_31;
+    
     /**
      * Default {@link Analyzer} for fulltext parsing.
      */
@@ -75,7 +78,7 @@ public class LuceneDataSource extends LogBackedXaDataSource
         @Override
         public TokenStream tokenStream( String fieldName, Reader reader )
         {
-            return new LowerCaseFilter( new WhitespaceTokenizer( reader ) );
+            return new LowerCaseFilter( CURRENT_VERSION, new WhitespaceTokenizer( CURRENT_VERSION, reader ) );
         }
     };
 
@@ -438,8 +441,8 @@ public class LuceneDataSource extends LogBackedXaDataSource
         try
         {
             Directory dir = getDirectory( key );
-            IndexWriter writer = new IndexWriter( dir, getAnalyzer(),
-                MaxFieldLength.UNLIMITED );
+            IndexWriterConfig config = new IndexWriterConfig( CURRENT_VERSION, getAnalyzer() );
+            IndexWriter writer = new IndexWriter( dir, config );
             
             // TODO We should tamper with this value and see how it affects the
             // general performance. Lucene docs says rather <10 for mixed

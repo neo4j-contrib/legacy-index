@@ -35,7 +35,7 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.IndexWriter.MaxFieldLength;
+import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
@@ -69,7 +69,8 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
         @Override
         public TokenStream tokenStream( String fieldName, Reader reader )
         {
-            return new LowerCaseFilter( new WhitespaceTokenizer( reader ) );
+            return new LowerCaseFilter( LuceneDataSource.CURRENT_VERSION,
+                    new WhitespaceTokenizer( LuceneDataSource.CURRENT_VERSION, reader ) );
         }
     };
     
@@ -119,8 +120,8 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
         {
             try
             {
-                IndexWriter indexWriter = new IndexWriter( dir, fieldAnalyzer,
-                    MaxFieldLength.UNLIMITED );
+                IndexWriterConfig config = new IndexWriterConfig( LuceneDataSource.CURRENT_VERSION, fieldAnalyzer );
+                IndexWriter indexWriter = new IndexWriter( dir, config );
                 
                 // TODO We should tamper with this value and see how it affects
                 // the general performance. Lucene docs says rather >10 for
@@ -156,7 +157,7 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
                     oldSearcher.getIndexReader().close();
                     oldSearcher.close();
                 }
-                IndexReader newReader = writer.writer.getReader();
+                IndexReader newReader = IndexReader.open( writer.writer, true );
                 result = new IndexSearcher( newReader );
                 indexSearchers.put( key, result );
                 writer.modifiedFlag = false;

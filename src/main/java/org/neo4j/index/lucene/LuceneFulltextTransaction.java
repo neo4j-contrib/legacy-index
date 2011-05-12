@@ -30,7 +30,8 @@ import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Index;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.IndexWriter.MaxFieldLength;
+import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.IndexWriterConfig.OpenMode;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
@@ -67,9 +68,9 @@ class LuceneFulltextTransaction extends LuceneTransaction
             Directory directory = new RAMDirectory();
             try
             {
-                IndexWriter writer = new IndexWriter( directory,
-                    getDataSource().getAnalyzer(), true,
-                    MaxFieldLength.UNLIMITED );
+                IndexWriterConfig config = new IndexWriterConfig( LuceneDataSource.CURRENT_VERSION, getDataSource().getAnalyzer() );
+                config.setOpenMode( OpenMode.CREATE );
+                IndexWriter writer = new IndexWriter( directory, config );
                 writer.close();
                 result = new DirectoryAndWorkers( directory );
             }
@@ -85,9 +86,8 @@ class LuceneFulltextTransaction extends LuceneTransaction
     private IndexWriter newIndexWriter( Directory directory )
         throws IOException
     {
-        return new IndexWriter( directory,
-            getDataSource().getAnalyzer(),
-            MaxFieldLength.UNLIMITED );
+        IndexWriterConfig config = new IndexWriterConfig( LuceneDataSource.CURRENT_VERSION, getDataSource().getAnalyzer() );
+        return new IndexWriter( directory, config );
     }
     
     private void insertAndRemove( DirectoryAndWorkers insertTo,
@@ -202,7 +202,7 @@ class LuceneFulltextTransaction extends LuceneTransaction
             HashSet<Long> result = new HashSet<Long>();
             for ( int i = 0; i < hits.length(); i++ )
             {
-                result.add( Long.parseLong( hits.doc( i ).getField(
+                result.add( Long.valueOf( hits.doc( i ).getField(
                     LuceneIndexService.DOC_ID_KEY ).stringValue() ) );
             }
             return result;
